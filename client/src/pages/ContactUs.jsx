@@ -16,8 +16,9 @@ export default function ContactUs() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const { currentUser } = useSelector((state) => state.user);
+  const defaultUserId = currentUser ? currentUser._id : "UnregisteredUser";
   const [formData, setFormData] = useState({
-    userid: currentUser._id || "UnregisteredUser",
+    userid: defaultUserId,
     name: "",
     email: "",
     phone: "",
@@ -132,9 +133,9 @@ export default function ContactUs() {
               </Button>
             </form>
             {successMessage && (
-            <Alert color="success" className="mt-5">
-            {successMessage}
-          </Alert>
+              <Alert color="success" className="mt-5">
+                {successMessage}
+              </Alert>
             )}
             <div className=" flex gap-2 text-sm mt-5">
               <span>More Questions?</span>
