@@ -8,6 +8,7 @@ import {
   signInFailure,
 } from "../redux/user/userSlice";
 import { ToastContainer, toast } from "react-toastify";
+import OAuth from "../components/OAuth";
 export default function SignIn() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -94,6 +95,7 @@ export default function SignIn() {
                 "sign in"
               )}
             </Button>
+            <OAuth />
           </form>
           <div className=" flex gap-2 text-sm mt-5">
             <span>Dont Have an account?</span>
