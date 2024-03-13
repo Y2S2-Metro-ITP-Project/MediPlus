@@ -17,15 +17,14 @@ const inquirySchema=new mongoose.Schema({
         type:String,
         required:true
     },
-    reply: {
-        type:String,
-        default:""
-    },
     userId:{
         type:String,
-        default:"",
         required:true
-    }
+    },
+    reply: {
+        type:String,
+        default:"PENDING"
+    },
 },{timestamps:true});
 
 const Inquiry=mongoose.model('Inquiry',inquirySchema)

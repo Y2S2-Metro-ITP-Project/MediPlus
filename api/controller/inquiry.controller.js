@@ -1,11 +1,12 @@
 import Inquiry from "../models/inquiry.model.js";
 import { errorHandler } from "../utils/error.js";
 export const submit = async (req, res, next) => {
-    const {name,email,phone,message}=req.body;
+    const {name,email,phone,message,userid}=req.body;
+    console.log(req.body);
     if(!name || !email || !phone || !message || name==="" || email==="" || phone==="" || message===""){
         next(errorHandler(400,"All fields are required"));
     }
-    const newInquiry=new Inquiry({name,email,phone,message});
+    const newInquiry=new Inquiry({name,email,phone,message,userId:userid});
     try {
         await newInquiry.save();
         res.json({message:"Inquiry submitted Successfully."});

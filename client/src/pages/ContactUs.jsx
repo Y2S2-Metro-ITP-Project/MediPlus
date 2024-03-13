@@ -10,28 +10,34 @@ import {
   TextInput,
   Textarea,
 } from "flowbite-react";
-
+import { useSelector } from "react-redux";
 export default function ContactUs() {
-  const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [successMessage, setSuccessMessage] = useState("");
+  const { currentUser } = useSelector((state) => state.user);
+  const [formData, setFormData] = useState({
+    userid: currentUser._id || "UnregisteredUser",
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (
       !formData.name ||
       !formData.email ||
       !formData.phone ||
-      !formData.message
+      !formData.message ||
+      !formData.userid
     ) {
       toast.error("Please fill out all the fields");
       return;
     }
-
     try {
       setLoading(true);
       setErrorMessage(null);
@@ -42,13 +48,9 @@ export default function ContactUs() {
         },
         body: JSON.stringify(formData),
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to submit inquiry");
-      }
-
-      toast.success("Your Inquiry is Submitted Successfully!");
       setLoading(false);
+      setSuccessMessage("Your Inquiry is Submitted Successfully!");
+      //toast.success("Your Inquiry is Submitted Successfully!");
       setFormData({});
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again later");
@@ -129,6 +131,11 @@ export default function ContactUs() {
                 )}
               </Button>
             </form>
+            {successMessage && (
+            <Alert color="success" className="mt-5">
+            {successMessage}
+          </Alert>
+            )}
             <div className=" flex gap-2 text-sm mt-5">
               <span>More Questions?</span>
               <Link to="#" className=" text-blue-500">
