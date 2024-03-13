@@ -9,6 +9,7 @@ import {
 } from "flowbite-react";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { HiCheck, HiExclamation, HiX } from 'react-icons/hi';
 export default function ContactUs() {
   const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
@@ -19,7 +20,12 @@ export default function ContactUs() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone || !formData.message) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.message
+    ) {
       setErrorMessage("Please fill out all the fileds");
       return;
     }
@@ -41,8 +47,8 @@ export default function ContactUs() {
         return;
       }
       setLoading(false);
-      if(res.ok){
-        setSuccess("Inquiry submitted Successfully.Memebr of our team will contact you soon.");
+      if (res.ok) {
+        setSuccess(true);
       }
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again later");
@@ -99,7 +105,8 @@ export default function ContactUs() {
                 <Textarea
                   placeholder="Your Message"
                   id="message"
-                  onChange={handleChange}/>
+                  onChange={handleChange}
+                />
               </div>
               <Button
                 gradientDuoTone="purpleToPink"
@@ -128,10 +135,17 @@ export default function ContactUs() {
               </Alert>
             )}
             {success && (
-              <Alert color="success" className="mt-5">
-                {success}
-              </Alert>
-            
+              <>
+                <Toast>
+                  <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-500 dark:bg-cyan-800 dark:text-cyan-200">
+                    <HiCheck className="h-5 w-5" />
+                  </div>
+                  <div className="ml-3 text-sm font-normal">
+                    Your Inuiry is Submitted Successfully!
+                  </div>
+                  <Toast.Toggle />
+                </Toast>
+              </>
             )}
           </div>
         </div>
