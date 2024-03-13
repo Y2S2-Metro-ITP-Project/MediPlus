@@ -1,56 +1,45 @@
-import {
-  Alert,
-  Button,
-  Label,
-  Spinner,
-  TextInput,
-  Toast,
-} from "flowbite-react";
+import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
-
+import { useDispatch, useSelector } from "react-redux";
+import {
+  signInSuccess,
+  signInStart,
+  signInFailure,
+} from "../redux/user/userSlice";
+import { ToastContainer, toast } from "react-toastify";
 export default function SignIn() {
-  const [formData, setFormData] = useState({});
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({});
+  const { loading, error: errorMessage } = useSelector((state) => state.user);
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      toast.error("Please fill out all the fields");
-      return;
-    }
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+      toast.error("Please fill in all fields");
       return;
     }
     try {
-      setLoading(true);
-      setErrorMessage(null);
+      dispatch(signInStart());
       const res = await fetch("api/auth/signin", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
       if (data.success === false) {
-        setErrorMessage(data.message);
-        setLoading(false);
-        return;
+        toast.error(data.message);
+        dispatch(signInFailure(data.message));
       }
-      setLoading(false);
       if (res.ok) {
+        dispatch(signInSuccess(data));
         navigate("/");
       }
     } catch (error) {
-      setErrorMessage("Something went wrong. Please try again later");
-      setLoading(false);
+      dispatch(signInFailure(error.message));
     }
   };
   return (
@@ -61,16 +50,13 @@ export default function SignIn() {
         <div className="flex-1">
           <Link to="/" className="font-bold dark:text-white text-4xl">
             <span className="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white">
-              Medi
+              Asiri's
             </span>
-            Plus
+            Blog
           </Link>
           <p className="text-sm mt-5">
-            About MediPlus is a comprehensive Hospital Management System built
-            using the MERN stack-MongoDB, Express.js, React.js, Node.js. This
-            system is designed to streamline various operations within a
-            hospital, including patient management, appointment scheduling,
-            staff management, inventory management, billing, and more.
+            This is a demo project. You can use your email to sign in or the
+            google API can be used to sign in
           </p>
         </div>
         {/*right*/}
@@ -89,7 +75,7 @@ export default function SignIn() {
               <Label value="Your Password" />
               <TextInput
                 type="password"
-                placeholder="***********"
+                placeholder="**********"
                 id="password"
                 onChange={handleChange}
               />
@@ -105,21 +91,16 @@ export default function SignIn() {
                   <span className="pl-3">Loading....</span>
                 </>
               ) : (
-                "Sign In"
+                "sign in"
               )}
             </Button>
           </form>
           <div className=" flex gap-2 text-sm mt-5">
-            <span>Dont have an account?</span>
+            <span>Dont Have an account?</span>
             <Link to="/sign-up" className=" text-blue-500">
               Sign Up
             </Link>
           </div>
-          {errorMessage && (
-            <Alert color="failure" className="mt-5">
-              {errorMessage}
-            </Alert>
-          )}
         </div>
       </div>
     </div>

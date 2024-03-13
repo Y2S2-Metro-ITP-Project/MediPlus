@@ -34,13 +34,13 @@ export default function SignUp() {
       });
       const data = await res.json();
       if (data.success === false) {
-        setErrorMessage(data.message);
+        toast.error(data.message);
         setLoading(false);
         return;
       }
       setLoading(false);
       toast.success("Sign Up Successful");
-      setFormData({}); // Clear form fields on successful submission
+      setFormData({});
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again later");
       setLoading(false);
