@@ -1,34 +1,25 @@
-import {
-  Alert,
-  Button,
-  Label,
-  Spinner,
-  TextInput,
-  Toast,
-} from "flowbite-react";
-import { set } from "mongoose";
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Link } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate=useNavigate();
-  const successToast = () => toast.success('Sign Up Successful');
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.username || !formData.email || !formData.password) {
-      setErrorMessage("Please fill out all the fileds");
+      toast.error("Please fill out all the fields");
       return;
     }
     if (formData.password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long");
+      toast.error("Password must be at least 6 characters long");
       return;
     }
     try {
@@ -48,15 +39,17 @@ export default function SignUp() {
         return;
       }
       setLoading(false);
-      successToast();
-      navigate("/sign-in");
+      toast.success("Sign Up Successful");
+      setFormData({}); // Clear form fields on successful submission
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again later");
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen mt-20">
+      <ToastContainer />
       <div className="flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
         {/*left*/}
         <div className="flex-1">
@@ -83,6 +76,7 @@ export default function SignUp() {
                 type="text"
                 placeholder="Username"
                 id="username"
+                value={formData.username || ""}
                 onChange={handleChange}
               />
             </div>
@@ -92,6 +86,7 @@ export default function SignUp() {
                 type="email"
                 placeholder="name@company.com"
                 id="email"
+                value={formData.email || ""}
                 onChange={handleChange}
               />
             </div>
@@ -101,6 +96,7 @@ export default function SignUp() {
                 type="password"
                 placeholder="***********"
                 id="password"
+                value={formData.password || ""}
                 onChange={handleChange}
               />
             </div>

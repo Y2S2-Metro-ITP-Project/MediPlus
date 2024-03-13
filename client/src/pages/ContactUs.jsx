@@ -1,3 +1,7 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { HiCheck } from "react-icons/hi";
+import { ToastContainer, toast } from "react-toastify";
 import {
   Alert,
   Button,
@@ -5,19 +9,17 @@ import {
   Spinner,
   TextInput,
   Textarea,
-  Toast,
 } from "flowbite-react";
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { HiCheck, HiExclamation, HiX } from 'react-icons/hi';
+
 export default function ContactUs() {
   const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (
@@ -26,10 +28,10 @@ export default function ContactUs() {
       !formData.phone ||
       !formData.message
     ) {
-      setErrorMessage("Please fill out all the fileds");
+      toast.error("Please fill out all the fields");
       return;
     }
-    console.log(formData);
+
     try {
       setLoading(true);
       setErrorMessage(null);
@@ -40,23 +42,23 @@ export default function ContactUs() {
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      if (data.success === false) {
-        setErrorMessage(data.message);
-        setLoading(false);
-        return;
+
+      if (!res.ok) {
+        throw new Error("Failed to submit inquiry");
       }
+
+      toast.success("Your Inquiry is Submitted Successfully!");
       setLoading(false);
-      if (res.ok) {
-        setSuccess(true);
-      }
+      setFormData({});
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again later");
       setLoading(false);
     }
   };
+
   return (
     <div>
+      <ToastContainer />
       <div className="min-h-screen mt-20">
         <div className="flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
           {/*left*/}
@@ -81,6 +83,7 @@ export default function ContactUs() {
                   type="text"
                   placeholder="Name"
                   id="name"
+                  value={formData.name || ""}
                   onChange={handleChange}
                 />
               </div>
@@ -90,6 +93,7 @@ export default function ContactUs() {
                   type="email"
                   placeholder="name@company.com"
                   id="email"
+                  value={formData.email || ""}
                   onChange={handleChange}
                 />
               </div>
@@ -99,12 +103,14 @@ export default function ContactUs() {
                   type="number"
                   placeholder="+94 70 100 0000"
                   id="phone"
+                  value={formData.phone || ""}
                   onChange={handleChange}
                 />
                 <Label value="Your Message" />
                 <Textarea
                   placeholder="Your Message"
                   id="message"
+                  value={formData.message || ""}
                   onChange={handleChange}
                 />
               </div>
@@ -129,24 +135,6 @@ export default function ContactUs() {
                 FAQ
               </Link>
             </div>
-            {errorMessage && (
-              <Alert color="failure" className="mt-5">
-                {errorMessage}
-              </Alert>
-            )}
-            {success && (
-              <>
-                <Toast>
-                  <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-500 dark:bg-cyan-800 dark:text-cyan-200">
-                    <HiCheck className="h-5 w-5" />
-                  </div>
-                  <div className="ml-3 text-sm font-normal">
-                    Your Inuiry is Submitted Successfully!
-                  </div>
-                  <Toast.Toggle />
-                </Toast>
-              </>
-            )}
           </div>
         </div>
       </div>
