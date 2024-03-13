@@ -33,6 +33,7 @@ export default function SignIn() {
       const data = await res.json();
       if (data.success === false) {
         toast.error(data.message);
+        setFormData({});
         dispatch(signInFailure(data.message));
       }
       if (res.ok) {
@@ -69,6 +70,7 @@ export default function SignIn() {
                 type="email"
                 placeholder="name@company.com"
                 id="email"
+                value={formData.email || ""}
                 onChange={handleChange}
               />
             </div>
@@ -78,6 +80,7 @@ export default function SignIn() {
                 type="password"
                 placeholder="**********"
                 id="password"
+                value={formData.password || ""}
                 onChange={handleChange}
               />
             </div>

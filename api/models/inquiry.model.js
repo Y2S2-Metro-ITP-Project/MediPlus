@@ -20,6 +20,11 @@ const inquirySchema=new mongoose.Schema({
     reply: {
         type:String,
         default:""
+    },
+    userId:{
+        type:String,
+        default:"",
+        required:true
     }
 },{timestamps:true});
 
