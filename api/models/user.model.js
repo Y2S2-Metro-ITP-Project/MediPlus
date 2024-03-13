@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    NIC:{
+        type: String,
+        required: true,
+        unique: true,
+    },
     email: {
       type: String,
       required: true,
