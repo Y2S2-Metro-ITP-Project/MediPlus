@@ -117,7 +117,9 @@ export const getusers = async (req, res, next) => {
     res
       .status(200)
       .json({ users: usersWithourPassword, totalUser, lastMonthUser });
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getUser = async (req,res,next) => {

@@ -21,6 +21,10 @@ const inquirySchema=new mongoose.Schema({
         type:String,
         required:true
     },
+    isAnswer: {
+        type:Boolean,
+        default:false
+    },
     reply: {
         type:String,
         default:"PENDING"

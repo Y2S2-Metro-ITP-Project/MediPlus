@@ -14,3 +14,66 @@ export const submit = async (req, res, next) => {
         next(error);
     }
 }
+
+export const getInquiries = async (req, res, next) => {
+    if(!req.user.isAdmin){
+        return next(errorHandler(403,"You are not allowed to access these resources"));
+    }
+    try {
+        const startIndex = parseInt(req.query.startIndex) || 0;
+        const limit = parseInt(req.query.limit) || 9;
+        const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+        const inquiries = await Inquiry.find()
+          .sort({ createdAt: sortDirection })
+          .skip(startIndex)
+          .limit(limit);
+        const totalInquiries = await Inquiry.countDocuments();
+        const now = new Date();
+        const oneMonthAgo = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          now.getDate()
+        );
+        const lastMonthInquiries = await Inquiry.countDocuments({
+          createdAt: { $gte: oneMonthAgo },
+        });
+        res
+          .status(200)
+          .json({ inquiries, totalInquiries, lastMonthInquiries })
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const deleteInquiry = async (req, res, next) => {
+    if(!req.user.isAdmin && req.user.id!==req.params.inquiryId){
+        return next(errorHandler(403,"You are not allowed to delete these resources"));
+    }
+    try {
+        await Inquiry.findByIdAndDelete(req.params.inquiryId);
+        res.status(200).json({message:"Inquiry deleted successfully"});
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const updateInquiry = async (req, res, next) => {
+    if(!req.user.isAdmin && req.user.id!==req.params.inquiryId){
+        return next(errorHandler(403,"You are not allowed to update these resources"));
+    }
+    try {
+        const updatedInquiry = await Inquiry.findByIdAndUpdate(
+          req.params.inquiryId,
+          {
+            $set: {
+                isAnswer:true,
+                reply:req.body.reply
+            },
+          },
+          { new: true }
+        );
+        res.status(200).json(updatedInquiry);
+      } catch (error) {
+        next(error);
+      }
+}

@@ -80,9 +80,9 @@ export default function DashSideBar() {
                   Users
                 </Sidebar.Item>
                 </Link>
-                <Link to="#">
+                <Link to="/dashboard?tab=inquiries">
                 <Sidebar.Item
-                  active={tab === "comments"}
+                  active={tab === "inquiries"}
                   icon={HiAnnotation}
                   as="div"
                 >
