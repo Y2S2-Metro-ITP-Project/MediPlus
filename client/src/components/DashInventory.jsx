@@ -124,20 +124,20 @@ export default function DashInquiries() {
   const handleSearch = async (e) => {
     e.preventDefault();
     try {
-      const res=await fetch(`/api/inquiry/searchInquiry`,{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
+      const res = await fetch(`/api/inquiry/searchInquiry`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        body:JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
-      const data=await res.json();
-      if(res.ok){
-        setFormData({}); 
+      const data = await res.json();
+      if (res.ok) {
+        setFormData({});
         toast.success(data.message);
         setInquirires(data);
         console.log(data);
-      }else{
+      } else {
         toast.error(data.error);
         setInquirires([]);
       }
@@ -145,16 +145,16 @@ export default function DashInquiries() {
       toast.error(error.message);
     }
   };
-  
+
   const handleReset = async () => {
-    setSearchTerm(""); 
+    setSearchTerm("");
     const res = await fetch(`/api/inquiry/getinquiries`);
     const data = await res.json();
     if (res.ok) {
       setInquirires(data.inquiries);
       setShowMore(data.inquiries.length >= 9);
     }
-  }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -170,19 +170,23 @@ export default function DashInquiries() {
               onChange={onChange}
               style={{ width: "300px" }}
             />
-            <Button className="w-12 h-10 lg:hidden flex justify-between" color="gray">
+            <Button className="w-12 h-10 lg:hidden" color="gray">
               <AiOutlineSearch />
-            </Button>
-            <Button className="w-12 h-10" color="gray" onClick={()=>handleReset()}>
-              Reset
             </Button>
           </form>
         </div>
+        <Button
+          className="w-200 h-10 ml-4 lg:ml-0 lg:w-32"
+          color="gray"
+          onClick={() => handleReset()}
+        >
+          Reset
+        </Button>
         <select
           id="filter"
           className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         >
-          <option value="defaultvalue" disabled >
+          <option value="defaultvalue" disabled>
             Choose a filter option
           </option>
           <option value="answer">Answered</option>
