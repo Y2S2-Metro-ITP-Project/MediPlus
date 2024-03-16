@@ -8,6 +8,7 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { FaBox } from 'react-icons/fa';
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
@@ -44,9 +45,8 @@ export default function DashSideBar() {
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-1">
-          {
-            currentUser && currentUser.isAdmin && (
-              <Link to="#">
+          {currentUser && currentUser.isAdmin && (
+            <Link to="#">
               <Sidebar.Item
                 active={tab === "dash" || !tab}
                 icon={HiChartPie}
@@ -56,8 +56,7 @@ export default function DashSideBar() {
                 Dashboard
               </Sidebar.Item>
             </Link>
-            )
-          }
+          )}
           <Link to="/dashboard?tab=profile">
             <Sidebar.Item
               active={tab === "profile"}
@@ -79,14 +78,23 @@ export default function DashSideBar() {
                 >
                   Users
                 </Sidebar.Item>
-                </Link>
-                <Link to="/dashboard?tab=inquiries">
+              </Link>
+              <Link to="/dashboard?tab=inquiries">
                 <Sidebar.Item
                   active={tab === "inquiries"}
                   icon={HiAnnotation}
                   as="div"
                 >
                   Inquiries
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inventory">
+                <Sidebar.Item
+                  active={tab === "inventory"}
+                  icon={FaBox}
+                  as="div"
+                >
+                Inventory
                 </Sidebar.Item>
               </Link>
             </>

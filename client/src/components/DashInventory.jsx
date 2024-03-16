@@ -1,4 +1,11 @@
-import { Button, Modal, Table, TextInput } from "flowbite-react";
+import {
+  Button,
+  ButtonGroup,
+  Modal,
+  Select,
+  Table,
+  TextInput,
+} from "flowbite-react";
 import React, { useEffect, useState } from "react";
 import { HiOutlineExclamationCircle, HiEye } from "react-icons/hi";
 import { useSelector } from "react-redux";
@@ -6,6 +13,7 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
+import { set } from "mongoose";
 export default function DashInquiries() {
   const { currentUser } = useSelector((state) => state.user);
   const [inquiries, setInquirires] = useState([]);
@@ -17,8 +25,8 @@ export default function DashInquiries() {
   const [modalMessage, setModalMessage] = useState("");
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [formData, setFormData] = useState({});
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterOption, setFilterOption] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   useEffect(() => {
     const fetchInquires = async () => {
       try {
@@ -112,9 +120,75 @@ export default function DashInquiries() {
       console.log(error.message);
     }
   };
+  console.log(formData);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    try {
+      const res=await fetch(`/api/inquiry/searchInquiry`,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify(formData)
+      });
+      const data=await res.json();
+      if(res.ok){
+        setFormData({}); 
+        toast.success(data.message);
+        setInquirires(data);
+        console.log(data);
+      }else{
+        toast.error(data.error);
+        setInquirires([]);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleReset = async () => {
+    setSearchTerm(""); 
+    const res = await fetch(`/api/inquiry/getinquiries`);
+    const data = await res.json();
+    if (res.ok) {
+      setInquirires(data.inquiries);
+      setShowMore(data.inquiries.length >= 9);
+    }
+  }
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <form onSubmit={handleSearch}>
+            <TextInput
+              type="text"
+              placeholder="Search...."
+              rightIcon={AiOutlineSearch}
+              className="hidden lg:inline"
+              id="search"
+              onChange={onChange}
+              style={{ width: "300px" }}
+            />
+            <Button className="w-12 h-10 lg:hidden flex justify-between" color="gray">
+              <AiOutlineSearch />
+            </Button>
+            <Button className="w-12 h-10" color="gray" onClick={()=>handleReset()}>
+              Reset
+            </Button>
+          </form>
+        </div>
+        <select
+          id="filter"
+          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        >
+          <option value="defaultvalue" disabled >
+            Choose a filter option
+          </option>
+          <option value="answer">Answered</option>
+          <option value="notanswer">Unanswered</option>
+        </select>
+      </div>
       {currentUser.isAdmin && inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
