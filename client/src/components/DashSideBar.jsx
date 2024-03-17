@@ -8,6 +8,7 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { FaUserInjured } from 'react-icons/fa';
 import { FaBox } from 'react-icons/fa';
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -95,6 +96,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                 Inventory
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=patients">
+                <Sidebar.Item
+                  active={tab === "patients"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                Patients
                 </Sidebar.Item>
               </Link>
             </>

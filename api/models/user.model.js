@@ -24,6 +24,14 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false,
     },
+    isPatient:{
+        type:Boolean,
+        default:false,
+    },
+    patientType:{
+        type:String,
+        default:"Default",
+    }
     },{timestamps:true}
 );
 

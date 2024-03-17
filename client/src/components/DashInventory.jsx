@@ -27,6 +27,7 @@ export default function DashInquiries() {
   const [formData, setFormData] = useState({});
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filteredInquiries, setFilteredInquiries] = useState([]);
   useEffect(() => {
     const fetchInquires = async () => {
       try {
@@ -95,7 +96,24 @@ export default function DashInquiries() {
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
-
+  const handleFilterChange = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/inquiry/filterInquiry`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filterOption: selectedOption }),
+      });
+      const data = await res.json();
+      setInquirires(data);
+      setShowMore(data.inquiries.length >= 9);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     try {
@@ -120,7 +138,6 @@ export default function DashInquiries() {
       console.log(error.message);
     }
   };
-  console.log(formData);
   const handleSearch = async (e) => {
     e.preventDefault();
     try {
@@ -184,13 +201,14 @@ export default function DashInquiries() {
         </Button>
         <select
           id="filter"
+          onChange={handleFilterChange}
           className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         >
-          <option value="defaultvalue" disabled>
+          <option value="defaultvalue" disabled selected>
             Choose a filter option
           </option>
           <option value="answer">Answered</option>
-          <option value="notanswer">Unanswered</option>
+          <option value="notanswer">UnAnswered</option>
         </select>
       </div>
       {currentUser.isAdmin && inquiries.length > 0 ? (
@@ -204,8 +222,7 @@ export default function DashInquiries() {
               <Table.HeadCell>Message</Table.HeadCell>
               <Table.HeadCell>Answered</Table.HeadCell>
               <Table.HeadCell>Reply</Table.HeadCell>
-              <Table.HeadCell>Submit</Table.HeadCell>
-              <Table.HeadCell>Delete</Table.HeadCell>
+              <Table.HeadCell>Actions</Table.HeadCell>
             </Table.Head>
             {inquiries.map((inquiry) => (
               <Table.Body className="divide-y" key={inquiry._id}>
@@ -240,7 +257,7 @@ export default function DashInquiries() {
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
+                    <Link className="text-teal-500 hover:underline mr-4">
                       <span
                         onClick={() => {
                           setShowReplyModal(true);
@@ -250,8 +267,6 @@ export default function DashInquiries() {
                         Reply
                       </span>
                     </Link>
-                  </Table.Cell>
-                  <Table.Cell>
                     <span
                       onClick={() => {
                         setShowModal(true);
@@ -276,7 +291,19 @@ export default function DashInquiries() {
           )}
         </>
       ) : (
-        <p>You have no Inquiries</p>
+        <Table hoverable className="shadow-md">
+            <Table.Head>
+              <Table.HeadCell>Date Created</Table.HeadCell>
+              <Table.HeadCell>Customer Name</Table.HeadCell>
+              <Table.HeadCell>Email</Table.HeadCell>
+              <Table.HeadCell>Phone</Table.HeadCell>
+              <Table.HeadCell>Message</Table.HeadCell>
+              <Table.HeadCell>Answered</Table.HeadCell>
+              <Table.HeadCell>Reply</Table.HeadCell>
+              <Table.HeadCell>Actions</Table.HeadCell>
+            </Table.Head>
+            <Table.Body>Reply Not Found</Table.Body>
+        </Table>
       )}
       <Modal
         show={showModal}
