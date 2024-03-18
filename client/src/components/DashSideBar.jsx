@@ -8,6 +8,7 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { FaUsers } from 'react-icons/fa';
 import { FaUserInjured } from "react-icons/fa";
 import { FaBox } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
@@ -132,6 +133,15 @@ export default function DashSideBar() {
                   Inpatients
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=staff">
+                <Sidebar.Item
+                  active={tab === "staff"}
+                  icon={FaUsers}
+                  as="div"
+                >
+                  Staff
+                </Sidebar.Item>
+              </Link>
             </>
           )}
           {currentUser.isReceptionist && (
@@ -165,6 +175,19 @@ export default function DashSideBar() {
                 as="div"
               >
                 Inquiries
+              </Sidebar.Item>
+            </Link>
+            )
+          }
+          {
+            currentUser.isHRM &&(
+              <Link to="/dashboard?tab=staff">
+              <Sidebar.Item
+                active={tab === "staff"}
+                icon={FaUsers}
+                as="div"
+              >
+                Staff
               </Sidebar.Item>
             </Link>
             )

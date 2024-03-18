@@ -8,6 +8,7 @@ import DashInventory from "../components/DashInventory";
 import DashPatients from "../components/DashOutPatients";
 import DashInpatients from "../components/DashInpatients";
 import DashUserInquiries from "../components/DashUserInquiries";
+import DashStaffManagement from "../components/DashStaffManagement";
 export default function Dashboard() {
   const location = useLocation();
   const [tab, setTab] = useState("");
@@ -38,6 +39,8 @@ export default function Dashboard() {
       {tab==="inpatients" && <DashInpatients/>}
       {/** <DashUserInquires/> */}
       {tab==="userInquiries" && <DashUserInquiries/>}
+      {/** <DashStaffManagement /> */}
+      {tab=="staff" && <DashStaffManagement/>}
     </div>
   );
 }

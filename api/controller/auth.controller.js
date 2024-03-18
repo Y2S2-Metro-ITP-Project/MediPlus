@@ -27,6 +27,71 @@ export const signup = async (req, res, next) => {
   }
 };
 
+
+export const employeeSignUp=async(req,res,next)=>{
+  const {username,email,password,role}=req.body;
+  console.log(req.body)
+  /*if(!req.user.isAdmin && !req.user.isHRM){
+    return next(errorHandler(403,"You are not allowed to access this function"));
+  }*/
+  if(!username || !email || !password || !role || username==="" || email==="" || password==="" || role===""){
+    return next(errorHandler(400,"All fields are required"));
+  }
+  const hashPassword=bcryptjs.hashSync(password,10);
+  if(role==="admin"){
+    return next(errorHandler(403,"You are not allowed to create an admin"));
+  }
+  if(role==="HRM"){
+    return next(errorHandler(403,"You are not allowed to create an HRM"));
+  }
+  if(role==="receptionist"){
+    const newReceptionist = new User({ username, email, password: hashPassword,isReceptionist:true,isUser:false });
+    try {
+      await newReceptionist.save();
+      res.json({ message: "Signup success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+  if(role==="headNurse"){
+    const newHeadNurse = new User({ username, email, password: hashPassword,isHeadNurse:true,isUser:false });
+    try {
+      await newHeadNurse.save();
+      res.json({ message: "Signup success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+  if(role==="nurse"){
+    const newNurse = new User({ username, email, password: hashPassword,isNurse:true,isUser:false });
+    try {
+      await newNurse.save();
+      res.json({ message: "Signup success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+  if(role==="doctor"){
+    const newDoctor = new User({ username, email, password: hashPassword,isDoctor:true,isUser:false });
+    try {
+      await newDoctor.save();
+      res.json({ message: "Signup success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+  if(role==="pharmacist"){
+    const newPharmacist = new User({ username, email, password: hashPassword,isPharmacist:true,isUser:false });
+    try {
+      await newPharmacist.save();
+      res.json({ message: "Signup success" });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password || email === "" || password === "") {

@@ -2,7 +2,6 @@ import Patient from "../models/patient.model.js";
 import { errorHandler } from "../utils/error.js";
 
 export const register = async (req, res) => {
-  console.log(req.body);
   const { patientName, phone, profilePicture, patientType } = req.body;
   const newPatient = new Patient({
     patientName,
@@ -10,6 +9,18 @@ export const register = async (req, res) => {
     patientProfilePicture: profilePicture,
     patientType,
   });
+  if (
+    !patientName ||
+    patientName === "" ||
+    !phone ||
+    phone === "" ||
+    !profilePicture ||
+    profilePicture === "" ||
+    !patientType ||
+    patientType === ""
+  ) {
+    return next(errorHandler(400, "All fields are required"));
+  }
   try {
     await newPatient.save();
     res.status(201).json(newPatient);
