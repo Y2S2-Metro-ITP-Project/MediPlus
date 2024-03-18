@@ -153,7 +153,6 @@ export default function DashInquiries() {
         setFormData({});
         toast.success(data.message);
         setInquirires(data);
-        console.log(data);
       } else {
         toast.error(data.error);
         setInquirires([]);

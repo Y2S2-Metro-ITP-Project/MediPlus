@@ -104,9 +104,7 @@ export const searchInquiry = async (req, res, next) => {
     );
   }
   try {
-    console.log(req.body);
     const searchTerm = req.body.search;
-    console.log(searchTerm);
     const inquiries = await Inquiry.find({
       $or: [{ name: { $regex: new RegExp(searchTerm, "i") } }],
     });
@@ -126,7 +124,7 @@ export const filterInquiry = async (req, res, next) => {
     );
   }
   try {
-    const {filterOption} = req.body;
+    const { filterOption } = req.body;
     console.log(filterOption);
     let query = {};
     if (filterOption === "answer") {

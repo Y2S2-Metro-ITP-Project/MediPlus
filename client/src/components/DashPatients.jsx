@@ -13,7 +13,7 @@ import { HiOutlineExclamationCircle, HiEye } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
-import { Link } from "react-router-dom";
+import { Link, json } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { get, set } from "mongoose";
 import {
@@ -42,7 +42,6 @@ export default function DashPatients() {
     try {
       const res = await fetch(`/api/patient/getPatients`);
       const data = await res.json();
-      console.log(data);
       if (res.ok) {
         setPatients(data.patients);
         if (data.patients.length < 9) {
@@ -114,17 +113,59 @@ export default function DashPatients() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   const handleFilterChange = async (e) => {
-
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/patient/filterPatient`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filterOption:selectedOption }),
+      });
+      const data = await res.json();
+        setPatients(data);
+        setShowMore(data.patients.length > 9);
+    } catch (error) {
+      console.log(error.message);
+    }
   };
-  const handleReplySubmit = async (e) => {
 
-  };
   const handleSearch = async (e) => {
-
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/patient/searchPatient", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFormData({});
+        setPatients(data);
+      } else {
+        setPatients([]);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   const handleReset = async () => {
-
+    try {
+      const res = await fetch("/api/patient/getPatients");
+      const data = await res.json();
+      if (res.ok) {
+        setPatients(data.patients);
+        if (data.patients.length < 9) {
+          setShowMore(false);
+        }
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
   const handleImageChange = (e) => {
@@ -223,7 +264,7 @@ export default function DashPatients() {
           </form>
         </div>
         <Button
-          className="w-200 h-10 ml-4 lg:ml-0 lg:w-32"
+          className="w-200 h-10 ml-6lg:ml-0 lg:w-32"
           color="gray"
           onClick={() => handleReset()}
         >
@@ -234,11 +275,11 @@ export default function DashPatients() {
           onChange={handleFilterChange}
           className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         >
-          <option value="defaultvalue" disabled>
+          <option value="defaultvalue" disabled selected>
             Choose a filter option
           </option>
-          <option value="answer">Answered</option>
-          <option value="notanswer">UnAnswered</option>
+          <option value="inpatients">Inpatients</option>
+          <option value="outpatients">Outpatients</option>
         </select>
       </div>
       {currentUser.isAdmin && patients.length > 0 ? (
@@ -260,7 +301,7 @@ export default function DashPatients() {
                     {new Date(patient.createdAt).toLocaleDateString()}
                   </Table.Cell>
                   <Table.Cell>
-                  <img
+                    <img
                       src={patient.patientProfilePicture}
                       alt={patient.patientName}
                       className="w-10 h-10 object-cover b-gray-500 rounded-full"
@@ -306,7 +347,7 @@ export default function DashPatients() {
           )}
         </>
       ) : (
-        <p>You have no Inquiries</p>
+        <p>You have no Patients</p>
       )}
       <Modal
         show={showModal}
@@ -410,7 +451,7 @@ export default function DashPatients() {
               <Button
                 color="gray"
                 onClick={() => {
-                      setAddPateintModal(false),
+                  setAddPateintModal(false),
                     setFormData({}),
                     setImageFile(null),
                     setImageFileUploadingError(false),
