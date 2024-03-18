@@ -8,10 +8,14 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { FaUsers } from "react-icons/fa";
+import { FaUserInjured } from "react-icons/fa";
+import { FaBox } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { FaRegCalendarTimes } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -44,9 +48,8 @@ export default function DashSideBar() {
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-1">
-          {
-            currentUser && currentUser.isAdmin && (
-              <Link to="#">
+          {currentUser && currentUser.isAdmin && (
+            <Link to="#">
               <Sidebar.Item
                 active={tab === "dash" || !tab}
                 icon={HiChartPie}
@@ -56,13 +59,28 @@ export default function DashSideBar() {
                 Dashboard
               </Sidebar.Item>
             </Link>
-            )
-          }
+          )}
           <Link to="/dashboard?tab=profile">
             <Sidebar.Item
               active={tab === "profile"}
               icon={HiUser}
-              label={currentUser.isAdmin ? "Admin" : "User"}
+              label={
+                currentUser.isAdmin
+                  ? "Admin"
+                  : currentUser.isDoctor
+                  ? "Doctor"
+                  : currentUser.isNurse
+                  ? "Nurse"
+                  : currentUser.isPharmacist
+                  ? "Pharmacist"
+                  : currentUser.isReceptionist
+                  ? "Receptionist"
+                  : currentUser.isHeadNurse
+                  ? "Head Nurse"
+                  : currentUser.isHRM
+                  ? "HRM"
+                  : "User"
+              }
               labelColor="dark"
               as="div"
             >
@@ -70,19 +88,8 @@ export default function DashSideBar() {
             </Sidebar.Item>
           </Link>
           {currentUser.isAdmin && (
-            <Link to="#">
-              <Sidebar.Item
-                active={tab === "posts"}
-                icon={HiDocumentText}
-                as="div"
-              >
-                Posts
-              </Sidebar.Item>
-            </Link>
-          )}
-          {currentUser.isAdmin && (
             <>
-              <Link to="#">
+              <Link to="/dashboard?tab=users">
                 <Sidebar.Item
                   active={tab === "users"}
                   icon={HiOutlineUserGroup}
@@ -90,14 +97,106 @@ export default function DashSideBar() {
                 >
                   Users
                 </Sidebar.Item>
-                </Link>
-                <Link to="#">
+              </Link>
+              <Link to="/dashboard?tab=inquiries">
                 <Sidebar.Item
-                  active={tab === "comments"}
+                  active={tab === "inquiries"}
                   icon={HiAnnotation}
                   as="div"
                 >
-                  Comments
+                  Inquiries
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inventory">
+                <Sidebar.Item
+                  active={tab === "inventory"}
+                  icon={FaBox}
+                  as="div"
+                >
+                  Inventory
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=patients">
+                <Sidebar.Item
+                  active={tab === "patients"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Patients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inpatients">
+                <Sidebar.Item
+                  active={tab === "users"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Inpatients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=staff">
+                <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
+                  Staff
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=leave">
+                <Sidebar.Item
+                  active={tab === "leave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Employee Leave
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+          {currentUser.isReceptionist && (
+            <>
+              <Link to="/dashboard?tab=patients">
+                <Sidebar.Item
+                  active={tab === "patients"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Out Patients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inquiries">
+                <Sidebar.Item
+                  active={tab === "inquiries"}
+                  icon={HiAnnotation}
+                  as="div"
+                >
+                  Inquiries
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+          {currentUser.isUser && (
+            <Link to="/dashboard?tab=userInquiries">
+              <Sidebar.Item
+                active={tab === "inquiries"}
+                icon={HiAnnotation}
+                as="div"
+              >
+                Inquiries
+              </Sidebar.Item>
+            </Link>
+          )}
+          {currentUser.isHRM && (
+            <>
+              <Link to="/dashboard?tab=staff">
+                <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
+                  Staff
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=leave">
+                <Sidebar.Item
+                  active={tab === "leave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Employee Leave
                 </Sidebar.Item>
               </Link>
             </>

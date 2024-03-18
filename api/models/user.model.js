@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
         type:String,
         required:true,
         unique:true,
-
     },
     email:{
         type:String,
@@ -24,8 +23,39 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false,
     },
-    },{timestamps:true}
-);
+    isPatient:{
+        type:Boolean,
+        default:false,
+    },
+    isDoctor:{
+        type:Boolean,
+        default:false,
+    },
+    isNurse:{
+        type:Boolean,
+        default:false,
+    },
+    isPharmacist:{
+        type:Boolean,
+        default:false,
+    },
+    isReceptionist:{
+        type:Boolean,
+        default:false,
+    },
+    isHeadNurse:{
+        type:Boolean,
+        default:false,
+    },
+    isHRM:{
+        type:Boolean,
+        default:false,
+    },
+    isUser:{
+        type:Boolean,
+        default:true,
+    },
+},{timestamps:true});
 
-const User=mongoose.model("User",userSchema);
+const User = mongoose.model("User",userSchema);
 export default User;
