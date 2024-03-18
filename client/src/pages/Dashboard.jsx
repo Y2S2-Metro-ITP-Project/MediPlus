@@ -12,7 +12,7 @@ export default function Dashboard() {
       setTab(tabFromUrl);
     }
   }, [location.search]);
-  return (
+  return(
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* <DashSideBar /> */}
       <div className=" md:w-56">
