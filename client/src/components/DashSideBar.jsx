@@ -8,13 +8,14 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
-import { FaUsers } from 'react-icons/fa';
+import { FaUsers } from "react-icons/fa";
 import { FaUserInjured } from "react-icons/fa";
 import { FaBox } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { FaRegCalendarTimes } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -134,12 +135,17 @@ export default function DashSideBar() {
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=staff">
+                <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
+                  Staff
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
-                  active={tab === "staff"}
-                  icon={FaUsers}
+                  active={tab === "leave"}
+                  icon={FaRegCalendarTimes}
                   as="div"
                 >
-                  Staff
+                  Employee Leave
                 </Sidebar.Item>
               </Link>
             </>
@@ -166,9 +172,8 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
-          {
-            currentUser.isUser && (
-              <Link to="/dashboard?tab=userInquiries">
+          {currentUser.isUser && (
+            <Link to="/dashboard?tab=userInquiries">
               <Sidebar.Item
                 active={tab === "inquiries"}
                 icon={HiAnnotation}
@@ -177,21 +182,25 @@ export default function DashSideBar() {
                 Inquiries
               </Sidebar.Item>
             </Link>
-            )
-          }
-          {
-            currentUser.isHRM &&(
+          )}
+          {currentUser.isHRM && (
+            <>
               <Link to="/dashboard?tab=staff">
-              <Sidebar.Item
-                active={tab === "staff"}
-                icon={FaUsers}
-                as="div"
-              >
-                Staff
-              </Sidebar.Item>
-            </Link>
-            )
-          }
+                <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
+                  Staff
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=leave">
+                <Sidebar.Item
+                  active={tab === "leave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Employee Leave
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
           <Sidebar.Item
             icon={HiArrowSmRight}
             className="cursor-pointer"
