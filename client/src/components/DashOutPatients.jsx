@@ -22,7 +22,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
-export default function DashPatients() {
+export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
   const [patients, setPatients] = useState([]);
   const [showMore, setShowMore] = useState(true);
@@ -68,7 +68,7 @@ export default function DashPatients() {
         console.log(error);
       }
     };
-    if (currentUser.isAdmin) {
+    if (currentUser.isAdmin || currentUser.isReceptionist) {
       fetchPatients();
     }
   }, [currentUser._id]);
@@ -282,7 +282,7 @@ export default function DashPatients() {
           <option value="outpatients">Outpatients</option>
         </select>
       </div>
-      {currentUser.isAdmin && patients.length > 0 ? (
+      {currentUser.isAdmin || currentUser.isReceptionist && patients.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>

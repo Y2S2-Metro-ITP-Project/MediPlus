@@ -14,7 +14,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { set } from "mongoose";
-export default function DashInquiries() {
+export default function DashUserInquiries() {
   const { currentUser } = useSelector((state) => state.user);
   const [inquiries, setInquirires] = useState([]);
   const [showMore, setShowMore] = useState(true);
@@ -29,9 +29,11 @@ export default function DashInquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredInquiries, setFilteredInquiries] = useState([]);
   useEffect(() => {
-    const fetchInquires = async () => {
+    const fetchUserInquires = async () => {
       try {
-        const res = await fetch(`/api/inquiry/getinquiries`);
+        const res = await fetch(
+          `/api/inquiry/getUserinquiries/${currentUser._id}`
+        );
         const data = await res.json();
         if (res.ok) {
           setInquirires(data.inquiries);
@@ -43,8 +45,8 @@ export default function DashInquiries() {
         console.log(error);
       }
     };
-    if (currentUser.isAdmin || currentUser.isReceptionist) {
-      fetchInquires();
+    if (currentUser.isUser) {
+      fetchUserInquires();
     }
   }, [currentUser._id]);
 
@@ -97,22 +99,7 @@ export default function DashInquiries() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   const handleFilterChange = async (e) => {
-    e.preventDefault();
-    const selectedOption = e.target.value;
-    try {
-      const res = await fetch(`/api/inquiry/filterInquiry`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ filterOption: selectedOption }),
-      });
-      const data = await res.json();
-      setInquirires(data);
-      setShowMore(data.inquiries.length >= 9);
-    } catch (error) {
-      console.log(error.message);
-    }
+    
   };
   const handleReplySubmit = async (e) => {
     e.preventDefault();
@@ -139,33 +126,12 @@ export default function DashInquiries() {
     }
   };
   const handleSearch = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`/api/inquiry/searchInquiry`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setFormData({});
-        toast.success(data.message);
-        setInquirires(data);
-        console.log(data);
-      } else {
-        toast.error(data.error);
-        setInquirires([]);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+   
   };
 
   const handleReset = async () => {
     setSearchTerm("");
-    const res = await fetch(`/api/inquiry/getinquiries`);
+    const res = await fetch(`/api/inquiry/getUserinquiries/${currentUser._id}`);
     const data = await res.json();
     if (res.ok) {
       setInquirires(data.inquiries);
@@ -204,14 +170,14 @@ export default function DashInquiries() {
           onChange={handleFilterChange}
           className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         >
-          <option value="defaultvalue" disabled selected>
+          <option value="defaultvalue" disabled>
             Choose a filter option
           </option>
           <option value="answer">Answered</option>
           <option value="notanswer">UnAnswered</option>
         </select>
       </div>
-      {currentUser.isAdmin || currentUser.isReceptionist && inquiries.length > 0 ? (
+      {(currentUser.isUser || currentUser.isReceptionist || currentUser.isUser) && inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
@@ -222,7 +188,6 @@ export default function DashInquiries() {
               <Table.HeadCell>Message</Table.HeadCell>
               <Table.HeadCell>Answered</Table.HeadCell>
               <Table.HeadCell>Reply</Table.HeadCell>
-              <Table.HeadCell>Submit</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
             {inquiries.map((inquiry) => (
@@ -256,18 +221,6 @@ export default function DashInquiries() {
                     ) : (
                       <p className="text-red-500">{inquiry.reply}</p>
                     )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      <span
-                        onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
-                        }}
-                      >
-                        Reply
-                      </span>
-                    </Link>
                   </Table.Cell>
                   <Table.Cell>
                     <span

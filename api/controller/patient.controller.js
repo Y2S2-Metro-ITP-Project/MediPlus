@@ -19,7 +19,7 @@ export const register = async (req, res) => {
 };
 
 export const getPatients = async (req, res) => {
-  if (!req.user.isAdmin) {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(
         403,
@@ -52,7 +52,7 @@ export const getPatients = async (req, res) => {
 };
 
 export const deletePatient = async (req, res) => {
-  if (!req.user.isAdmin) {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(403, "You are not allowed to delete this account")
     );
@@ -67,7 +67,11 @@ export const deletePatient = async (req, res) => {
 };
 
 export const searchPateint = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.patientId) {
+  if (
+    !req.user.isAdmin &&
+    req.user.id !== req.params.patientId &&
+    !req.user.isReceptionist
+  ) {
     return next(
       errorHandler(403, "you are not allowed to access this resource")
     );
@@ -89,10 +93,13 @@ export const searchPateint = async (req, res, next) => {
 };
 
 export const filterPatients = async (req, res, next) => {
-  console.log(req.body.filterOption);
-
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
   try {
-    let query={};
+    let query = {};
     console.log(req.body);
     const filterOption = req.body.filterOption;
     if (filterOption === "outpatients") {
@@ -102,7 +109,7 @@ export const filterPatients = async (req, res, next) => {
     } else {
       query = {};
     }
-    const patients=await Patient.find(query);
+    const patients = await Patient.find(query);
     res.status(200).json(patients);
   } catch (error) {
     next(error);

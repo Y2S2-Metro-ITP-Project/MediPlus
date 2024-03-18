@@ -31,7 +31,8 @@ export const submit = async (req, res, next) => {
 };
 
 export const getInquiries = async (req, res, next) => {
-  if (!req.user.isAdmin) {
+  console.log(req.user);
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -61,7 +62,7 @@ export const getInquiries = async (req, res, next) => {
 };
 
 export const deleteInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.inquiryId) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
     return next(
       errorHandler(403, "You are not allowed to delete these resources")
     );
@@ -75,7 +76,11 @@ export const deleteInquiry = async (req, res, next) => {
 };
 
 export const updateInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.inquiryId) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    req.user.id !== req.params.inquiryId
+  ) {
     return next(
       errorHandler(403, "You are not allowed to update these resources")
     );
@@ -98,7 +103,7 @@ export const updateInquiry = async (req, res, next) => {
 };
 
 export const searchInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.inquiryId) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -118,14 +123,13 @@ export const searchInquiry = async (req, res, next) => {
 };
 
 export const filterInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
   }
   try {
     const { filterOption } = req.body;
-    console.log(filterOption);
     let query = {};
     if (filterOption === "answer") {
       query = { isAnswer: true };
@@ -139,6 +143,42 @@ export const filterInquiry = async (req, res, next) => {
       return next(errorHandler(404, "Inquiries not found"));
     }
     res.status(200).json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserInquiry = async (req, res, next) => {
+  if (!req.user) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    const userId = req.params.userId;
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+
+    const inquiries = await Inquiry.find({ userId })
+      .sort({ createdAt: sortDirection })
+      .skip(startIndex)
+      .limit(limit);
+
+    const totalInquiries = await Inquiry.countDocuments({ userId });
+
+    const now = new Date();
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+    const lastMonthInquiries = await Inquiry.countDocuments({
+      userId,
+      createdAt: { $gte: oneMonthAgo },
+    });
+
+    res.status(200).json({ inquiries, totalInquiries, lastMonthInquiries });
   } catch (error) {
     next(error);
   }

@@ -42,7 +42,18 @@ export const signin = async (req, res, next) => {
       return next(errorHandler(400, "Invalid Credentials"));
     }
     const token = jwt.sign(
-      { id: validUser._id, isAdmin: validUser.isAdmin },
+      {
+        id: validUser._id,
+        isAdmin: validUser.isAdmin,
+        isReceptionist: validUser.isReceptionist,
+        isHRM: validUser.isHRM,
+        isHeadNurse: validUser.isHeadNurse,
+        isPharmacist: validUser.isPharmacist,
+        isNurse: validUser.isNurse,
+        isDoctor: validUser.isDoctor,
+        isPatient: validUser.isPatient,
+        isUser: validUser.isUser,
+      },
       process.env.JWT_SECRET
     );
     const { password: pass, ...rest } = validUser._doc;

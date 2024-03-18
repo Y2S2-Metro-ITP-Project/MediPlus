@@ -8,8 +8,8 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
-import { FaUserInjured } from 'react-icons/fa';
-import { FaBox } from 'react-icons/fa';
+import { FaUserInjured } from "react-icons/fa";
+import { FaBox } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
@@ -62,7 +62,23 @@ export default function DashSideBar() {
             <Sidebar.Item
               active={tab === "profile"}
               icon={HiUser}
-              label={currentUser.isAdmin ? "Admin" : "User"}
+              label={
+                currentUser.isAdmin
+                  ? "Admin"
+                  : currentUser.isDoctor
+                  ? "Doctor"
+                  : currentUser.isNurse
+                  ? "Nurse"
+                  : currentUser.isPharmacist
+                  ? "Pharmacist"
+                  : currentUser.isReceptionist
+                  ? "Receptionist"
+                  : currentUser.isHeadNurse
+                  ? "Head Nurse"
+                  : currentUser.isHRM
+                  ? "HRM"
+                  : "User"
+              }
               labelColor="dark"
               as="div"
             >
@@ -95,7 +111,7 @@ export default function DashSideBar() {
                   icon={FaBox}
                   as="div"
                 >
-                Inventory
+                  Inventory
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=patients">
@@ -104,11 +120,55 @@ export default function DashSideBar() {
                   icon={FaUserInjured}
                   as="div"
                 >
-                Patients
+                  Patients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inpatients">
+                <Sidebar.Item
+                  active={tab === "users"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Inpatients
                 </Sidebar.Item>
               </Link>
             </>
           )}
+          {currentUser.isReceptionist && (
+            <>
+              <Link to="/dashboard?tab=patients">
+                <Sidebar.Item
+                  active={tab === "patients"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Out Patients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inquiries">
+                <Sidebar.Item
+                  active={tab === "inquiries"}
+                  icon={HiAnnotation}
+                  as="div"
+                >
+                  Inquiries
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+          {
+            currentUser.isUser && (
+              <Link to="/dashboard?tab=userInquiries">
+              <Sidebar.Item
+                active={tab === "inquiries"}
+                icon={HiAnnotation}
+                as="div"
+              >
+                Inquiries
+              </Sidebar.Item>
+            </Link>
+            )
+          }
           <Sidebar.Item
             icon={HiArrowSmRight}
             className="cursor-pointer"
