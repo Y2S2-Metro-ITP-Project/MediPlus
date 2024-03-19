@@ -83,8 +83,9 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
+
 export const getusers = async (req, res, next) => {
-  if (!req.user.isAdmin) {
+  if (!req.user.isAdmin && !req.user.isHRM ) {
     return next(
       errorHandler(
         403,
@@ -122,6 +123,7 @@ export const getusers = async (req, res, next) => {
   }
 };
 
+
 export const getUser = async (req,res,next) => {
   try {
     const user=await User.findById(req.params.userId);
@@ -134,3 +136,94 @@ export const getUser = async (req,res,next) => {
     next(error);
   }
 }
+
+
+
+export const getemployee = async (req, res, next) => {
+  try {
+    // Check if the user is an admin or HR manager
+    if (!req.user.isAdmin && !req.user.isHRM) {
+      return next(
+        errorHandler(
+          403,
+          "You are not allowed to access employee data"
+        )
+      );
+    }
+
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+
+    // Construct query to filter users with isAdmin or isHRM role
+    const query = {
+      $or: [
+        { isAdmin: true },
+        { isHRM: true },
+        { isHeadNurse: true },
+        { isNurse: true },
+        { isPharmacist: true },
+        { isReceptionist: true },
+        { isDoctor: true }
+      ]
+    };
+
+    // Find users based on the query
+    const users = await User.find(query)
+      .sort({ createdAt: sortDirection })
+      .skip(startIndex)
+      .limit(limit);
+
+    // Remove password field from users
+    const usersWithoutPassword = users.map((user) => {
+      const { password, ...rest } = user._doc;
+      return rest;
+    });
+
+    // Count total users
+    const totalUser = await User.countDocuments(query);
+
+    // Count users created last month
+    const now = new Date();
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+    const lastMonthUser = await User.countDocuments({
+      ...query,
+      createdAt: { $gte: oneMonthAgo }
+    });
+
+    // Send response with filtered users
+    res.status(200).json({ users: usersWithoutPassword, totalUser, lastMonthUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+// import User from "../models/user.model.js"; // Import the mongoose model
+
+// Controller function to add a new employee
+export const addEMP = async (req, res, next) => {
+  try {
+    // Extract data from the request body
+    const { username, email, password, role } = req.body;
+
+    // Create a new user record using the mongoose model
+    const newUser = await User.create({
+      username,
+      email,
+      password,
+      [role]: true, // Set the selected role as true
+    });
+
+    // Send a success response to the client
+    res.status(201).json({ message: "Employee created successfully", newUser });
+  } catch (error) {
+    // Handle any errors and pass them to the error handling middleware
+    next(error);
+  }
+};

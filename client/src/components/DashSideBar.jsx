@@ -16,6 +16,8 @@ import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
+import { FaUserPlus } from 'react-icons/fa';
+
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -134,11 +136,19 @@ export default function DashSideBar() {
                   Inpatients
                 </Sidebar.Item>
               </Link>
+
               <Link to="/dashboard?tab=staff">
                 <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
                   Staff
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=Add_staff">
+                <Sidebar.Item active={tab === "Add_staff"} icon={FaUserPlus}  as="div" >
+                  Add Employee 
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
                   active={tab === "leave"}
@@ -148,6 +158,7 @@ export default function DashSideBar() {
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+
             </>
           )}
           {currentUser.isReceptionist && (
@@ -190,12 +201,15 @@ export default function DashSideBar() {
                   Staff
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=Add_staff">
+                <Sidebar.Item active={tab === "Add_staff"} icon={FaUserPlus} as="div" >
+                  Add Employee 
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=leave">
-                <Sidebar.Item
-                  active={tab === "leave"}
-                  icon={FaRegCalendarTimes}
-                  as="div"
-                >
+                <Sidebar.Item active={tab === "leave"} icon={FaRegCalendarTimes} as="div" >
                   Employee Leave
                 </Sidebar.Item>
               </Link>
