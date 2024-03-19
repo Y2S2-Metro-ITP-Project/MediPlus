@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false,
     },
+    isLabTechnician:{
+        type:Boolean,
+        default:false,
+    },
     isReceptionist:{
         type:Boolean,
         default:false,
