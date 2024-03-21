@@ -23,6 +23,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
+import { FaExclamationTriangle } from "react-icons/fa";
 export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
   const [inventory, setInventory] = useState([]);
@@ -234,7 +235,7 @@ export default function DashOutPatients() {
       });
       const data = await res.json();
       if (res.ok) {
-        fetchPatients();
+        fetchInventory();
         setAddInventoryItemModal(false);
         setFormData({});
         setFileUploadSuccess(false);
@@ -284,7 +285,7 @@ export default function DashOutPatients() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
