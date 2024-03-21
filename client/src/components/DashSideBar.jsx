@@ -16,6 +16,8 @@ import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
+import { FaBed } from 'react-icons/fa';
+import { GiHospital } from 'react-icons/gi';
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -197,6 +199,37 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Employee Leave
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+          {currentUser.isHeadNurse && (
+            <>
+              <Link to="/dashboard?tab=inpatients">
+                <Sidebar.Item
+                  active={tab === "users"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Inpatients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=beds">
+                <Sidebar.Item
+                  active={tab === "beds"}
+                  icon={FaBed}
+                  as="div"
+                >
+                  Beds
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=wards">
+                <Sidebar.Item
+                  active={tab === "wards"}
+                  icon={GiHospital}
+                  as="div"
+                >
+                  Wards
                 </Sidebar.Item>
               </Link>
             </>

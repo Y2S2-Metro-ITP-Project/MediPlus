@@ -88,7 +88,7 @@ export const getusers = async (req, res, next) => {
     return next(
       errorHandler(
         403,
-        "You are not allowed to sell all the user of the database"
+        "You are not allowed to access all the user of the database"
       )
     );
   }
