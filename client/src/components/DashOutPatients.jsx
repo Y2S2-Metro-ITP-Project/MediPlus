@@ -451,7 +451,7 @@ export default function DashOutPatients() {
               <Button
                 color="gray"
                 onClick={() => {
-                  setAddPateintModal(false),
+                    setAddPateintModal(false),
                     setFormData({}),
                     setImageFile(null),
                     setImageFileUploadingError(false),
