@@ -6,7 +6,7 @@ const router=express.Router();
 
 router.get("/getInventory",verifyToken,getInventoryData);
 router.post("/addInventory",verifyToken,addInventoryData);
-router.delete("/deleteInventory/:inventoryId",verifyToken,deleteInventoryData);
+router.delete("/deleteItem/:itemId",verifyToken,deleteInventoryData);
 router.put("/updateInventory/:inventoryId",verifyToken,updateInventoryData);
 
 

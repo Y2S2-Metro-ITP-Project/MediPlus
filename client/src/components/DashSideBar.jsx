@@ -129,7 +129,7 @@ export default function DashSideBar() {
               </Link>
               <Link to="/dashboard?tab=inpatients">
                 <Sidebar.Item
-                  active={tab === "users"}
+                  active={tab === "inpatients"}
                   icon={FaUserInjured}
                   as="div"
                 >
