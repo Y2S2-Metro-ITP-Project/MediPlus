@@ -69,7 +69,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.userId) {
+  if (!req.user.isAdmin && req.user.id !== req.params.userId) {
     return next(
       errorHandler(403, "You are not allowed to delete this account")
     );
@@ -81,5 +81,56 @@ export const deleteUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-  
+};
+
+export const getusers = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access all the user of the database"
+      )
+    );
+  }
+  try {
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+    const users = await User.find()
+      .sort({ createdAt: sortDirection })
+      .skip(startIndex)
+      .limit(limit);
+    const usersWithourPassword = users.map((user) => {
+      const { password, ...rest } = user._doc;
+      return rest;
+    });
+    const totalUser = await User.countDocuments();
+    const now = new Date();
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+    const lastMonthUser = await User.countDocuments({
+      createdAt: { $gte: oneMonthAgo },
+    });
+    res
+      .status(200)
+      .json({ users: usersWithourPassword, totalUser, lastMonthUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUser = async (req,res,next) => {
+  try {
+    const user=await User.findById(req.params.userId);
+    if(!user){
+      return next(errorHandler(404,'User not found'));
+    }
+    const {password,...rest}=user._doc;
+    res.status(200).json(rest);
+  } catch (error) {
+    next(error);
+  }
 }
