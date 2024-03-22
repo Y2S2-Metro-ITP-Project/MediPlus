@@ -9,7 +9,7 @@ const inventorySchema= new mongoose.Schema({
         type:String,
         required:true
     },
-    itemDecription: {
+    itemDescription: {
         type:String,
         required:true
     },
@@ -21,9 +21,17 @@ const inventorySchema= new mongoose.Schema({
         type:Number,
         required:true
     },
+    itemMinValue:{
+        type:Number,
+        required:true
+    },
     itemImage: {
         type:String,
     },
+    itemExpireDate: {
+        type:String,
+        required:true
+    }
 },{timestamps:true})
 
 const Inventory=mongoose.model('Inventory',inventorySchema)

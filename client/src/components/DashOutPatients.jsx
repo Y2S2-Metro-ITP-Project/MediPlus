@@ -29,15 +29,12 @@ export default function DashOutPatients() {
   const [showModal, setShowModal] = useState(false);
   const [patientIdToDelete, setPatientIdToDelete] = useState("");
   const [inquiryIdToReply, setInquiryIdToReply] = useState("");
-  const [modalMessagePopUp, setModalMessagePopUp] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [addPatientModal, setAddPateintModal] = useState(false);
   const [filterOption, setFilterOption] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredInquiries, setFilteredInquiries] = useState([]);
   const fetchPatients = async () => {
     try {
       const res = await fetch(`/api/patient/getPatients`);
