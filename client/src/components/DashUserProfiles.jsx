@@ -53,7 +53,7 @@ export default function DashUserProfiles() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers((prev) => prev.filter((user) => user._id !== userIdToDelete));
+        setUsers((prev) => prev.filter((user) => user._id !== userIudToDelete));
         setShowModal(false);
         toast.success(data.message);
       } else {

@@ -69,7 +69,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) {
+  if (!(req.user.isAdmin || req.user.isHRM) && req.user.id !== req.params.userId){
     return next(
       errorHandler(403, "You are not allowed to delete this account")
     );
@@ -204,7 +204,7 @@ export const getemployee = async (req, res, next) => {
 
 
 
-// import User from "../models/user.model.js"; // Import the mongoose model
+
 
 // Controller function to add a new employee
 export const addEMP = async (req, res, next) => {
@@ -224,6 +224,87 @@ export const addEMP = async (req, res, next) => {
     res.status(201).json({ message: "Employee created successfully", newUser });
   } catch (error) {
     // Handle any errors and pass them to the error handling middleware
+    next(error);
+  }
+};
+
+
+
+
+export const updateEmp = async (req, res, next) => {
+  // Check if the user performing the action is an admin or HRM
+  if (!req.user.isAdmin && !req.user.isHRM) {
+    return next(
+      errorHandler(403, "You are not allowed to update this user's information")
+    );
+  }
+
+  // Validate and update user information
+  try {
+    if (req.body.password) {
+      if (req.body.password.length < 6) {
+        return next(
+          errorHandler(403, "Password must be at least 6 characters long")
+        );
+      }
+      req.body.password = bcryptjs.hashSync(req.body.password, 10);
+    }
+    if (req.body.username) {
+      if (req.body.username.length < 7 || req.body.username.length > 20) {
+        return next(
+          errorHandler(403, "Username must be between 7 and 20 characters long")
+        );
+      }
+      if (req.body.username.includes(" ")) {
+        return next(errorHandler(403, "Username must not contain spaces"));
+      }
+
+      if (req.body.username !== req.body.username.toLowerCase()) {
+        return next(errorHandler(403, "Username must be in lowercase"));
+      }
+
+      if (!req.body.username.match(/^[a-zA-Z0-9]+$/)) {
+        return next(
+          errorHandler(403, "Username must contain only letters and numbers")
+        );
+      }
+    }
+
+    // Retrieve user's current roles
+    const currentUser = await User.findById(req.params.userId);
+    const currentRoles = {
+      isAdmin: currentUser.isAdmin,
+      isHRM: currentUser.isHRM,
+      isDoctor: currentUser.isDoctor,
+      isNurse: currentUser.isNurse,
+      isPharmacist: currentUser.isPharmacist,
+      isReceptionist: currentUser.isReceptionist,
+      isHeadNurse: currentUser.isHeadNurse,
+      // Add more roles here if needed
+    };
+
+    // Update user's information
+    const updatedUserData = {
+      username: req.body.username,
+      email: req.body.email,
+      profilePicture: req.body.profilePicture,
+      password: req.body.password,
+      // If a role is being updated, set all other roles to false
+      ...req.body.role && Object.keys(currentRoles).reduce((acc, key) => {
+        acc[key] = key === req.body.role;
+        return acc;
+      }, {}),
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.userId,
+      { $set: updatedUserData },
+      { new: true }
+    );
+    
+    const { password, ...rest } = updatedUser._doc;
+    res.status(200).json(rest);
+  } catch (error) {
     next(error);
   }
 };

@@ -70,20 +70,25 @@ export const DashaddEmp = () => {
                     onChange={handleChange}
                     placeholder="Password"
                 />
-                {/* Dropdown selection for user roles */}
-                <label>
-                    Select Role:
-                    <select id="role" value={formData.role} onChange={handleChange}>
-                        <option value="">Select Role</option>
-                        <option value="isAdmin">Admin</option>
-                        <option value="isDoctor">Doctor</option>
-                        <option value="isNurse">Nurse</option>
-                        <option value="isPharmacist">Pharmacist</option>
-                        <option value="isReceptionist">Receptionist</option>
-                        <option value="isHeadNurse">Head Nurse</option>
-                        <option value="isHRM">HRM</option>
-                    </select>
-                </label>
+        {/* Dropdown selection for user roles */}
+        <div className="flex flex-col">
+            <label htmlFor="role" className="text-lg font-semibold dark:text-gray-300">Select Role</label>
+            <select
+                id="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="input-field dark:bg-gray-800 dark:text-white"
+            >
+                <option value="">Select Role</option>
+                <option value="isAdmin">Admin</option>
+                <option value="isDoctor">Doctor</option>
+                <option value="isNurse">Nurse</option>
+                <option value="isPharmacist">Pharmacist</option>
+                <option value="isReceptionist">Receptionist</option>
+                <option value="isHeadNurse">Head Nurse</option>
+                <option value="isHRM">HRM</option>
+            </select>
+        </div>
                 <Button type="submit" gradientDuoTone="purpleToBlue" outline>
                     Add
                 </Button>
