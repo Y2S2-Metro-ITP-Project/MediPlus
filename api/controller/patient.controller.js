@@ -1,23 +1,66 @@
 import Patient from "../models/patient.model.js";
 import { errorHandler } from "../utils/error.js";
-
-export const register = async (req, res) => {
-  const { patientName, phone, profilePicture, patientType } = req.body;
+import User from "../models/user.model.js";
+import bcryptjs from "bcryptjs";
+import { sendEmail } from "../utils/email.js";
+export const registerOutPatient = async (req, res, next) => {
+  const {
+    name,
+    illness,
+    identification,
+    gender,
+    emergencyPhoneNumber,
+    emergencyName,
+    dateOfBirth,
+    contactPhone,
+    contactEmail,
+    address,
+    doctor,
+    patientPicture,
+  } = req.body;
+  const password = Math.random().toString(36).slice(-8);
+  const hashPassword = bcryptjs.hashSync(password, 10);
+  const newUser = new User({
+    username:
+      name.toLowerCase().split(" ").join("") +
+      Math.random().toString(36).slice(-4),
+    email: contactEmail,
+    password: hashPassword,
+    isOutPatient: true,
+  });
+  try {
+    await newUser.save();
+  } catch (error) {
+    return next(errorHandler(500, "Error occurred while saving the user"));
+  }
   const newPatient = new Patient({
-    patientName,
-    patientPhone: phone,
-    patientProfilePicture: profilePicture,
-    patientType,
+    name,
+    illness,
+    patientProfilePicture: patientPicture,
+    identification,
+    gender,
+    emergencyContact: {
+      name: emergencyName,
+      phone: emergencyPhoneNumber,
+    },
+    dateOfBirth,
+    contactPhone,
+    contactEmail,
+    address,
+    patientType: "Outpatient",
+    user: newUser._id,
   });
   if (
-    !patientName ||
-    patientName === "" ||
-    !phone ||
-    phone === "" ||
-    !profilePicture ||
-    profilePicture === "" ||
-    !patientType ||
-    patientType === ""
+    !name ||
+    name === "" ||
+    !contactPhone ||
+    contactPhone === "" ||
+    !patientPicture ||
+    patientPicture === "" ||
+    !illness ||
+    illness === "" ||
+    !identification ||
+    identification === ""
   ) {
     return next(errorHandler(400, "All fields are required"));
   }
@@ -25,8 +68,14 @@ export const register = async (req, res) => {
     await newPatient.save();
     res.status(201).json(newPatient);
   } catch (error) {
+    console.log(error);
     res.status(500).json(error);
   }
+  await sendEmail({
+    to: contactEmail,
+    subject: "Welcome to Ismails Pvt Hospital!",
+    text: `Dear ${name},\n\nYour account has been created successfully. Here are your login credentials:\n\nEmail: ${contactEmail}\nPassword: ${password}\n\nPlease keep this information secure.\n\nBest regards,\nThe Hospital Team`,
+  });
 };
 
 export const getPatients = async (req, res) => {
@@ -92,7 +141,7 @@ export const searchPateint = async (req, res, next) => {
     const patients = await Patient.find({
       $or: [
         {
-          patientName: { $regex: new RegExp(searchTerm, "i") },
+          name: { $regex: new RegExp(searchTerm, "i") },
         },
       ],
     });
@@ -111,15 +160,59 @@ export const filterPatients = async (req, res, next) => {
   }
   try {
     let query = {};
-    console.log(req.body);
     const filterOption = req.body.filterOption;
-    if (filterOption === "outpatients") {
-      query = { patientType: "Outpatient" };
-    } else if (filterOption === "inpatients") {
-      query = { patientType: "Inpatient" };
-    } else {
-      query = {};
+
+
+    const currentDate = new Date();
+    let startDate, endDate;
+
+
+    switch (filterOption) {
+      case "today":
+        startDate = new Date(currentDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(currentDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case "lastmonth":
+        startDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() - 1,
+          1
+        );
+        endDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          0,
+          23,
+          59,
+          59,
+          999
+        );
+        break;
+      case "lastyear":
+        startDate = new Date(currentDate.getFullYear() - 1, 0, 1);
+        endDate = new Date(
+          currentDate.getFullYear() - 1,
+          11,
+          31,
+          23,
+          59,
+          59,
+          999
+        );
+        break;
+      case "Bydate":
+        startDate = new Date(req.body.startDate);
+        endDate = new Date(req.body.endDate);
+        break;
+      default:
+        break;
     }
+    if (startDate && endDate) {
+      query.admissionDate = { $gte: startDate, $lte: endDate };
+    }
+
     const patients = await Patient.find(query);
     res.status(200).json(patients);
   } catch (error) {
