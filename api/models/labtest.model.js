@@ -30,5 +30,5 @@ const testSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const LabTest = mongoose.model("LabTest", sampleSchema);
+const LabTest = mongoose.model("LabTest", testSchema);
 export default LabTest;

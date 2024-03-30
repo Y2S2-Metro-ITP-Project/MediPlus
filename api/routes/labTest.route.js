@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.get("/", getLabTests);
-router.get("/:id", getLabTest);
-router.post("/", createLabTest);
-router.put("/:id", updateLabTest);
-router.delete("/:id", deleteLabTest);
+router.get("/getTests", getLabTests);
+router.get("/getTest/:id", getLabTest);
+router.post("/createTest", createLabTest);
+router.put("/updateTest/:id", updateLabTest);
+router.delete("/deleteTest/:id", deleteLabTest);
 
 export default router;

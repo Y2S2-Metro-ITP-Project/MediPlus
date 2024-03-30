@@ -2,7 +2,7 @@ import LabTest from "../models/labtest.model.js";
 //import { errorHandler } from "../utils/error";
 
 //GET ALL LAB TEST TYPES
-const getLabTests = async (req, res) => {
+export const getLabTests = async (req, res) => {
   try {
     const labtests = await LabTest.find({});
     res.status(200).json(labtests);
@@ -12,7 +12,7 @@ const getLabTests = async (req, res) => {
 };
 
 //GET UNIQUE LAB TEST
-const getLabTest = async (req, res) => {
+export const getLabTest = async (req, res) => {
   try {
     const { id } = req.params;
     const labtest = await LabTest.findById({ id });
@@ -23,7 +23,7 @@ const getLabTest = async (req, res) => {
 };
 
 //CREATE LAB TEST
-const createLabTest = async (req, res) => {
+export const createLabTest = async (req, res) => {
   try {
     const labtest = await LabTest.create(req.body);
     res.status(200).json(labtest);
@@ -34,7 +34,7 @@ const createLabTest = async (req, res) => {
 
 //UPDATE EXISTING LAB TEST
 
-const updateLabTest = async (req, res) => {
+export const updateLabTest = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -53,7 +53,7 @@ const updateLabTest = async (req, res) => {
 
 //DELETE EXISTING LAB TEST
 
-const deleteLabTest = async (req, res) => {
+export const deleteLabTest = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -69,10 +69,10 @@ const deleteLabTest = async (req, res) => {
   }
 };
 
-module.exports = {
-  getLabTests,
-  getLabTest,
-  createLabTest,
-  updateLabTest,
-  deleteLabTest,
-};
+// module.exports = {
+//   getLabTests,
+//   getLabTest,
+//   createLabTest,
+//   updateLabTest,
+//   deleteLabTest,
+// };
