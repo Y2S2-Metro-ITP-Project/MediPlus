@@ -1,25 +1,30 @@
 import mongoose from "mongoose";
 
-const sampleSchema = new mongoose.Schema(
+const testSchema = new mongoose.Schema(
   {
-    type: {
+    name: {
       type: String,
       required: true,
     },
 
-    testsOrderedOnSample: [
+    sampleType: 
       {
         type: String, // String is a place holder and will have to be updated with test ID
         required: true,
       },
-    ],
+ 
 
-    patientId: {
+    sampleVolume: {
       type: Number, //number is a place holder
       required: true,
     },
 
-    collectionEmployeeId: {
+    completionTime: {
+        type: String, //storing time as a string until better solution
+        required: true,
+      },
+
+    price: {
       type: Number, // number is a place holder
       required: true,
     },
@@ -27,5 +32,5 @@ const sampleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Sample = mongoose.model("Sample", sampleSchema);
-export default Sample;
+const LabTest = mongoose.model("LabTest", sampleSchema);
+export default LabTest;
