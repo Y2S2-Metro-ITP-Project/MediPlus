@@ -20,9 +20,22 @@ const sampleSchema = new mongoose.Schema(
     },
 
     collectionEmployeeId: {
-      type: Number, // number is a place holder
+      type: Number, 
       required: true,
     },
+
+    sampleStatus: {
+      type: String, 
+      required: true,
+    },
+
+
+    AssignedStorage: {
+      type: String, 
+      required: true,
+    },
+
+
   },
   { timestamps: true }
 );

@@ -7,25 +7,23 @@ const testSchema = new mongoose.Schema(
       required: true,
     },
 
-    sampleType: 
-      {
-        type: String, // String is a place holder and will have to be updated with test ID
-        required: true,
-      },
- 
+    sampleType: {
+      type: String,
+      required: true,
+    },
 
     sampleVolume: {
-      type: Number, //number is a place holder
+      type: Number,
       required: true,
     },
 
     completionTime: {
-        type: String, //storing time as a string until better solution
-        required: true,
-      },
+      type: String,
+      required: true,
+    },
 
     price: {
-      type: Number, // number is a place holder
+      type: Number,
       required: true,
     },
   },
