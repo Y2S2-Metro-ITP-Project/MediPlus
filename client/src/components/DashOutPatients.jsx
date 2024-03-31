@@ -186,18 +186,18 @@ export default function DashOutPatients() {
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [showPatientDetails, setShowPatientDetails] = useState(false);
   const [patientDetails, setPatientDetails] = useState({
-    name:false,
-    gender:false,
-    contactEmail:false,
-    contactPhone:false,
-    createdAt:false,
-    illness:false,
-    dateOfBirth:false,
-    address:false,
-    identification:false,
-    emergencyName:false,
-    emergencyPhoneNumber:false,
-    patientProfilePicture:false,
+    name: false,
+    gender: false,
+    contactEmail: false,
+    contactPhone: false,
+    createdAt: false,
+    illness: false,
+    dateOfBirth: false,
+    address: false,
+    identification: false,
+    emergencyName: false,
+    emergencyPhoneNumber: false,
+    patientProfilePicture: false,
   });
   const uploadPatientImage = async () => {
     const storage = getStorage(app);
@@ -227,6 +227,66 @@ export default function DashOutPatients() {
   };
   const handlePatientSubmit = async (e) => {
     e.preventDefault();
+    const name = formData.name ? formData.name.trim() : "";
+    const dateOfBirth = formData.dateOfBirth ? formData.dateOfBirth.trim() : "";
+    const gender = formData.gender;
+    const address = formData.address ? formData.address.trim() : "";
+    const contactPhone = formData.contactPhone
+      ? formData.contactPhone
+      : "";
+    const contactEmail = formData.contactEmail
+      ? formData.contactEmail
+      : "";
+    const identification = formData.identification
+      ? formData.identification
+      : "";
+    const emergencyName = formData.emergencyName
+      ? formData.emergencyName
+      : "";
+    const emergencyPhoneNumber = formData.emergencyPhoneNumber
+      ? formData.emergencyPhoneNumber
+      : "";
+    const patientImage = imageFile;
+
+    if (
+      !name ||
+      !dateOfBirth ||
+      !gender ||
+      !address ||
+      !contactPhone ||
+      !contactEmail ||
+      !identification ||
+      !emergencyName ||
+      !emergencyPhoneNumber ||
+      !patientImage
+    ) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dobRegex.test(dateOfBirth)) {
+      toast.error(
+        "Invalid date of birth format. Please use YYYY-MM-DD format."
+      );
+      return;
+    }
+
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(contactPhone)) {
+      toast.error(
+        "Invalid contact phone number. Please enter a 10-digit phone number."
+      );
+      return;
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(contactEmail)) {
+      toast.error(
+        "Invalid email address format. Please enter a valid email address."
+      );
+      return;
+    }
     try {
       const res = await fetch(`/api/patient/register`, {
         method: "POST",
@@ -279,7 +339,7 @@ export default function DashOutPatients() {
       identification,
       emergencyName,
       emergencyPhoneNumber,
-      patientProfilePicture
+      patientProfilePicture,
     });
     setShowPatientDetails(true);
   };
@@ -597,77 +657,76 @@ export default function DashOutPatients() {
         </Modal.Body>
       </Modal>
       <Modal
-  show={showPatientDetails}
-  onClose={() => setShowPatientDetails(false)}
-  popup
-  size="xlg"
->
-  <Modal.Header />
-  <Modal.Body>
-    <div className="text-center">
-      <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
-      <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
-        Patient Details
-      </h3>
-    </div>
-    <div className="grid grid-cols-5 gap-4">
-      <div>
-        <p className="font-semibold">Name:</p>
-        <p>{patientDetails.name}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Gender:</p>
-        <p>{patientDetails.gender}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Contact Email:</p>
-        <p>{patientDetails.contactEmail}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Contact Phone:</p>
-        <p>{patientDetails.contactPhone}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Created At:</p>
-        <p>{patientDetails.createdAt}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Date of Birth:</p>
-        <p>{patientDetails.dateOfBirth}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Address:</p>
-        <p>{patientDetails.address}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Identification:</p>
-        <p>{patientDetails.identification}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Emergency Contact Name:</p>
-        <p>{patientDetails.emergencyName}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Emergency Contact Phone Number:</p>
-        <p>{patientDetails.emergencyPhoneNumber}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Patient Picture:</p>
-        <img
-          src={patientDetails.patientProfilePicture}
-          alt="Patient Picture"
-          className="w-40 h-40"
-        />
-      </div>
-    </div>
-    <div className="flex justify-center mt-4">
-      <Button color="gray" onClick={() => setShowPatientDetails(false)}>
-        Close
-      </Button>
-    </div>
-  </Modal.Body>
-</Modal>
-
+        show={showPatientDetails}
+        onClose={() => setShowPatientDetails(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
+              Patient Details
+            </h3>
+          </div>
+          <div className="grid grid-cols-5 gap-4">
+            <div>
+              <p className="font-semibold">Name:</p>
+              <p>{patientDetails.name}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Gender:</p>
+              <p>{patientDetails.gender}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Contact Email:</p>
+              <p>{patientDetails.contactEmail}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Contact Phone:</p>
+              <p>{patientDetails.contactPhone}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Created At:</p>
+              <p>{patientDetails.createdAt}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Date of Birth:</p>
+              <p>{patientDetails.dateOfBirth}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Address:</p>
+              <p>{patientDetails.address}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Identification:</p>
+              <p>{patientDetails.identification}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Emergency Contact Name:</p>
+              <p>{patientDetails.emergencyName}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Emergency Contact Phone Number:</p>
+              <p>{patientDetails.emergencyPhoneNumber}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Patient Picture:</p>
+              <img
+                src={patientDetails.patientProfilePicture}
+                alt="Patient Picture"
+                className="w-40 h-40"
+              />
+            </div>
+          </div>
+          <div className="flex justify-center mt-4">
+            <Button color="gray" onClick={() => setShowPatientDetails(false)}>
+              Close
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

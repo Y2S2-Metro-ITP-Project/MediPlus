@@ -27,6 +27,7 @@ export const registerOutPatient = async (req, res, next) => {
     email: contactEmail,
     password: hashPassword,
     isOutPatient: true,
+    isUser:false,
   });
   try {
     await newUser.save();
@@ -41,7 +42,7 @@ export const registerOutPatient = async (req, res, next) => {
     gender,
     emergencyContact: {
       name: emergencyName,
-      phone: emergencyPhoneNumber,
+      phoneNumber: emergencyPhoneNumber,
     },
     dateOfBirth,
     contactPhone,

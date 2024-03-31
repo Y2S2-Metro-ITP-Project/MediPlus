@@ -111,6 +111,8 @@ export default function DashInquiries() {
       if(res.ok){
         setInquirires(data);
         setShowMore(data.length >= 9);
+      }else{
+        setInquirires([]);
       }
     } catch (error) {
       console.log(error.message);
