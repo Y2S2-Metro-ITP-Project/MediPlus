@@ -57,8 +57,6 @@ export const registerOutPatient = async (req, res, next) => {
     contactPhone === "" ||
     !patientPicture ||
     patientPicture === "" ||
-    !illness ||
-    illness === "" ||
     !identification ||
     identification === ""
   ) {

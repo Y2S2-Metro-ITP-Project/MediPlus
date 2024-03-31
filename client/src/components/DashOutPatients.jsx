@@ -368,8 +368,8 @@ export default function DashOutPatients() {
                           patient.dateOfBirth,
                           patient.address,
                           patient.identification,
-                          patient.emergencyName,
-                          patient.emergencyPhoneNumber,
+                          patient.emergencyContact.name,
+                          patient.emergencyContact.phoneNumber,
                           patient.patientProfilePicture
                         )
                       }
@@ -459,16 +459,6 @@ export default function DashOutPatients() {
                   type="text"
                   placeholder="Patient Name"
                   id="name"
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <Label htmlFor="illness">Illness</Label>
-                <TextInput
-                  type="text"
-                  placeholder="Illness"
-                  id="illness"
                   onChange={handleChange}
                   className="input-field"
                 />
@@ -640,10 +630,6 @@ export default function DashOutPatients() {
       <div>
         <p className="font-semibold">Created At:</p>
         <p>{patientDetails.createdAt}</p>
-      </div>
-      <div>
-        <p className="font-semibold">Illness:</p>
-        <p>{patientDetails.illness}</p>
       </div>
       <div>
         <p className="font-semibold">Date of Birth:</p>

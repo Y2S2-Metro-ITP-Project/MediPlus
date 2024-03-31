@@ -16,7 +16,6 @@ const patientSchema = new mongoose.Schema(
     },
     illness: {
       type: String,
-      required: true,
     },
     dateOfBirth: {
       type: Date,

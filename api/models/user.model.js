@@ -61,6 +61,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isLabTech: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
