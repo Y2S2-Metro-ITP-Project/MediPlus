@@ -15,7 +15,7 @@ const sampleSchema = new mongoose.Schema(
     ],
 
     patientId: {
-      type: Number, //number is a place holder
+      type: Number, //number is a place holder, needs to be updated with patient ID
       required: true,
     },
 

@@ -13,7 +13,7 @@ const testSchema = new mongoose.Schema(
     },
 
     sampleVolume: {
-      type: Number,
+      type: String,
       required: true,
     },
 
@@ -23,7 +23,7 @@ const testSchema = new mongoose.Schema(
     },
 
     price: {
-      type: Number,
+      type: String,
       required: true,
     },
   },

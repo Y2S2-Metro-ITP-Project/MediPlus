@@ -24,9 +24,34 @@ export const getLabTest = async (req, res) => {
 
 //CREATE LAB TEST
 export const createLabTest = async (req, res) => {
+  const { name, sampleType, sampleVolume, completionTime, price } = req.body;
+
+  if (
+    !name ||
+    !sampleType ||
+    !sampleVolume ||
+    !completionTime ||
+    !price ||
+    name === "" ||
+    sampleType === "" ||
+    completionTime === "" ||
+    price === "" ||
+    sampleVolume === ""
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const newlabtest = new LabTest({
+    name,
+    sampleType,
+    sampleVolume,
+    completionTime,
+    price,
+  });
   try {
-    const labtest = await LabTest.create(req.body);
-    res.status(200).json(labtest);
+    await newlabtest.save();
+    res.json({message:"registered new test succefully"});
+    res.status(200).json(newlabtest);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
