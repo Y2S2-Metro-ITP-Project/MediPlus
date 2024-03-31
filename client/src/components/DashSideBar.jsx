@@ -181,6 +181,15 @@ export default function DashSideBar() {
                   Inquiries
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item 
+                active={tab === "EMPleave"}
+                 icon={FaRegCalendarTimes} 
+                 as="div" >
+                 Leave
+                </Sidebar.Item>
+              </Link>
             </>
           )}
           {currentUser.isUser && (
@@ -207,13 +216,29 @@ export default function DashSideBar() {
                   Add Employee 
                 </Sidebar.Item>
               </Link>
-
-              <Link to="/dashboard?tab=leave">
-                <Sidebar.Item active={tab === "leave"} icon={FaRegCalendarTimes} as="div" >
+              
+               <Link to="/dashboard?tab=leave">
+                <Sidebar.Item
+                  active={tab === "leave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item 
+                active={tab === "EMPleave"}
+                 icon={FaRegCalendarTimes} 
+                 as="div" >
+                 Leave
+                </Sidebar.Item>
+              </Link>
+             
+              
             </>
+            
           )}
           <Sidebar.Item
             icon={HiArrowSmRight}

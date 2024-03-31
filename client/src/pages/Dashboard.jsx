@@ -9,6 +9,7 @@ import DashPatients from "../components/DashOutPatients";
 import DashInpatients from "../components/DashInpatients";
 import DashUserInquiries from "../components/DashUserInquiries";
 import DashStaffManagement from "../components/DashStaffManagement";
+import DashLeave from "../components/DashLeave";
 import DashEMPLeave from "../components/DashEMPLeave";
 import { DashaddEmp } from "../components/DashaddEmp";
 export default function Dashboard() {
@@ -43,8 +44,10 @@ export default function Dashboard() {
       {tab==="userInquiries" && <DashUserInquiries/>}
       {/** <DashStaffManagement /> */}
       {tab=="staff" && <DashStaffManagement/>}
-      {/**<EmployeeLeave/> */}
-      {tab==="leave" && <DashEMPLeave/>}
+      {/**<Leave/> */}
+      {tab==="leave" && <DashLeave/>}
+       {/**<EMPleave/> */}
+       {tab==="EMPleave" && <DashEMPLeave/>}
       {/**<AddEmployee/> */}
       {tab==="Add_staff" && <DashaddEmp/>}
     </div>

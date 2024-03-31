@@ -46,7 +46,7 @@ export const DashaddEmp = () => {
 
     return (
         <div className="max-w-lg mx-auto p-3 w-full">
-            <h1 className="my-7 text-center font-semibold text-3xl">Profile</h1>
+            <h1 className="my-7 text-center font-semibold text-3xl">ADD EMPLOYEE</h1>
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 <TextInput
                     type="text"
@@ -80,13 +80,11 @@ export const DashaddEmp = () => {
                 className="input-field dark:bg-gray-800 dark:text-white"
             >
                 <option value="">Select Role</option>
-                <option value="isAdmin">Admin</option>
                 <option value="isDoctor">Doctor</option>
                 <option value="isNurse">Nurse</option>
                 <option value="isPharmacist">Pharmacist</option>
                 <option value="isReceptionist">Receptionist</option>
                 <option value="isHeadNurse">Head Nurse</option>
-                <option value="isHRM">HRM</option>
             </select>
         </div>
                 <Button type="submit" gradientDuoTone="purpleToBlue" outline>

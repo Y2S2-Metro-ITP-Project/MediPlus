@@ -206,17 +206,22 @@ export const getemployee = async (req, res, next) => {
 
 
 
+import bcryptjs from "bcryptjs";
+
 // Controller function to add a new employee
 export const addEMP = async (req, res, next) => {
   try {
     // Extract data from the request body
     const { username, email, password, role } = req.body;
 
+    // Hash the password using bcrypt.js
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
     // Create a new user record using the mongoose model
     const newUser = await User.create({
       username,
       email,
-      password,
+      password: hashedPassword, // Store the hashed password
       [role]: true, // Set the selected role as true
     });
 
@@ -228,9 +233,7 @@ export const addEMP = async (req, res, next) => {
   }
 };
 
-
-
-
+// Controller function to update employee information
 export const updateEmp = async (req, res, next) => {
   // Check if the user performing the action is an admin or HRM
   if (!req.user.isAdmin && !req.user.isHRM) {
@@ -241,14 +244,17 @@ export const updateEmp = async (req, res, next) => {
 
   // Validate and update user information
   try {
+    // Hash the password if provided in the request body
     if (req.body.password) {
       if (req.body.password.length < 6) {
         return next(
           errorHandler(403, "Password must be at least 6 characters long")
         );
       }
-      req.body.password = bcryptjs.hashSync(req.body.password, 10);
+      req.body.password = await bcryptjs.hash(req.body.password, 10);
     }
+
+    // Validate username
     if (req.body.username) {
       if (req.body.username.length < 7 || req.body.username.length > 20) {
         return next(
@@ -258,11 +264,9 @@ export const updateEmp = async (req, res, next) => {
       if (req.body.username.includes(" ")) {
         return next(errorHandler(403, "Username must not contain spaces"));
       }
-
       if (req.body.username !== req.body.username.toLowerCase()) {
         return next(errorHandler(403, "Username must be in lowercase"));
       }
-
       if (!req.body.username.match(/^[a-zA-Z0-9]+$/)) {
         return next(
           errorHandler(403, "Username must contain only letters and numbers")
@@ -288,7 +292,7 @@ export const updateEmp = async (req, res, next) => {
       username: req.body.username,
       email: req.body.email,
       profilePicture: req.body.profilePicture,
-      password: req.body.password,
+      password: req.body.password, // Use the hashed password
       // If a role is being updated, set all other roles to false
       ...req.body.role && Object.keys(currentRoles).reduce((acc, key) => {
         acc[key] = key === req.body.role;
