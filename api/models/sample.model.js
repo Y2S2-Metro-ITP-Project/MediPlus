@@ -4,34 +4,39 @@ const sampleSchema = new mongoose.Schema(
   {
     type: {
       type: String,
+      enum:["blood","urine","stool","saliva","mucus"],
       required: true,
     },
 
     testsOrderedOnSample: [
       {
-        type: String, // String is a place holder and will have to be updated with test ID
+        type: String, 
         required: true,
+        default: "No tests ordered",
       },
     ],
 
     patientId: {
-      type: Number, //number is a place holder, needs to be updated with patient ID
+      type: String, 
       required: true,
     },
 
     collectionEmployeeId: {
-      type: Number,
+      type: String,
       required: true,
     },
 
     sampleStatus: {
       type: String,
+      enums: ["inStorage","processing","complete"],
+      default: 'inStorage',
       required: true,
     },
 
     AssignedStorage: {
       type: String,
       required: true,
+      default: "No Storage Assigned",
     },
   },
   { timestamps: true }
