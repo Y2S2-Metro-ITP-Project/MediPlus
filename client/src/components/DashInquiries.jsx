@@ -108,10 +108,15 @@ export default function DashInquiries() {
         body: JSON.stringify({ filterOption: selectedOption }),
       });
       const data = await res.json();
-      setInquirires(data);
-      setShowMore(data.inquiries.length >= 9);
+      if(res.ok){
+        setInquirires(data);
+        setShowMore(data.length >= 9);
+      }else{
+        setInquirires([]);
+      }
     } catch (error) {
       console.log(error.message);
+      toast.error(error.message)
     }
   };
   const handleReplySubmit = async (e) => {
@@ -211,7 +216,7 @@ export default function DashInquiries() {
           <option value="notanswer">UnAnswered</option>
         </select>
       </div>
-      {currentUser.isAdmin || currentUser.isReceptionist && inquiries.length > 0 ? (
+      {(currentUser.isAdmin || currentUser.isReceptionist) && inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
