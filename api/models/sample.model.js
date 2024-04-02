@@ -4,7 +4,7 @@ const sampleSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum:["blood","urine","stool","saliva","mucus"],
+      enum:["Blood","Urine","Stool","Saliva","Mucus"],
       required: true,
     },
 

@@ -6,7 +6,7 @@ import {
   registerSample,
   updateSample,
   deleteSample,
-} from "../controller/sample.controller";
+} from "../controller/sample.controller.js";
 
 const router = express.Router();
 
