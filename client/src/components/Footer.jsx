@@ -54,7 +54,7 @@ export default function FooterComp() {
             <Footer.Title title="Follow us"/>
             <Footer.LinkGroup col>
                 <Footer.Link
-                href='https://github.com/it22323934/'
+                href=''
                 target="_blank"
                 rel='noopener noreferrer'
                 >
@@ -97,8 +97,8 @@ export default function FooterComp() {
         <div className="w-full sm:flex sm:items-center sm:justify-between">
             <Footer.Copyright href="#" by="Team WebTitans" year={new Date().getFullYear()}/>
             <div className=" flex gap-6 sm:mt-0 mt-4 sm:justify-center">
-                <Footer.Icon href='https://www.linkedin.com/in/asiri-jayawardena-5707a3282?originalSubdomain=lk' icon={BsLinkedin} />
-                <Footer.Icon href='https://github.com/it22323934/' icon={BsGithub} />
+                <Footer.Icon href='' icon={BsLinkedin} />
+                <Footer.Icon href='' icon={BsGithub} />
             </div>
         </div>
       </div>

@@ -16,7 +16,16 @@ const patientSchema = new mongoose.Schema({
     patientType:{
         type:String,
         default:"Default",
-    }
+    },
+
+    patientOrderedTests:[
+        {
+        type: String,
+        default: "none",
+        required: false,
+        }
+    ],
+
     },{timestamps:true}
 );
 
