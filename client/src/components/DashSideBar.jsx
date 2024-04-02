@@ -16,15 +16,10 @@ import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
-<<<<<<< HEAD
-import { FaBed } from "react-icons/fa";
-import { GiHospital } from "react-icons/gi";
-=======
 import { FaUserPlus } from 'react-icons/fa';
 import { FaBed } from 'react-icons/fa';
 import { GiHospital } from 'react-icons/gi';
 
->>>>>>> 6961c2d63ec141d479740438089fba81879fe95f
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
