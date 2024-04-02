@@ -12,6 +12,9 @@ import DashStaffManagement from "../components/DashStaffManagement";
 import DashLeave from "../components/DashLeave";
 import DashEMPLeave from "../components/DashEMPLeave";
 import { DashaddEmp } from "../components/DashaddEmp";
+import DashBedManagement from "../components/DashBedManagement";
+import DashWards from "../components/DashWards";
+
 export default function Dashboard() {
   const location = useLocation();
   const [tab, setTab] = useState("");
@@ -31,17 +34,17 @@ export default function Dashboard() {
       {/* <DashProfile /> */}
       {tab === "profile" && <DashProfile />}
       {/** <DashUserProfiles /> */}
-      {tab === "users" && <DashUserProfiles/>}
+      {tab === "users" && <DashUserProfiles />}
       {/** <DashInquiries /> */}
-      {tab==="inquiries" && <DashInquiries/>}
+      {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
-      {tab==="inventory" && <DashInventory/>}
+      {tab === "inventory" && <DashInventory />}
       {/** <DashPatients /> */}
-      {tab==="patients" && <DashPatients/>}
+      {tab === "patients" && <DashPatients />}
       {/** <DashInpatients /> */}
-      {tab==="inpatients" && <DashInpatients/>}
+      {tab === "inpatients" && <DashInpatients />}
       {/** <DashUserInquires/> */}
-      {tab==="userInquiries" && <DashUserInquiries/>}
+      {tab === "userInquiries" && <DashUserInquiries />}
       {/** <DashStaffManagement /> */}
       {tab=="staff" && <DashStaffManagement/>}
       {/**<Leave/> */}
@@ -50,6 +53,10 @@ export default function Dashboard() {
        {tab==="EMPleave" && <DashEMPLeave/>}
       {/**<AddEmployee/> */}
       {tab==="Add_staff" && <DashaddEmp/>}
+      {/** <DashBedManagement/> */}
+      {tab === "beds" && <DashBedManagement />}
+      {/** <DashWards/> */}
+      {tab === "wards" && <DashWards />}
     </div>
   );
 }
