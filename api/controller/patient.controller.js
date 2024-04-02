@@ -70,11 +70,26 @@ export const registerOutPatient = async (req, res, next) => {
     console.log(error);
     res.status(500).json(error);
   }
-  await sendEmail({
-    to: contactEmail,
-    subject: "Welcome to Ismails Pvt Hospital!",
-    text: `Dear ${name},\n\nYour account has been created successfully. Here are your login credentials:\n\nEmail: ${contactEmail}\nPassword: ${password}\n\nPlease keep this information secure.\n\nBest regards,\nThe Hospital Team`,
-  });
+  try {
+    await sendEmail({
+      to: contactEmail,
+      subject: "Welcome to Ismails Pvt Hospital!",
+      html: `
+      <p>Dear User,</p>
+      <p>Your account has been created successfully. Here are your login credentials:</p>
+      <ul>
+        <li><strong>Email:</strong> example@example.com</li>
+        <li><strong>Password:</strong> 123456</li>
+      </ul>
+      <p>Please keep this information secure.</p>
+      <p>Best regards,<br>The MediPlus Team</p>
+      <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
+      <P>This is an auto-generated email. Please do not reply to this email.</p>
+    `,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const getPatients = async (req, res) => {

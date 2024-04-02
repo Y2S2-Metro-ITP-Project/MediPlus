@@ -1,8 +1,8 @@
 import Inquiry from "../models/inquiry.model.js";
 import { errorHandler } from "../utils/error.js";
+import { sendEmail } from "../utils/email.js";
 export const submit = async (req, res, next) => {
   const { name, email, phone, message, userid } = req.body;
-  console.log(req.body);
   if (
     !name ||
     !email ||
@@ -27,6 +27,26 @@ export const submit = async (req, res, next) => {
     res.json({ message: "Inquiry submitted Successfully." });
   } catch (error) {
     next(error);
+  }
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Welcome to Ismails Pvt Hospital!",
+      html: ` 
+      <p>Dear ${name},</p>
+      <p>Your inquiry has been successfully submitted. Here is a summary of your message:</p>
+      <blockquote style="background-color: #f2f2f2; border-left: 5px solid #3498db; padding: 10px 20px; margin: 0; font-family: Arial, sans-serif; font-size: 16px;">
+      <p style="margin: 0;">${message}</p>
+    </blockquote>
+    
+      <p>We will get back to you immediately.</p>
+      <p>Best regards,<br>MediPlus Team</p>
+      <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
+      <P>This is an auto-generated email. Please do not reply to this email.</p>
+    `,
+    });
+  } catch (error) {
+    console.log(error);
   }
 };
 

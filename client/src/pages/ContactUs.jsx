@@ -9,6 +9,7 @@ import {
   Spinner,
   TextInput,
   Textarea,
+  ToastToggle,
 } from "flowbite-react";
 import { useSelector } from "react-redux";
 export default function ContactUs() {
@@ -25,40 +26,56 @@ export default function ContactUs() {
     message: "",
   });
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.message ||
-      !formData.userid
-    ) {
-      toast.error("Please fill out all the fields");
-      return;
-    }
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-      const res = await fetch("api/inquiry/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      setLoading(false);
-      setSuccessMessage("Your Inquiry is Submitted Successfully!");
-      //toast.success("Your Inquiry is Submitted Successfully!");
-      setFormData({});
-    } catch (error) {
-      setErrorMessage("Something went wrong. Please try again later");
-      setLoading(false);
-    }
-  };
+    const { name, email, phone, message, userid } = formData;
 
+    if (!name || !email || !phone || !message || !userid) {
+      toast.error("Please fill out all the fields");
+    }else{
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+        const res = await fetch("api/inquiry/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setLoading(false);
+          setSuccessMessage(data.message);
+          setFormData({
+            userid: defaultUserId,
+            name: "",
+            email: "",
+            phone: "",
+            message: "",
+          });
+        } else {
+          toast.error(data.message);
+        }
+        //toast.success("Your Inquiry is Submitted Successfully!");
+      } catch (error) {
+        setSuccessMessage(null);
+        setFormData({
+          userid: defaultUserId,
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+        });
+        setErrorMessage("Something went wrong. Please try again later");
+        setLoading(false);
+      }
+    }
+    
+  };
+  console.log(formData)
   return (
     <div>
       <ToastContainer />
