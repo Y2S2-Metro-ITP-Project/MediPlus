@@ -69,7 +69,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.userId) {
+  if (!req.user.isAdmin && req.user.id !== req.params.userId) {
     return next(
       errorHandler(403, "You are not allowed to delete this account")
     );
@@ -81,5 +81,138 @@ export const deleteUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-  
+};
+
+export const getusers = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access all the user of the database"
+      )
+    );
+  }
+  try {
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+    const users = await User.find()
+      .sort({ createdAt: sortDirection })
+      .skip(startIndex)
+      .limit(limit);
+    const usersWithourPassword = users.map((user) => {
+      const { password, ...rest } = user._doc;
+      return rest;
+    });
+    const totalUser = await User.countDocuments();
+    const now = new Date();
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+    const lastMonthUser = await User.countDocuments({
+      createdAt: { $gte: oneMonthAgo },
+    });
+    res
+      .status(200)
+      .json({ users: usersWithourPassword, totalUser, lastMonthUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+    const { password, ...rest } = user._doc;
+    res.status(200).json(rest);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const filterUsers = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access all the users of the database"
+      )
+    );
+  }
+
+  const filterOption = req.body.filterOption;
+
+  try {
+    let users;
+    switch (filterOption) {
+      case "user":
+        users = await User.find({ isUser: true });
+        break;
+      case "outPatients":
+        users = await User.find({ isOutPatient: true });
+        break;
+      case "inPatients":
+        users = await User.find({ isInPatient: true });
+        break;
+      case "doctor":
+        users = await User.find({ isDoctor: true });
+        break;
+      case "nurse":
+        users = await User.find({ isNurse: true });
+        break;
+      case "hrManager":
+        users = await User.find({ isHRM: true });
+        break;
+      case "labTechnician":
+        users = await User.find({ isLabTech: true });
+        break;
+      case "pharmacist":
+        users = await User.find({ isPharmacist: true });
+        break;
+      case "receptionist":
+        users = await User.find({ isReceptionist: true });
+        break;
+      default:
+        return next(
+          errorHandler(
+            400,
+            "Invalid filter option provided. Please provide a valid filter option."
+          )
+        );
+    }
+    res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchUsers = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access all the users of the database"
+      )
+    );
+  }
+  const searchTerm = req.body.search;
+  try {
+    const users = await User.find({
+      $or: [
+        { username: { $regex: new RegExp(searchTerm, "i") } },
+        { email: { $regex: new RegExp(searchTerm, "i") } },
+      ],
+    });
+    if (!users || users.length === 0) {
+      return next(errorHandler(404, "User not found"));
+    }
+    res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
 }
