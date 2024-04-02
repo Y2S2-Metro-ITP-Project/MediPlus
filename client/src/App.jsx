@@ -10,7 +10,7 @@ import Header from "./components/Header";
 import FooterComp from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 import LabDashBoard from "./pages/LabDashBoard";
-import CollectionCentre from "./pages/CollectionCentre";
+import DashCollectionCentre from "./components/DashCollectionCentre";
 import TestProfileManager from "./pages/TestProfileManager";
 export default function App() {
   return (
@@ -26,7 +26,7 @@ export default function App() {
         </Route>
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/lab-dashboard" element={<LabDashBoard/>}/>
-        <Route path="/lab-sample-collection" element={<CollectionCentre/>}/>
+        <Route path="/lab-sample-collection" element={<DashCollectionCentre/>}/>
         <Route path="/lab-test-profile-manager" element={<TestProfileManager/>}/>
       </Routes>
       <FooterComp/>

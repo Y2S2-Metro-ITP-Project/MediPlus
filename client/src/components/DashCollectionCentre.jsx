@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 //import {useNavigate} from "react-router-dom";
 
-export default function CollectionCentre() {
+export default function DashCollectionCentre() {
   const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState(""); 
   const [loading, setLoading] = useState(false);
