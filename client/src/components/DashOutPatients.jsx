@@ -17,6 +17,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { Link, json } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { get, set } from "mongoose";
+import { saveAs } from "file-saver";
 import {
   getStorage,
   ref,
@@ -37,6 +38,7 @@ export default function DashOutPatients() {
   const [imageFile, setImageFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [patientName, setPatient] = useState("");
+  const [patientIdDownloadPDF, setPatientIdDownloadPDF] = useState("");
   const fetchPatients = async () => {
     try {
       const res = await fetch(`/api/patient/getPatients`);
@@ -231,18 +233,12 @@ export default function DashOutPatients() {
     const dateOfBirth = formData.dateOfBirth ? formData.dateOfBirth.trim() : "";
     const gender = formData.gender;
     const address = formData.address ? formData.address.trim() : "";
-    const contactPhone = formData.contactPhone
-      ? formData.contactPhone
-      : "";
-    const contactEmail = formData.contactEmail
-      ? formData.contactEmail
-      : "";
+    const contactPhone = formData.contactPhone ? formData.contactPhone : "";
+    const contactEmail = formData.contactEmail ? formData.contactEmail : "";
     const identification = formData.identification
       ? formData.identification
       : "";
-    const emergencyName = formData.emergencyName
-      ? formData.emergencyName
-      : "";
+    const emergencyName = formData.emergencyName ? formData.emergencyName : "";
     const emergencyPhoneNumber = formData.emergencyPhoneNumber
       ? formData.emergencyPhoneNumber
       : "";
@@ -343,6 +339,41 @@ export default function DashOutPatients() {
     });
     setShowPatientDetails(true);
   };
+  const handleDownloadPdf = async (name) => {
+    try {
+      const res = await fetch(
+        `/api/patient/DownloadPDFPatient/${patientIdDownloadPDF}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ patientId: patientIdDownloadPDF }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+      const pdfBlob = await res.blob();
+
+      // Create blob URL
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      // Create temporary link element
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Patient-${name}.pdf`; // Set download attribute
+      document.body.appendChild(a);
+
+      // Click link to initiate download
+      a.click();
+
+      // Remove link from DOM
+      document.body.removeChild(a);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -404,6 +435,7 @@ export default function DashOutPatients() {
               <Table.HeadCell>Patient Details</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
+              <Table.HeadCell>Additional</Table.HeadCell>
             </Table.Head>
             {patients.map((patient) => (
               <Table.Body className="divide-y" key={patient._id}>
@@ -456,6 +488,17 @@ export default function DashOutPatients() {
                       className="font-medium text-red-500 hover:underline cursor-pointer"
                     >
                       Delete
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => {
+                        handleDownloadPdf(patient.name);
+                        setPatientIdDownloadPDF(patient._id);
+                      }}
+                      className="font-medium text-green-700 hover:underline cursor-pointer"
+                    >
+                      Download PDF
                     </span>
                   </Table.Cell>
                 </Table.Row>
@@ -721,7 +764,7 @@ export default function DashOutPatients() {
             </div>
           </div>
           <div className="flex justify-center mt-4">
-            <Button color="gray" onClick={() => setShowPatientDetails(false)}>
+            <Button color="red" onClick={() => setShowPatientDetails(false)}>
               Close
             </Button>
           </div>
