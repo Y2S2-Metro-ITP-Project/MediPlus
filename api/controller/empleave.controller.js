@@ -34,28 +34,28 @@ export const createLeave = async (req, res, next) => {
 
 
 
-  
-  
+
+
 const getAllLeaves = async (req, res) => {
   try {
-      const leaves = await Leave.find()
-          .populate({
-              path: 'user',
-              select: 'username',
-              options: { 
-                  strict: false 
-              }
-          })
-          .select('reason startDate endDate status');
-      res.json(leaves);
+    const leaves = await Leave.find()
+      .populate({
+        path: 'user',
+        select: 'username isAdmin isDoctor isNurse isPharmacist isReceptionist isHeadNurse isHRM',
+        options: {
+          strict: false
+        }
+      })
+      .select('reason startDate endDate status');
+    res.json(leaves);
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }
 
 export { getAllLeaves };
 
-  
+
 
 
 // Function to update leave status
@@ -74,7 +74,7 @@ async function approveRejectLeave(req, res) {
 
     // Update the status of the leave
     leave.status = status;
-    
+
     // Save the updated leave
     await leave.save();
 
@@ -121,11 +121,11 @@ export { deleteLeave };
 
 // Function to get leaves of a specific user
 export const getUserLeaves = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const leaves = await Leave.find({ user: userId });
-        res.status(200).json(leaves);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+  try {
+    const { userId } = req.params;
+    const leaves = await Leave.find({ user: userId });
+    res.status(200).json(leaves);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

@@ -69,7 +69,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (!(req.user.isAdmin || req.user.isHRM) && req.user.id !== req.params.userId){
+  if (!(req.user.isAdmin || req.user.isHRM) && req.user.id !== req.params.userId) {
     return next(
       errorHandler(403, "You are not allowed to delete this account")
     );
@@ -85,7 +85,7 @@ export const deleteUser = async (req, res, next) => {
 
 
 export const getusers = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isHRM ) {
+  if (!req.user.isAdmin && !req.user.isHRM) {
     return next(
       errorHandler(
         403,
@@ -124,13 +124,13 @@ export const getusers = async (req, res, next) => {
 };
 
 
-export const getUser = async (req,res,next) => {
+export const getUser = async (req, res, next) => {
   try {
-    const user=await User.findById(req.params.userId);
-    if(!user){
-      return next(errorHandler(404,'User not found'));
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return next(errorHandler(404, 'User not found'));
     }
-    const {password,...rest}=user._doc;
+    const { password, ...rest } = user._doc;
     res.status(200).json(rest);
   } catch (error) {
     next(error);
@@ -223,6 +223,8 @@ export const addEMP = async (req, res, next) => {
       email,
       password: hashedPassword, // Store the hashed password
       [role]: true, // Set the selected role as true
+      isUser: false
+
     });
 
     // Send a success response to the client
@@ -305,7 +307,7 @@ export const updateEmp = async (req, res, next) => {
       { $set: updatedUserData },
       { new: true }
     );
-    
+
     const { password, ...rest } = updatedUser._doc;
     res.status(200).json(rest);
   } catch (error) {

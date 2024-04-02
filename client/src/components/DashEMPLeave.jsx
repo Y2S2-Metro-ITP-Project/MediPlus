@@ -3,44 +3,49 @@ import { Button, Modal, TextInput, Table } from "flowbite-react";
 import { FaEye, FaTimes, FaCheck } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {useSelector} from "react-redux";
+import { useSelector } from "react-redux";
 
 export default function DashEMPLeave() {
   // State for leave application modal
-  const { currentUser } = useSelector((state) => state.user)
+  const { currentUser } = useSelector((state) => state.user);
   const [showModal1, setShowModal1] = useState(false);
   const [selectedLeaveReason, setSelectedLeaveReason] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     reason: "",
     startDate: "",
-    endDate: ""
+    endDate: "",
   });
   const [loading, setLoading] = useState(false); // Define loading state
-  const [leaves, setLeaves] = useState([]);
+  const [userLeaves, setUserLeaves] = useState([]);
 
-  useEffect(() => {
-    async function fetchLeaves() {
-      try {
-        const response = await fetch(`/api/leaves/getAllLeaves`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch leaves');
-        }
-        const data = await response.json();
-        setLeaves(data);
-      } catch (error) {
-        console.error('Error fetching leaves:', error);
+  const fetchLeaves = async () => {
+    try {
+      const response = await fetch(`/api/leaves/getAllLeaves`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaves");
       }
+      const data = await response.json();
+      // Filter leaves by the current user's ID
+      const currentUserLeaves = data.filter(
+        (leave) => leave.user && leave.user._id === currentUser._id
+      );
+      setUserLeaves(currentUserLeaves);
+    } catch (error) {
+      console.error("Error fetching leaves:", error);
     }
+  };
 
+  // useEffect hook to fetch leaves on component mount or when currentUser changes
+  useEffect(() => {
     fetchLeaves();
-  }, []);
+  }, [currentUser._id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -53,11 +58,13 @@ export default function DashEMPLeave() {
         },
         body: JSON.stringify(formData),
       });
-  
+
       if (response.ok) {
         console.log("Leave application submitted successfully!");
         setShowModal(false);
         toast.success("Leave application submitted successfully!");
+        // Refetch leaves after submission to update the table
+        fetchLeaves();
       } else {
         const errorMessage = await response.text();
         console.error("Failed to submit leave application:", errorMessage);
@@ -70,21 +77,18 @@ export default function DashEMPLeave() {
       setLoading(false); // Reset loading state
     }
   };
-  
+
   const handleCreateLeave = async (event) => {
     event.preventDefault(); // Prevent default form submission behavior
     setLoading(true); // Set loading state while submitting
-  
+
     const formData = {
       reason: event.target.reason.value,
       startDate: event.target.startDate.value,
       endDate: event.target.endDate.value,
     };
-  
-    // Assuming userId is available in your component state
-    const userId = currentUser._id; // Implement this function to get the userId
-  
-    createLeaveApplication(userId, formData);
+
+    createLeaveApplication(currentUser._id, formData);
   };
 
   const handleViewReason = (reason) => {
@@ -92,7 +96,6 @@ export default function DashEMPLeave() {
     setShowModal1(true);
   };
 
-  
   const confirmDeleteLeave = async () => {
     // Handle confirm delete leave logic here
   };
@@ -179,23 +182,18 @@ export default function DashEMPLeave() {
       {/* Table for displaying leaves */}
       <Table hoverable className="shadow-md">
         <Table.Head>
-          <Table.HeadCell>User</Table.HeadCell>
+          <Table.HeadCell>Employee</Table.HeadCell>
           <Table.HeadCell>Start Date</Table.HeadCell>
           <Table.HeadCell>End Date</Table.HeadCell>
           <Table.HeadCell>Reason</Table.HeadCell>
           <Table.HeadCell>Status</Table.HeadCell>
- 
         </Table.Head>
-        {leaves.map((leave) => (
+        {userLeaves.map((leave) => (
           <Table.Body className="divide-y" key={leave._id}>
             <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
-              <Table.Cell>{leave.user ? leave.user.username : 'Unknown User'}</Table.Cell>
-              <Table.Cell>
-                {new Date(leave.startDate).toLocaleDateString()}
-              </Table.Cell>
-              <Table.Cell>
-                {new Date(leave.endDate).toLocaleDateString()}
-              </Table.Cell>
+              <Table.Cell>{leave.user ? leave.user.username : "Unknown User"}</Table.Cell>
+              <Table.Cell>{new Date(leave.startDate).toLocaleDateString()}</Table.Cell>
+              <Table.Cell>{new Date(leave.endDate).toLocaleDateString()}</Table.Cell>
               <Table.Cell>
                 <FaEye
                   className="text-blue-500 cursor-pointer"
@@ -216,8 +214,8 @@ export default function DashEMPLeave() {
         ))}
       </Table>
 
-       {/* Modal for viewing reason */}
-       <Modal
+      {/* Modal for viewing reason */}
+      <Modal
         show={showModal1}
         onClose={() => setShowModal1(false)}
         popup
