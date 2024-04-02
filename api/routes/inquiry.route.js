@@ -7,6 +7,7 @@ import {
   searchInquiry,
   submit,
   updateInquiry,
+  filterUserInquiry,
 } from "../controller/inquiry.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
@@ -18,5 +19,6 @@ router.delete("/delete/:inquiryId", verifyToken, deleteInquiry);
 router.put("/update/:inquiryId", verifyToken, updateInquiry);
 router.post("/searchInquiry", verifyToken, searchInquiry);
 router.post("/filterInquiry", verifyToken, filterInquiry);
+router.post("/filterUserInquiry/:userId", verifyToken, filterUserInquiry);
 
 export default router;

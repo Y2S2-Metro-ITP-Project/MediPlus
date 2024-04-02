@@ -9,7 +9,15 @@ import DashPatients from "../components/DashOutPatients";
 import DashInpatients from "../components/DashInpatients";
 import DashUserInquiries from "../components/DashUserInquiries";
 import DashStaffManagement from "../components/DashStaffManagement";
+import DashLeave from "../components/DashLeave";
 import DashEMPLeave from "../components/DashEMPLeave";
+import { DashaddEmp } from "../components/DashaddEmp";
+import DashBedManagement from "../components/DashBedManagement";
+import DashWards from "../components/DashWards";
+import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
+
+
+
 export default function Dashboard() {
   const location = useLocation();
   const [tab, setTab] = useState("");
@@ -20,7 +28,7 @@ export default function Dashboard() {
       setTab(tabFromUrl);
     }
   }, [location.search]);
-  return (
+  return(
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* <DashSideBar /> */}
       <div className=" md:w-56">
@@ -29,21 +37,31 @@ export default function Dashboard() {
       {/* <DashProfile /> */}
       {tab === "profile" && <DashProfile />}
       {/** <DashUserProfiles /> */}
-      {tab === "users" && <DashUserProfiles/>}
+      {tab === "users" && <DashUserProfiles />}
       {/** <DashInquiries /> */}
-      {tab==="inquiries" && <DashInquiries/>}
+      {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
-      {tab==="inventory" && <DashInventory/>}
+      {tab === "inventory" && <DashInventory />}
       {/** <DashPatients /> */}
-      {tab==="patients" && <DashPatients/>}
+      {tab === "patients" && <DashPatients />}
       {/** <DashInpatients /> */}
-      {tab==="inpatients" && <DashInpatients/>}
+      {tab === "inpatients" && <DashInpatients />}
       {/** <DashUserInquires/> */}
-      {tab==="userInquiries" && <DashUserInquiries/>}
+      {tab === "userInquiries" && <DashUserInquiries />}
       {/** <DashStaffManagement /> */}
       {tab=="staff" && <DashStaffManagement/>}
-      {/**<EmployeeLeave/> */}
-      {tab==="leave" && <DashEMPLeave/>}
+      {/**<Leave/> */}
+      {tab==="leave" && <DashLeave/>}
+       {/**<EMPleave/> */}
+       {tab==="EMPleave" && <DashLeave/>}
+      {/**<AddEmployee/> */}
+      {tab==="Add_staff" && <DashaddEmp/>}
+      {/** <DashBedManagement/> */}
+      {tab === "beds" && <DashBedManagement />}
+      {/** <DashWards/> */}
+      {tab === "wards" && <DashWards />}
+      {/** <ReceptionistDashBoard/> */}
+      {tab==="receptionist" && <ReceptionistDashBoard/>}
     </div>
   );
 }

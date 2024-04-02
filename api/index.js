@@ -7,7 +7,10 @@ import inquiryRoutes from "./routes/inquiry.route.js";
 import patientRoutes from "./routes/patient.route.js";
 import LabTestRoutes from "./routes/labTest.route.js";
 import sampleRoutes from "./routes/sample.route.js";
+import inventoryRoutes from "./routes/inventory.route.js";
 import cookieParser from "cookie-parser";
+import empleaveRoutes from "./routes/empleave.route.js"
+
 dotenv.config();
 
 mongoose
@@ -32,6 +35,8 @@ app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/labTest", LabTestRoutes);
 app.use("/api/sample", sampleRoutes);
+app.use("/api/leaves", empleaveRoutes);
+app.use("/api/inventory", inventoryRoutes);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
