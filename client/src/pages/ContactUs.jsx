@@ -75,7 +75,6 @@ export default function ContactUs() {
     }
     
   };
-  console.log(formData)
   return (
     <div>
       <ToastContainer />

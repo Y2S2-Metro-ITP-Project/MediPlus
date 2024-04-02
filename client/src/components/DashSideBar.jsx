@@ -186,8 +186,8 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
-          {currentUser.isUser &&
-            currentUser.isOutPatient(
+          {(currentUser.isUser ||
+            currentUser.isOutPatient) && (
               <Link to="/dashboard?tab=userInquiries">
                 <Sidebar.Item
                   active={tab === "inquiries"}

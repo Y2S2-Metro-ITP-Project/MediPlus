@@ -50,7 +50,6 @@ export const submit = async (req, res, next) => {
 };
 
 export const getInquiries = async (req, res, next) => {
-  console.log(req.user);
   if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
@@ -75,10 +74,26 @@ export const getInquiries = async (req, res, next) => {
       createdAt: { $gte: oneMonthAgo },
     });
     const totalAnswered = await Inquiry.countDocuments({ isAnswer: true });
-    const totalAnsweredOneMonth = await Inquiry.countDocuments({isAnswer: true, createdAt: { $gte: oneMonthAgo }});
-    const totalNotAnsweredOneMonth = await Inquiry.countDocuments({isAnswer: false, createdAt: { $gte: oneMonthAgo }}); 
+    const totalAnsweredOneMonth = await Inquiry.countDocuments({
+      isAnswer: true,
+      createdAt: { $gte: oneMonthAgo },
+    });
+    const totalNotAnsweredOneMonth = await Inquiry.countDocuments({
+      isAnswer: false,
+      createdAt: { $gte: oneMonthAgo },
+    });
     const totalNotAnswered = await Inquiry.countDocuments({ isAnswer: false });
-    res.status(200).json({ inquiries, totalInquiries, lastMonthInquiries, totalAnswered, totalNotAnswered, totalAnsweredOneMonth, totalNotAnsweredOneMonth });
+    res
+      .status(200)
+      .json({
+        inquiries,
+        totalInquiries,
+        lastMonthInquiries,
+        totalAnswered,
+        totalNotAnswered,
+        totalAnsweredOneMonth,
+        totalNotAnsweredOneMonth,
+      });
   } catch (error) {
     next(error);
   }
@@ -200,9 +215,65 @@ export const getUserInquiry = async (req, res, next) => {
       userId,
       createdAt: { $gte: oneMonthAgo },
     });
+    const totalAnswered = await Inquiry.countDocuments({
+      userId,
+      isAnswer: true,
+    });
+    const totalAnsweredOneMonth = await Inquiry.countDocuments({
+      userId,
+      isAnswer: true,
+      createdAt: { $gte: oneMonthAgo },
+    });
+    const totalNotAnsweredOneMonth = await Inquiry.countDocuments({
+      userId,
+      isAnswer: false,
+      createdAt: { $gte: oneMonthAgo },
+    });
+    const totalNotAnswered = await Inquiry.countDocuments({
+      userId,
+      isAnswer: false,
+    });
 
-    res.status(200).json({ inquiries, totalInquiries, lastMonthInquiries });
+    res
+      .status(200)
+      .json({
+        inquiries,
+        totalInquiries,
+        lastMonthInquiries,
+        totalAnswered,
+        totalNotAnswered,
+        totalAnsweredOneMonth,
+        totalNotAnsweredOneMonth,
+      });
   } catch (error) {
     next(error);
+  }
+};
+
+export const filterUserInquiry = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    const userId = req.params.userId;
+    const { filterOption } = req.body;
+    let query = {};
+    if (filterOption === "answer") {
+      query = { isAnswer: true, userId };
+    } else if (filterOption === "notanswer") {
+      query = { isAnswer: false,userId };
+    } else {
+      query = {};
+    }
+    const inquiries = await Inquiry.find(query);
+    if (!inquiries || inquiries.length === 0) {
+      return next(errorHandler(404, "Inquiries not found"));
+    }
+    res.status(200).json(inquiries);
+  } catch (err) {
+    console.error("Error filtering inquiries:", err);
+    res.status(500).json({ message: "Server Error" });
   }
 };

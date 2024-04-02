@@ -13,7 +13,6 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
-import { set } from "mongoose";
 import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
 export default function DashInquiries() {
   const { currentUser } = useSelector((state) => state.user);
@@ -143,7 +142,7 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if(res.ok){
-        setInquirires(data);
+        setInquirires(data.inquiries);
         setShowMore(data.length >= 9);
       }else{
         setInquirires([]);
