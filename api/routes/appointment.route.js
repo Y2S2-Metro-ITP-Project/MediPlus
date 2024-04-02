@@ -1,44 +1,19 @@
-const express = require('express');
+import express from "express";
+import { verifyToken } from "../utils/verifyUser.js";
+import {
+  createAppointment,
+  getAppointments,
+  deleteAppointment,
+  searchAppointments,
+  filterAppointments,
+} from "../controller/appointment.controller.js";
 
 const router = express.Router();
 
-// GET all appointments
-router.get('/appointment', (req, res) => {
-    
-    res.send('Get all appointments');
-});
+router.post("/create", verifyToken, createAppointment);
+router.get("/getAppointments", verifyToken, getAppointments);
+router.delete("/delete/:appointmentId", verifyToken, deleteAppointment);
+router.post("/searchAppointments", verifyToken, searchAppointments);
+router.post("/filterAppointments", verifyToken, filterAppointments);
 
-// GET a specific appointment by ID
-router.get('/appointment/:id', (req, res) => {
-    const appointmentId = req.params.id;
-    // Logic to fetch the appointment with the given ID
-    // from the database and send the response
-    res.send(`Get appointment with ID ${appointmentId}`);
-});
-
-// POST a new appointment
-router.post('/appointment', (req, res) => {
-    const appointmentData = req.body;
-    // Logic to create a new appointment in the database
-    // using the provided data and send the response
-    res.send('Create a new appointment');
-});
-
-// PUT/update an existing appointment
-router.put('/appointment/:id', (req, res) => {
-    const appointmentId = req.params.id;
-    const updatedAppointmentData = req.body;
-    // Logic to update the appointment with the given ID
-    // in the database using the provided data and send the response
-    res.send(`Update appointment with ID ${appointmentId}`);
-});
-
-// DELETE an appointment
-router.delete('/appointment/:id', (req, res) => {
-    const appointmentId = req.params.id;
-    // Logic to delete the appointment with the given ID
-    // from the database and send the response
-    res.send(`Delete appointment with ID ${appointmentId}`);
-});
-
-module.exports = router;
+export default router;
