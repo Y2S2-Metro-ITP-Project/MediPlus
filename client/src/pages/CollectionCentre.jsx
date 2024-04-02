@@ -8,12 +8,14 @@ import {
 } from "flowbite-react";
 import React from "react";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 //import {useNavigate} from "react-router-dom";
 
 export default function CollectionCentre() {
   const [formData, setFormData] = useState({});
   const [errorMessage, setErrorMessage] = useState(""); 
   const [loading, setLoading] = useState(false);
+  const {currentUser} = useSelector(state => state.user);
  // const navigate = useNavigate();
 
   const handleData = (e) => {
@@ -100,13 +102,21 @@ export default function CollectionCentre() {
               </div>
 
               <div className=" mb-3 block">
-                <Label className="" value="Collection employee ID:" />
-                <TextInput
+                <Label className="" value="Sample collection Employee:" />
+
+                {currentUser? (
+                <span className="block text-sm ">
+                    Employee name: @{currentUser.username}
+                </span>) : ( <span className="block text-base text-red-700 ">
+                  Authorized employee not logged in
+                </span>)
+                }
+                {/* <TextInput
                   type="text"
                   placeholder="Employee ID"
                   id="collectionEmployeeId"
                   onChange={handleData}
-                />
+                /> */}
               </div>
             </div>
             <Button className=" bg-gray-600 " type="submit" disabled={loading}>

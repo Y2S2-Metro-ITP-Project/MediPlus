@@ -24,6 +24,7 @@ const sampleSchema = new mongoose.Schema(
     collectionEmployeeId: {
       type: String,
       required: true,
+      default: "Medical worker not assigned",
     },
 
     sampleStatus: {
