@@ -16,8 +16,15 @@ import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
+<<<<<<< HEAD
 import { FaBed } from "react-icons/fa";
 import { GiHospital } from "react-icons/gi";
+=======
+import { FaUserPlus } from 'react-icons/fa';
+import { FaBed } from 'react-icons/fa';
+import { GiHospital } from 'react-icons/gi';
+
+>>>>>>> 6961c2d63ec141d479740438089fba81879fe95f
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -148,11 +155,19 @@ export default function DashSideBar() {
                   Inpatients
                 </Sidebar.Item>
               </Link>
+
               <Link to="/dashboard?tab=staff">
                 <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
                   Staff
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=Add_staff">
+                <Sidebar.Item active={tab === "Add_staff"} icon={FaUserPlus}  as="div" >
+                  Add Employee 
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
                   active={tab === "leave"}
@@ -162,6 +177,7 @@ export default function DashSideBar() {
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+
             </>
           )}
           {currentUser.isReceptionist && (
@@ -182,6 +198,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Inquiries
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item 
+                active={tab === "EMPleave"}
+                 icon={FaRegCalendarTimes} 
+                 as="div" >
+                 Leave
                 </Sidebar.Item>
               </Link>
             </>
@@ -205,7 +230,14 @@ export default function DashSideBar() {
                   Staff
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=leave">
+
+              <Link to="/dashboard?tab=Add_staff">
+                <Sidebar.Item active={tab === "Add_staff"} icon={FaUserPlus} as="div" >
+                  Add Employee 
+                </Sidebar.Item>
+              </Link>
+              
+               <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
                   active={tab === "leave"}
                   icon={FaRegCalendarTimes}
@@ -214,7 +246,19 @@ export default function DashSideBar() {
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item 
+                active={tab === "EMPleave"}
+                 icon={FaRegCalendarTimes} 
+                 as="div" >
+                 Leave
+                </Sidebar.Item>
+              </Link>
+             
+              
             </>
+            
           )}
           {currentUser.isHeadNurse && (
             <>
