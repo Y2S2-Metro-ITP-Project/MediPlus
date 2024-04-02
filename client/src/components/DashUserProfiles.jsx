@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { AiOutlineSearch } from "react-icons/ai";
+
 export default function DashUserProfiles() {
   const { currentUser } = useSelector((state) => state.user);
   const [users, setUsers] = useState([]);
@@ -53,7 +54,7 @@ export default function DashUserProfiles() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers((prev) => prev.filter((user) => user._id !== userIdToDelete));
+        setUsers((prev) => prev.filter((user) => user._id !== userIudToDelete));
         setShowModal(false);
         toast.success(data.message);
       } else {
