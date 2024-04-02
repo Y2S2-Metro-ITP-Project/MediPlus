@@ -233,6 +233,7 @@ export const addEMP = async (req, res, next) => {
   } catch (error) {
     // Handle any errors and pass them to the error handling middleware
 };
+}
 
 export const filterUsers = async (req, res, next) => {
   if (!req.user.isAdmin) {
