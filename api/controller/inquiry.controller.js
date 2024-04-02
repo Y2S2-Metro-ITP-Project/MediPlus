@@ -38,7 +38,6 @@ export const submit = async (req, res, next) => {
       <blockquote style="background-color: #f2f2f2; border-left: 5px solid #3498db; padding: 10px 20px; margin: 0; font-family: Arial, sans-serif; font-size: 16px;">
       <p style="margin: 0;">${message}</p>
     </blockquote>
-    
       <p>We will get back to you immediately.</p>
       <p>Best regards,<br>MediPlus Team</p>
       <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
@@ -75,7 +74,11 @@ export const getInquiries = async (req, res, next) => {
     const lastMonthInquiries = await Inquiry.countDocuments({
       createdAt: { $gte: oneMonthAgo },
     });
-    res.status(200).json({ inquiries, totalInquiries, lastMonthInquiries });
+    const totalAnswered = await Inquiry.countDocuments({ isAnswer: true });
+    const totalAnsweredOneMonth = await Inquiry.countDocuments({isAnswer: true, createdAt: { $gte: oneMonthAgo }});
+    const totalNotAnsweredOneMonth = await Inquiry.countDocuments({isAnswer: false, createdAt: { $gte: oneMonthAgo }}); 
+    const totalNotAnswered = await Inquiry.countDocuments({ isAnswer: false });
+    res.status(200).json({ inquiries, totalInquiries, lastMonthInquiries, totalAnswered, totalNotAnswered, totalAnsweredOneMonth, totalNotAnsweredOneMonth });
   } catch (error) {
     next(error);
   }
