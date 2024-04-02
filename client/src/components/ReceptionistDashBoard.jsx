@@ -21,7 +21,7 @@ export default function ReceptionistDashBoard() {
   useEffect(() => {
     const fetchOutPatients = async () => {
       try {
-        const res = await fetch(`/api/patient/getPatients?limit=5`);
+        const res = await fetch(`/api/patient/getPatients?limit=10`);
         const data = await res.json();
         if (res.ok) {
           setOutPatients(data.patients);
@@ -34,7 +34,7 @@ export default function ReceptionistDashBoard() {
     };
     const fetchInquiries = async () => {
       try {
-        const res = await fetch(`/api/inquiry/getInquiries?limit=5`);
+        const res = await fetch(`/api/inquiry/getInquiries?limit=10`);
         const data = await res.json();
         if (res.ok) {
           setInquiries(data.inquiries);
@@ -120,7 +120,7 @@ export default function ReceptionistDashBoard() {
           <div className=" flex justify-between p-3 text-sm font-semibold">
             <h1 className="text-center p-2">Recent Inquiries</h1>
             <Button outline gradientDuoTone="purpleToPink">
-              <Link to={"/dashboard?tab=patients"}>See all</Link>
+              <Link to={"/dashboard?tab=inquiries"}>See all</Link>
             </Button>
           </div>
           <Table>
