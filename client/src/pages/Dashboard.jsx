@@ -12,6 +12,7 @@ import DashStaffManagement from "../components/DashStaffManagement";
 import DashEMPLeave from "../components/DashEMPLeave";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
+import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
 export default function Dashboard() {
   const location = useLocation();
   const [tab, setTab] = useState("");
@@ -50,6 +51,8 @@ export default function Dashboard() {
       {tab === "beds" && <DashBedManagement />}
       {/** <DashWards/> */}
       {tab === "wards" && <DashWards />}
+      {/** <ReceptionistDashBoard/> */}
+      {tab==="receptionist" && <ReceptionistDashBoard/>}
     </div>
   );
 }

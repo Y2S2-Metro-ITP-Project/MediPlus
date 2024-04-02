@@ -16,8 +16,8 @@ import { Link, useLocation } from "react-router-dom";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
-import { FaBed } from 'react-icons/fa';
-import { GiHospital } from 'react-icons/gi';
+import { FaBed } from "react-icons/fa";
+import { GiHospital } from "react-icons/gi";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -50,6 +50,18 @@ export default function DashSideBar() {
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-1">
+          {currentUser.isReceptionist &&(
+            <Link to="/dashboard?tab=receptionist">
+              <Sidebar.Item
+                active={tab === "receptionist" || !tab}
+                icon={HiChartPie}
+                labelColor="dark"
+                as="div"
+              >
+                Dashboard
+              </Sidebar.Item>
+            </Link>
+          )}
           {currentUser && currentUser.isAdmin && (
             <Link to="#">
               <Sidebar.Item
@@ -174,17 +186,18 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
-          {currentUser.isUser && (
-            <Link to="/dashboard?tab=userInquiries">
-              <Sidebar.Item
-                active={tab === "inquiries"}
-                icon={HiAnnotation}
-                as="div"
-              >
-                Inquiries
-              </Sidebar.Item>
-            </Link>
-          )}
+          {currentUser.isUser &&
+            currentUser.isOutPatient(
+              <Link to="/dashboard?tab=userInquiries">
+                <Sidebar.Item
+                  active={tab === "inquiries"}
+                  icon={HiAnnotation}
+                  as="div"
+                >
+                  Inquiries
+                </Sidebar.Item>
+              </Link>
+            )}
           {currentUser.isHRM && (
             <>
               <Link to="/dashboard?tab=staff">
@@ -215,11 +228,7 @@ export default function DashSideBar() {
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=beds">
-                <Sidebar.Item
-                  active={tab === "beds"}
-                  icon={FaBed}
-                  as="div"
-                >
+                <Sidebar.Item active={tab === "beds"} icon={FaBed} as="div">
                   Beds
                 </Sidebar.Item>
               </Link>
