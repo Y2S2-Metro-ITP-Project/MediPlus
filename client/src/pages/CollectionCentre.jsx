@@ -1,20 +1,32 @@
-import { Button, Label, Select, TextInput } from "flowbite-react";
+import { Alert, Button, Label, Select, Spinner, TextInput } from "flowbite-react";
 import React from "react";
 import { useState } from "react";
+//import {useNavigate} from "react-router-dom";
 
 export default function CollectionCentre() {
 
   const [formData, setFormData] = useState({});
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleData = (e) => {
-    setFormData({...formData, [e.target.id]: e.target.value});
+    setFormData({...formData, [e.target.id]: e.target.value.trim() });
   };
 
   const handleSubmit = async(e)=> {
 
     e.preventDefault();
 
+    if(!formData.type || !formData.testsOrderedOnSample || !formData.patientId){
+
+        return setErrorMessage("Please fill out all fields");
+
+    }
+
     try {
+      setLoading(true);
+      setErrorMessage(null);
       const res = await fetch("/api/sample/registerSample", {
         method: "POST",
         headers: {"content-Type": "application/json"},
@@ -23,7 +35,7 @@ export default function CollectionCentre() {
 
       const data = await res.json();
     } catch (error) {
-      
+      setLoading(false);
     }
   }
 
@@ -35,7 +47,7 @@ export default function CollectionCentre() {
         <div className=" font-bold dark:text-white  text-4xl p-10 ">
           Sample Collection
         </div>
-        <div className=" bg-gray-200 ">
+        <div className=" bg-gray-200 dark:bg-slate-800 ">
           <form className="flex flex-col items-center justify-center gap-8" onSubmit={handleSubmit}>
             <div className="flex flex-row gap-6">
 
@@ -81,12 +93,27 @@ export default function CollectionCentre() {
               <TextInput type="text" placeholder="Employee ID" id="collectionEmployeeId" onChange={handleData}/>
             </div>
             </div>
-            <Button className=" bg-gray-600 " type="submit" >
-              Register Sample
+            <Button className=" bg-gray-600 " type="submit" disabled={loading}>
+             {
+                loading ? (
+                  <>
+                  <Spinner size="sm"/> 
+                  <span className="pl-3">Loading...</span>
+                  </>
+                ) : " Register Sample"
+             }
             </Button>
           </form>
+          {errorMessage && (
+            <Alert color="failure" className="mt-5">
+              {errorMessage}
+            </Alert>
+          )}
+          
         </div>
+        
       </div>
+      
     </div>
   );
 }
