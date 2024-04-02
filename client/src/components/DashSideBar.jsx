@@ -124,7 +124,7 @@ export default function DashSideBar() {
                   icon={FaUserInjured}
                   as="div"
                 >
-                  Patients
+                  Outpatients
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inpatients">
