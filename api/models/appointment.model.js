@@ -5,12 +5,12 @@ const appointmentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    doctor: {
-        type: String,
+    doctorId: {
+        type: Number,
         required: true
     },
-    patient: {
-        type: String,
+    patientId: {
+        type: Number,
         required: true
     },
     status: {
@@ -24,7 +24,27 @@ const appointmentSchema = new mongoose.Schema({
     time: {
         type: String,
         required: true
-    }
+    },
+    reason: {
+        type: String,
+        required: true
+    },
+    wardno: {
+        type: Number,
+        required: true
+    },
+    createdAt:{
+        type: Date,
+        default: Date.now
+    },
+    isDeleted:{
+        type: Boolean,
+        default: false
+    },
+    isChanged: {
+        type: Boolean,
+        default: false
+    },
 }, { timestamps: true });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
