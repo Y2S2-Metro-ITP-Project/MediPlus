@@ -3,6 +3,8 @@ import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
+import pdf from "html-pdf";
+import generatePdfFromHtml from "../utils/PatientPDF.js";
 export const registerOutPatient = async (req, res, next) => {
   const {
     name,
@@ -27,7 +29,7 @@ export const registerOutPatient = async (req, res, next) => {
     email: contactEmail,
     password: hashPassword,
     isOutPatient: true,
-    isUser:false,
+    isUser: false,
   });
   try {
     await newUser.save();
@@ -70,11 +72,26 @@ export const registerOutPatient = async (req, res, next) => {
     console.log(error);
     res.status(500).json(error);
   }
-  await sendEmail({
-    to: contactEmail,
-    subject: "Welcome to Ismails Pvt Hospital!",
-    text: `Dear ${name},\n\nYour account has been created successfully. Here are your login credentials:\n\nEmail: ${contactEmail}\nPassword: ${password}\n\nPlease keep this information secure.\n\nBest regards,\nThe Hospital Team`,
-  });
+  try {
+    await sendEmail({
+      to: contactEmail,
+      subject: "Welcome to Ismails Pvt Hospital!",
+      html: `
+      <p>Dear User,</p>
+      <p>Your account has been created successfully. Here are your login credentials:</p>
+      <ul>
+        <li><strong>Email:</strong> example@example.com</li>
+        <li><strong>Password:</strong> 123456</li>
+      </ul>
+      <p>Please keep this information secure.</p>
+      <p>Best regards,<br>The MediPlus Team</p>
+      <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
+      <P>This is an auto-generated email. Please do not reply to this email.</p>
+    `,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const getPatients = async (req, res) => {
@@ -161,10 +178,8 @@ export const filterPatients = async (req, res, next) => {
     let query = {};
     const filterOption = req.body.filterOption;
 
-
     const currentDate = new Date();
     let startDate, endDate;
-
 
     switch (filterOption) {
       case "today":
@@ -214,6 +229,103 @@ export const filterPatients = async (req, res, next) => {
 
     const patients = await Patient.find(query);
     res.status(200).json(patients);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const downloadPDFPatient = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    const patient = await Patient.findById(req.params.patientID).populate(
+      "user"
+    );
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+    const name = patient.name;
+    const gender = patient.gender;
+    const contactEmail = patient.contactEmail;
+    const contactPhone = patient.contactPhone;
+    const createdAt = patient.createdAt;
+    const dateOfBirth = patient.dateOfBirth;
+    const address = patient.address;
+    const identification = patient.identification;
+    const emergencyName = patient.emergencyContact.name;
+    const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
+    const patientProfilePicture = patient.patientProfilePicture;
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Patient Registration Report</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            h1, h2 {
+                margin-bottom: 10px;
+                color: #333;
+            }
+            p {
+                margin-bottom: 5px;
+                color: #666;
+            }
+            .section {
+                margin-bottom: 20px;
+            }
+            .patient-picture {
+                width: 200px;
+                height: auto;
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Patient Medical Report</h1>
+        </div>
+        <div class="section">
+        <h2>Patient Picture</h2>
+        <img class="patient-picture" src="${patientProfilePicture}" alt="Patient Picture">
+    </div>
+        <div class="section">
+            <h2>Personal Information</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Gender:</strong> ${gender}</p>
+            <p><strong>Date of Birth:</strong> ${dateOfBirth}</p>
+            <p><strong>Contact Email:</strong> ${contactEmail}</p>
+            <p><strong>Contact Phone:</strong> ${contactPhone}</p>
+            <p><strong>Address:</strong> ${address}</p>
+            <p><strong>Identification:</strong> ${identification}</p>
+        </div>
+        <div class="section">
+            <h2>Emergency Contact Information</h2>
+            <p><strong>Name:</strong> ${emergencyName}</p>
+            <p><strong>Phone Number:</strong> ${emergencyPhoneNumber}</p>
+        </div>
+        <div class="section">
+            <h2>Additional Information</h2>
+            <p><strong>Created At:</strong> ${createdAt}</p>
+        </div>
+    </body>
+    </html>
+    
+`;
+    const pdfBuffer = await generatePdfFromHtml(htmlContent);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
   } catch (error) {
     next(error);
   }
