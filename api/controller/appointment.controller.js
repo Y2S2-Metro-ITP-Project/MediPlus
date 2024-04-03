@@ -87,26 +87,22 @@ export const deleteAppointment = async (req, res, next) => {
 };
 
 export const searchAppointments = async (req, res, next) => {
-  try {
-    const searchTerm = req.body.search;
-    const appointments = await Appointment.find({
-      $or: [
-        {
-          type: { $regex: new RegExp(searchTerm, "i") },
-        },
-        {
-          reason: { $regex: new RegExp(searchTerm, "i") },
-        },
-      ],
-    });
-    if (!appointments || appointments.length === 0) {
-      return next(errorHandler(404, "No appointment found with this search term"));
+    try {
+      const searchTerm = req.body.search;
+      const appointments = await Appointment.find({
+        $or: [
+          { type: { $regex: new RegExp(searchTerm, "i") } },
+          { reason: { $regex: new RegExp(searchTerm, "i") } },
+        ],
+      });
+      if (!appointments || appointments.length === 0) {
+        return next(errorHandler(404, "No appointments found with this search term"));
+      }
+      res.status(200).json(appointments);
+    } catch (error) {
+      next(error);
     }
-    res.status(200).json(appointments);
-  } catch (error) {
-    next(error);
-  }
-};
+  };
 
 export const filterAppointments = async (req, res, next) => {
     if (

@@ -73,7 +73,7 @@ export default function DashAppointment() {
   const handleAppointmentDelete = async (e) => {
     try {
       const res = await fetch(
-        "/api/appointment/delete/${appointmentIdToDelete}",
+        `/api/appointment/delete/${appointmentIdToDelete}`, // Use backticks for string interpolation
         {
           method: "DELETE",
         }
@@ -94,6 +94,7 @@ export default function DashAppointment() {
       console.log(error);
     }
   };
+  
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -126,17 +127,17 @@ export default function DashAppointment() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ search: formData.search }),
       });
       const data = await res.json();
       if (res.ok) {
-        setFormData({});
         setAppointments(data);
       } else {
         setAppointments([]);
       }
     } catch (error) {
-      toast.error(error.message);
+      console.log(error);
+      // Handle error
     }
   };
 
