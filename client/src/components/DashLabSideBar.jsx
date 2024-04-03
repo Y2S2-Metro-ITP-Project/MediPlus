@@ -4,8 +4,10 @@ import { FaHouseMedical } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ImLab } from "react-icons/im";
+import { useDispatch } from "react-redux";
 
 export default function DashLabSideBar() {
+  const dispatch = useDispatch();
   const location = useLocation();
   const [tab, setTab] = useState("");
   useEffect(() => {
@@ -19,13 +21,13 @@ export default function DashLabSideBar() {
   return (
     <Sidebar className=" w-full md:w-56">
       <Sidebar.Items>
-        <Sidebar.ItemGroup>
+        <Sidebar.ItemGroup className="flex flex-col">
           <Link to="/lab-dashboard?tab=sampleCollection">
             <Sidebar.Item
               active={tab === "sampleCollection"}
               icon={FaHouseMedical}
-              label={"User"}
               labelColor="dark"
+              as="div"
             >
               Collection Center
             </Sidebar.Item>
@@ -43,8 +45,8 @@ export default function DashLabSideBar() {
             </Sidebar.Item>
           </Link>
 
-          <Link to=" ">
-            <Sidebar.Item active={tab === "testManager"} icon={ImLab} as="div">
+          <Link to="/lab-dashboard?tab=tests">
+            <Sidebar.Item active={tab === "tests"} icon={ImLab} as="div">
               Tests Manager
             </Sidebar.Item>
           </Link>
@@ -61,7 +63,7 @@ export default function DashLabSideBar() {
               icon={ImLab}
               as="div"
             >
-              Test Orders Manager
+              Test Order Manager
             </Sidebar.Item>
           </Link>
 

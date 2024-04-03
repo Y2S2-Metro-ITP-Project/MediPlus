@@ -51,96 +51,90 @@ export default function DashCollectionCentre() {
   console.log(formData);
 
   return (
-    <div className="min-h-screen mt-20">
-      <div className=" flex flex-col items-center justify-center">
-        <h1 className=" font-semibold text-3xl">Sample Collection</h1>
-        <div className=" bg-gray-200 dark:bg-slate-800 ">
-          <form
-            className="flex flex-col items-center justify-center gap-8"
-            onSubmit={handleSubmit}
-          >
-            <div className="flex flex-row gap-6">
-              <div className="mb-3 block">
-                <Label className="" value="Select the sample type:" />
-                <Select id="type" required onChange={handleData}>
-                  <option>Blood</option>
-                  <option>Urine</option>
-                  <option>Mucus</option>
-                  <option>Saliva</option>
-                  <option>Stool</option>
-                </Select>
-              </div>
+    <div className=" max-w-lg mx-auto p-3 w-full">
+      <h1 className=" my-7 text-center font-semibold text-3xl">
+        Sample Collection
+      </h1>
+      <div className=" bg-gray-100 dark:bg-slate-800 p-10 rounded-lg ">
+        <form className="flex flex-col" onSubmit={handleSubmit}>
+          <div className=" mb-4 block">
+            <Label className="" value="Patient Name:" />
+            <p id="patient_name">patient name placeholder</p>
+          </div>
 
-              <div className=" mb-3 block">
-                <Label
-                  className=""
-                  value="Please enter tests orderd on sample:"
-                />
-                <TextInput
-                  type="text"
-                  placeholder="Lab Test"
-                  id="testsOrderedOnSample"
-                  onChange={handleData}
-                />
-              </div>
+          <div className=" mb-4 block">
+            <Label className="" value="Sample collection Employee:" />
 
-              <div className=" mb-3 block">
-                <Label className="" value="Patient ID:" />
-                <TextInput
-                  type="text"
-                  placeholder="Patient ID"
-                  id="patientId"
-                  onChange={handleData}
-                />
-              </div>
+            {currentUser ? (
+              <span className="block text-sm ">
+                Employee name: {currentUser.username}
+              </span>
+            ) : (
+              <span className="block text-base text-red-700 ">
+                Authorized employee not logged in
+              </span>
+            )}
+          </div>
 
-              <div className=" mb-3 block">
-                <Label className="" value="Patient Name:" />
-                <p id="patient_name">patient name placeholder</p>
-              </div>
-
-              <div className=" mb-3 block">
-                <Label className="" value="Sample collection Employee:" />
-
-                {currentUser ? (
-                  <span className="block text-sm ">
-                    Employee name: @{currentUser.username}
-                  </span>
-                ) : (
-                  <span className="block text-base text-red-700 ">
-                    Authorized employee not logged in
-                  </span>
-                )}
-                {/* <TextInput
-                  type="text"
-                  placeholder="Employee ID"
-                  id="collectionEmployeeId"
-                  onChange={handleData}
-                /> */}
-              </div>
-            </div>
-            <Button
-              gradientDuoTone="purpleToBlue"
-              outline
-              type="submit"
-              disabled={loading}
+          <div className="mb-4 block">
+            <Label className="mb-2 block" value="Select the sample type:" />
+            <Select
+              id="type"
+              placeholder="--select sample type--"
+              required
+              onChange={handleData}
             >
-              {loading ? (
-                <>
-                  <Spinner size="sm" />
-                  <span className="pl-3">Loading...</span>
-                </>
-              ) : (
-                " Register Sample"
-              )}
-            </Button>
-          </form>
-          {errorMessage && (
-            <Alert color="failure" className="mt-5">
-              {errorMessage}
-            </Alert>
-          )}
-        </div>
+              <option value="">--please select an option--</option>
+              <option value="BLOOD">Blood</option>
+              <option value="URINE">Urine</option>
+              <option value="MUCUS">Mucus</option>
+              <option value="SALIVA">Saliva</option>
+              <option value="STOOL">Stool</option>
+            </Select>
+          </div>
+
+          <div className=" mb-4 block">
+            <Label className="mb-2 block" value="Please enter tests orderd on sample:" />
+            <TextInput
+              type="text"
+              placeholder="Lab Test"
+              id="testsOrderedOnSample"
+              onChange={handleData}
+            />
+          </div>
+
+          <div className=" mb-4 block">
+            <Label className="mb-2 block" value="Patient ID:" />
+            <TextInput
+              type="text"
+              placeholder="Patient ID"
+              id="patientId"
+              onChange={handleData}
+            />
+          </div>
+
+          <Button
+            className="mt-4 block"
+            gradientDuoTone="purpleToBlue"
+            outline
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Spinner size="sm" />
+                <span className="pl-3">Loading...</span>
+              </>
+            ) : (
+              " Register Sample"
+            )}
+          </Button>
+        </form>
+        {errorMessage && (
+          <Alert color="failure" className="mt-5">
+            {errorMessage}
+          </Alert>
+        )}
       </div>
     </div>
   );

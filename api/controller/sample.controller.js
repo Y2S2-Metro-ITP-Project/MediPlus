@@ -51,7 +51,7 @@ export const registerSample = async (req, res) => {
   try {
     await newSample.save();
     res.status(200).json(newSample);
-    res.json({ message: "sample registered successfully" });
+   
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

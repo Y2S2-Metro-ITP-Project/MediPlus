@@ -12,6 +12,12 @@ const orderedTestSchema = new mongoose.Schema(
       required: true,
     },
 
+    orderPriority: {
+      type: String,
+      enums: ["High", "Normal"],
+      default: "Normal",
+    },
+
     orderStatus: {
       type: String,
       enums: ["OnHold", "Processing", "Complete"],

@@ -1,5 +1,5 @@
 import LabTest from "../models/labtest.model.js";
-//import { errorHandler } from "../utils/error";
+import { errorHandler } from "../utils/error.js";
 
 //GET ALL LAB TEST TYPES
 export const getLabTests = async (req, res) => {
@@ -50,7 +50,7 @@ export const createLabTest = async (req, res) => {
   });
   try {
     await newlabtest.save();
-    res.json({message:"registered new test succefully"});
+    res.json({ message: "registered new test succefully" });
     res.status(200).json(newlabtest);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -59,7 +59,12 @@ export const createLabTest = async (req, res) => {
 
 //UPDATE EXISTING LAB TEST
 
-export const updateLabTest = async (req, res) => {
+export const updateLabTest = async (req, res, next) => {
+  if (!req.user.isLabTech || !req.user.isAdmin) {
+    return next(
+      errorHandler(403, "You are not allowed to modify these resources")
+    );
+  }
   try {
     const { id } = req.params;
 

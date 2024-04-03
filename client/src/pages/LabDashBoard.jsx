@@ -2,6 +2,7 @@ import { useEffect,useState } from "react";
 import { useLocation } from "react-router-dom";
 import DashLabSideBar from "../components/DashLabSideBar"
 import DashCollectionCentre from "../components/DashCollectionCentre";
+import DashTestManager from "../components/DashTestManager";
 
 export default function LabDashBoard() {
 
@@ -19,13 +20,15 @@ export default function LabDashBoard() {
   }, [location.search]
   );
   return (
-    <div className="min-h-screen flex flex-col md:flex-grow">
+    <div className="min-h-screen flex flex-col md:flex-row">
       <div className=" md: w-56">
         {/* Sidebar */}
         <DashLabSideBar/>
       </div>
       {/*Sample Collection Center */}
       {tab === 'sampleCollection' && <DashCollectionCentre /> }
+      {/*Lab tests manager*/}
+      {tab=== "tests" && <DashTestManager/>}
     </div>
   )
 }

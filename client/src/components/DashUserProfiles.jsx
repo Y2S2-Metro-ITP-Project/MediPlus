@@ -107,7 +107,7 @@ export default function DashUserProfiles() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
   const handleReset = async () => {
     try {
       const res = await fetch(`/api/user/getusers`);
@@ -123,7 +123,7 @@ export default function DashUserProfiles() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -143,7 +143,11 @@ export default function DashUserProfiles() {
             </Button>
           </form>
         </div>
-        <Button className="w-200 h-10 ml-6lg:ml-0 lg:w-32" color="gray" onClick={handleReset}>
+        <Button
+          className="w-200 h-10 ml-6lg:ml-0 lg:w-32"
+          color="gray"
+          onClick={handleReset}
+        >
           Reset
         </Button>
         <select
@@ -154,15 +158,15 @@ export default function DashUserProfiles() {
           <option value="defaultvalue" disabled selected>
             Choose a filter option
           </option>
-            <option value="user">User</option>
-            <option value="outPatients">Out Patients</option>
-            <option value="inPatients">In Patients</option>
-            <option value="doctor">Doctor</option>
-            <option value="nurse">Nurse</option>
-            <option value="hrManager">HR Manager</option>
-            <option value="labTechnician">Lab Technician</option>
-            <option value="pharmacist">Pharmacist</option>
-            <option value="receptionist">Receptionist</option>
+          <option value="user">User</option>
+          <option value="outPatients">Out Patients</option>
+          <option value="inPatients">In Patients</option>
+          <option value="doctor">Doctor</option>
+          <option value="nurse">Nurse</option>
+          <option value="hrManager">HR Manager</option>
+          <option value="labTechnician">Lab Technician</option>
+          <option value="pharmacist">Pharmacist</option>
+          <option value="receptionist">Receptionist</option>
         </select>
       </div>
       {currentUser.isAdmin && users.length > 0 ? (
