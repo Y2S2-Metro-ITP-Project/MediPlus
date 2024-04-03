@@ -234,6 +234,106 @@ export const filterPatients = async (req, res, next) => {
   }
 };
 
+export const updateOutPatient = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "You are not allowed to access this resource")
+    );
+  }
+  if (req.body.name) {
+    if (req.body.name < 7 || req.body.name > 50) {
+      return next(
+        errorHandler(400, "Name must be between 7 and 50 characters")
+      );
+    }
+    if (!req.body.name.match(/^[a-zA-Z\s]+$/)) {
+      return next(
+        errorHandler(400, "Name must contain only alphabets and spaces")
+      );
+    }
+  }
+  if (req.body.identification) {
+    if (req.body.identification.length !== 12) {
+      return next(errorHandler(400, "Identification must be 13 characters"));
+    }
+    if (!req.body.identification.match(/^[0-9]+$/)) {
+      return next(
+        errorHandler(400, "Identification must contain only numbers")
+      );
+    }
+  }
+  if (req.body.emergencyPhoneNumber) {
+    if (req.body.emergencyPhoneNumber.length !== 10) {
+      return next(
+        errorHandler(400, "Emergency Phone Number must be 10 characters")
+      );
+    }
+    if (!req.body.emergencyPhoneNumber.match(/^[0-9]+$/)) {
+      return next(
+        errorHandler(400, "Emergency Phone Number must contain only numbers")
+      );
+    }
+  }
+  if (req.body.contactPhone) {
+    if (req.body.contactPhone.length !== 10) {
+      return next(
+        errorHandler(400, "Contact Phone Number must be 10 characters")
+      );
+    }
+    if (!req.body.contactPhone.match(/^[0-9]+$/)) {
+      return next(
+        errorHandler(400, "Contact Phone Number must contain only numbers")
+      );
+    }
+  }
+  if (req.body.contactEmail) {
+    if (!req.body.contactEmail.match(/^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$/)) {
+      return next(errorHandler(400, "Invalid Email"));
+    }
+  }
+  if (req.body.address) {
+    if (req.body.address.length < 10 || req.body.address.length > 100) {
+      return next(
+        errorHandler(400, "Address must be between 10 and 100 characters")
+      );
+    }
+  }
+  if (req.body.dateOfBirth) {
+    const dob = new Date(req.body.dateOfBirth);
+    const minDate = new Date("1900-01-01");
+    const maxDate = new Date();
+    if (dob < minDate || dob > maxDate) {
+      return next(errorHandler(400, "Invalid Date of Birth"));
+    }
+  }
+  console.log(req.body);
+  try {
+    const patient = await Patient.findByIdAndUpdate(
+      req.params.patientID,
+      {
+        $set: {
+          name: req.body.name,
+          identification: req.body.identification,
+          "emergencyContact.name": req.body.emergencyName,
+          "emergencyContact.phoneNumber": req.body.emergencyPhoneNumber,
+          contactPhone: req.body.contactPhone,
+          contactEmail: req.body.contactEmail,
+          address: req.body.address,
+          dateOfBirth: req.body.dateOfBirth,
+          patientProfilePicture: req.body.patientPicture,
+        },
+      },
+      { new: true }
+    );
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const downloadPDFPatient = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
@@ -258,7 +358,7 @@ export const downloadPDFPatient = async (req, res, next) => {
     const emergencyName = patient.emergencyContact.name;
     const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
     const patientProfilePicture = patient.patientProfilePicture;
-
+    const age= new Date().getFullYear()-new Date(dateOfBirth).getFullYear();
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -273,6 +373,7 @@ export const downloadPDFPatient = async (req, res, next) => {
             h1, h2 {
                 margin-bottom: 10px;
                 color: #333;
+                text-align: center; /* Center the headings */
             }
             p {
                 margin-bottom: 5px;
@@ -285,7 +386,8 @@ export const downloadPDFPatient = async (req, res, next) => {
                 width: 200px;
                 height: auto;
                 border: 1px solid #ccc;
-                margin-bottom: 10px;
+                margin: 0 auto; /* Center the picture */
+                display: block; /* Ensure the picture is displayed as a block element */
             }
         </style>
     </head>
@@ -294,14 +396,15 @@ export const downloadPDFPatient = async (req, res, next) => {
             <h1>Patient Medical Report</h1>
         </div>
         <div class="section">
-        <h2>Patient Picture</h2>
-        <img class="patient-picture" src="${patientProfilePicture}" alt="Patient Picture">
-    </div>
+            <h2>Patient Picture</h2>
+            <img class="patient-picture" src="${patientProfilePicture}" alt="Patient Picture">
+        </div>
         <div class="section">
             <h2>Personal Information</h2>
             <p><strong>Name:</strong> ${name}</p>
             <p><strong>Gender:</strong> ${gender}</p>
             <p><strong>Date of Birth:</strong> ${dateOfBirth}</p>
+            <p><strong>Age:</strong> ${age}</p>
             <p><strong>Contact Email:</strong> ${contactEmail}</p>
             <p><strong>Contact Phone:</strong> ${contactPhone}</p>
             <p><strong>Address:</strong> ${address}</p>
@@ -318,6 +421,7 @@ export const downloadPDFPatient = async (req, res, next) => {
         </div>
     </body>
     </html>
+    
     
 `;
     const pdfBuffer = await generatePdfFromHtml(htmlContent);

@@ -187,6 +187,8 @@ export default function DashOutPatients() {
   const [fileUploadSuccess, setFileUploadSuccess] = useState(false);
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [showPatientDetails, setShowPatientDetails] = useState(false);
+  const [updatePatientModal, setUpdatePatientModal] = useState(false);
+  const [patientIdToUpdate, setPatientIdToUpdate] = useState("");
   const [patientDetails, setPatientDetails] = useState({
     name: false,
     gender: false,
@@ -356,24 +358,77 @@ export default function DashOutPatients() {
       }
       const pdfBlob = await res.blob();
 
-      // Create blob URL
       const url = window.URL.createObjectURL(pdfBlob);
 
-      // Create temporary link element
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `Patient-${name}.pdf`; // Set download attribute
+      a.download = `Patient-${name}.pdf`;
       document.body.appendChild(a);
-
-      // Click link to initiate download
       a.click();
-
-      // Remove link from DOM
       document.body.removeChild(a);
     } catch (error) {
       console.log(error);
     }
   };
+  const handlePatientUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/patient/update/${patientIdToUpdate}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUpdatePatientModal(false);
+        setFormData({});
+        setImageFile(null);
+        setImageFileUploadingError(null);
+        setFileUploadSuccess(null);
+        setImageFileUploadingProgress(null);
+        setImageFileUploadingError(null);
+        fetchPatients();
+        toast.success("Patient Updated Successfully");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error);
+    }
+  };
+  const handleSetPatientDetails = (
+    name,
+    gender,
+    contactEmail,
+    contactPhone,
+    createdAt,
+    illness,
+    dateOfBirth,
+    address,
+    identification,
+    emergencyName,
+    emergencyPhoneNumber,
+    patientProfilePicture
+  ) => {
+    setPatientDetails({
+      name,
+      gender,
+      contactEmail,
+      contactPhone,
+      createdAt,
+      illness,
+      dateOfBirth,
+      address,
+      identification,
+      emergencyName,
+      emergencyPhoneNumber,
+      patientProfilePicture,
+    });
+  };
+  console.log(formData);
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -471,8 +526,22 @@ export default function DashOutPatients() {
                     <Link className="text-teal-500 hover:underline">
                       <span
                         onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
+                          setPatientIdToUpdate(patient._id);
+                          handleSetPatientDetails(
+                            patient.name,
+                            patient.gender,
+                            patient.contactEmail,
+                            patient.contactPhone,
+                            patient.createdAt,
+                            patient.illness,
+                            patient.dateOfBirth,
+                            patient.address,
+                            patient.identification,
+                            patient.emergencyContact.name,
+                            patient.emergencyContact.phoneNumber,
+                            patient.patientProfilePicture
+                          );
+                          setUpdatePatientModal(true);
                         }}
                       >
                         Update
@@ -517,6 +586,7 @@ export default function DashOutPatients() {
       ) : (
         <p>You have no Patients</p>
       )}
+      {/** Delete Patient Modal */}
       <Modal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -541,6 +611,7 @@ export default function DashOutPatients() {
           </div>
         </Modal.Body>
       </Modal>
+      {/** Add Patient Modal */}
       <Modal
         show={addPatientModal}
         onClose={() => setAddPateintModal(false)}
@@ -699,6 +770,7 @@ export default function DashOutPatients() {
           </form>
         </Modal.Body>
       </Modal>
+      {/** Show Patient Details Modal */}
       <Modal
         show={showPatientDetails}
         onClose={() => setShowPatientDetails(false)}
@@ -768,6 +840,166 @@ export default function DashOutPatients() {
               Close
             </Button>
           </div>
+        </Modal.Body>
+      </Modal>
+      {/** Update Patient Modal */}
+      <Modal
+        show={updatePatientModal}
+        onClose={() => setUpdatePatientModal(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+              Update Patient
+            </h3>
+          </div>
+          <form onSubmit={handlePatientUpdate}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="name">Patient Name</Label>
+                <TextInput
+                  type="text"
+                  placeholder={patientDetails.name}
+                  id="name"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <TextInput
+                  type="date"
+                  id="dateOfBirth"
+                  placeholder={patientDetails.dateOfBirth}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select
+                  id="gender"
+                  placeholder={patientDetails.dateOfBirth}
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <TextInput
+                  type="text"
+                  id="address"
+                  placeholder={patientDetails.address}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contactPhone">Contact Phone</Label>
+                <TextInput
+                  type="tel"
+                  id="contactPhone"
+                  placeholder={patientDetails.contactPhone}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contactEmail">Contact Email</Label>
+                <TextInput
+                  type="email"
+                  placeholder={patientDetails.contactEmail}
+                  id="contactEmail"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="identification">Identification</Label>
+                <TextInput
+                  type="text"
+                  placeholder={patientDetails.identification}
+                  id="identification"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyName">Emergency Contact Name</Label>
+                <TextInput
+                  type="text"
+                  id="emergencyName"
+                  placeholder={patientDetails.emergencyName}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyPhoneNumber">
+                  Emergency Contact Phone Number
+                </Label>
+                <TextInput
+                  type="tel"
+                  id="emergencyPhoneNumber"
+                  placeholder={patientDetails.emergencyPhoneNumber}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label className="mg">Patient Image</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="input-field ml-5"
+                />
+                {imageFileUploadingProgress && (
+                  <div className="mt-2">
+                    <progress value={imageFileUploadingProgress} max="100" />
+                  </div>
+                )}
+                {imageFileUploadingError && (
+                  <div className="mt-2">
+                    <p className="text-red-500">{imageFileUploadingError}</p>
+                  </div>
+                )}
+                {fileUploadSuccess && (
+                  <div className="mt-2">
+                    <p className="text-green-500">{fileUploadSuccess}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-center mt-3">
+              <Button color="blue" type="submit" outline>
+                Submit
+              </Button>
+              <Button
+                className="ml-4"
+                color="red"
+                onClick={() => {
+                  setUpdatePatientModal(false);
+                  setFormData({});
+                  setImageFile(null);
+                  setImageFileUploadingError(null);
+                  setFileUploadSuccess(null);
+                  setImageFileUploadingProgress(null);
+                  setImageFileUploadingError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </Modal.Body>
       </Modal>
     </div>

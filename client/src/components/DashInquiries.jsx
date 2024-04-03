@@ -142,7 +142,7 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if(res.ok){
-        setInquirires(data.inquiries);
+        setInquirires(data);
         setShowMore(data.length >= 9);
       }else{
         setInquirires([]);
@@ -211,6 +211,7 @@ export default function DashInquiries() {
       setShowMore(data.inquiries.length >= 9);
     }
   };
+  
   return (
     
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
