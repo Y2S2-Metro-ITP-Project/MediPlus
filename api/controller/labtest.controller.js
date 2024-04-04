@@ -50,8 +50,8 @@ export const createLabTest = async (req, res) => {
   });
   try {
     await newlabtest.save();
-    res.json({ message: "registered new test succefully" });
-    res.status(200).json(newlabtest);
+    res.json({ message: "registered new test succefully" , newlabtest});
+   
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
