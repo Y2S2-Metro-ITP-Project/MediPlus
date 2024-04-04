@@ -34,6 +34,9 @@ export default function DashInquiries() {
   const [totalUnAnsweredInquiries, setTotalUnAnsweredInquiries] = useState(0);
   const [totalAnweredOneMonth, setTotalAnsweredOneMonth] = useState(0);
   const [totalUnAnsweredOneMonth, setTotalUnAnsweredOneMonth] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [inquiriesPerPage, setInquiriesPerPage] = useState(10);
   const fetchInquires = async () => {
     try {
       const res = await fetch(`/api/inquiry/getinquiries`);
@@ -141,15 +144,15 @@ export default function DashInquiries() {
         body: JSON.stringify({ filterOption: selectedOption }),
       });
       const data = await res.json();
-      if(res.ok){
+      if (res.ok) {
         setInquirires(data);
         setShowMore(data.length >= 9);
-      }else{
+      } else {
         setInquirires([]);
       }
     } catch (error) {
       console.log(error.message);
-      toast.error(error.message)
+      toast.error(error.message);
     }
   };
   const handleReplySubmit = async (e) => {
@@ -201,7 +204,6 @@ export default function DashInquiries() {
       toast.error(error.message);
     }
   };
-
   const handleReset = async () => {
     setSearchTerm("");
     const res = await fetch(`/api/inquiry/getinquiries`);
@@ -211,68 +213,66 @@ export default function DashInquiries() {
       setShowMore(data.inquiries.length >= 9);
     }
   };
-  
+
   return (
-    
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <div className="p-3 md:mx-auto">
-      <div className=" flex-wrap flex gap-4 justify-center">
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-          <div className="flex justify-between">
-            <div className="">
-              <h3 className="text-gray-500 text-md uppercase">
-                Total Inquiries
-              </h3>
-              <p className="text-2xl">{totalInquiries}</p>
+        <div className=" flex-wrap flex gap-4 justify-center">
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Total Inquiries
+                </h3>
+                <p className="text-2xl">{totalInquiries}</p>
+              </div>
+              <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
-            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+                {lastmonthInquiries}
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
           </div>
-          <div className="flex gap-2 text-sm">
-            <span className="text-green-500 flex items-center">
-              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              {lastmonthInquiries}
-            </span>
-            <div className="text-gray-500">Last Month</div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Completed Inquiries
+                </h3>
+                <p className="text-2xl">{totalAnsweredInquiries}</p>
+              </div>
+              <HiAnnotation className="bg-green-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+                {totalAnweredOneMonth}
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Pending Inquiries
+                </h3>
+                <p className="text-2xl">{totalUnAnsweredInquiries}</p>
+              </div>
+              <HiAnnotation className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+                {totalUnAnsweredOneMonth}
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
           </div>
         </div>
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-          <div className="flex justify-between">
-            <div className="">
-              <h3 className="text-gray-500 text-md uppercase">
-                Completed Inquiries
-              </h3>
-              <p className="text-2xl">{totalAnsweredInquiries}</p>
-            </div>
-            <HiAnnotation className="bg-green-700 text-white rounded-full text-5xl p-3 shadow-lg" />
-          </div>
-          <div className="flex gap-2 text-sm">
-            <span className="text-green-500 flex items-center">
-              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              {totalAnweredOneMonth}
-            </span>
-            <div className="text-gray-500">Last Month</div>
-          </div>
-        </div>
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-          <div className="flex justify-between">
-            <div className="">
-              <h3 className="text-gray-500 text-md uppercase">
-                Pending Inquiries
-              </h3>
-              <p className="text-2xl">{totalUnAnsweredInquiries}</p>
-            </div>
-            <HiAnnotation className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
-          </div>
-          <div className="flex gap-2 text-sm">
-            <span className="text-green-500 flex items-center">
-              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              {totalUnAnsweredOneMonth}
-            </span>
-            <div className="text-gray-500">Last Month</div>
-          </div>
-        </div>
-      </div>
-      
       </div>
       <ToastContainer />
       <div className="flex justify-between items-center mb-4">
@@ -311,7 +311,8 @@ export default function DashInquiries() {
           <option value="notanswer">UnAnswered</option>
         </select>
       </div>
-      {(currentUser.isAdmin || currentUser.isReceptionist) && inquiries.length > 0 ? (
+      {(currentUser.isAdmin || currentUser.isReceptionist) &&
+      inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>

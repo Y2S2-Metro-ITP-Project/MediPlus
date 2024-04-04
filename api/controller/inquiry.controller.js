@@ -50,7 +50,7 @@ export const submit = async (req, res, next) => {
 };
 
 export const getInquiries = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -100,7 +100,7 @@ export const getInquiries = async (req, res, next) => {
 };
 
 export const deleteInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to delete these resources")
     );
@@ -141,7 +141,7 @@ export const updateInquiry = async (req, res, next) => {
 };
 
 export const searchInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -161,7 +161,7 @@ export const searchInquiry = async (req, res, next) => {
 };
 
 export const filterInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -187,7 +187,7 @@ export const filterInquiry = async (req, res, next) => {
 };
 
 export const getUserInquiry = async (req, res, next) => {
-  if (!req.user) {
+  if (!req.user && !req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -251,7 +251,7 @@ export const getUserInquiry = async (req, res, next) => {
 };
 
 export const filterUserInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser && !req.user.isHeadNurse) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );

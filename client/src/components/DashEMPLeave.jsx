@@ -21,7 +21,7 @@ export default function DashEMPLeave() {
 
   const fetchLeaves = async () => {
     try {
-      const response = await fetch(`/api/leaves/getAllLeaves`);
+      const response = await fetch(`/api/user/getAllLeaves`);
       if (!response.ok) {
         throw new Error("Failed to fetch leaves");
       }

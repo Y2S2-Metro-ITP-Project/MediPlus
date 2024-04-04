@@ -80,8 +80,8 @@ export const registerOutPatient = async (req, res, next) => {
       <p>Dear User,</p>
       <p>Your account has been created successfully. Here are your login credentials:</p>
       <ul>
-        <li><strong>Email:</strong> example@example.com</li>
-        <li><strong>Password:</strong> 123456</li>
+        <li><strong>Email:</strong>${contactEmail}</li>
+        <li><strong>Password:</strong>${password}</li>
       </ul>
       <p>Please keep this information secure.</p>
       <p>Best regards,<br>The MediPlus Team</p>
@@ -434,3 +434,20 @@ export const downloadPDFPatient = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getPatient = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "You are not allowed to access this resource")
+    );
+  }
+  try {
+    const patient = await Patient.findById(req.params.patientId);
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+}

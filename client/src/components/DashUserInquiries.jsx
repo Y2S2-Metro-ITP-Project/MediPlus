@@ -79,7 +79,7 @@ export default function DashUserInquiries() {
         console.log(error);
       }
     };
-    if (currentUser.isUser) {
+    if (currentUser.isUser || currentUser.isHeadNurse || currentUser.isReceptionist) {
       fetchUserInquires();
     }
   }, [currentUser._id]);

@@ -15,6 +15,7 @@ import { DashaddEmp } from "../components/DashaddEmp";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
 import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
+import DashOutPatientProfile from "../components/DashOutPatientProfile";
 
 
 
@@ -62,6 +63,8 @@ export default function Dashboard() {
       {tab === "wards" && <DashWards />}
       {/** <ReceptionistDashBoard/> */}
       {tab==="receptionist" && <ReceptionistDashBoard/>}
+      {/**<DashPatientProfile */}
+      {tab==="PatientProfile" && <DashOutPatientProfile/>}
     </div>
   );
 }

@@ -16,8 +16,6 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { Link, json } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
-import { get, set } from "mongoose";
-import { saveAs } from "file-saver";
 import {
   getStorage,
   ref,
@@ -341,35 +339,6 @@ export default function DashOutPatients() {
     });
     setShowPatientDetails(true);
   };
-  const handleDownloadPdf = async (name) => {
-    try {
-      const res = await fetch(
-        `/api/patient/DownloadPDFPatient/${patientIdDownloadPDF}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ patientId: patientIdDownloadPDF }),
-        }
-      );
-      if (!res.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-      const pdfBlob = await res.blob();
-
-      const url = window.URL.createObjectURL(pdfBlob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Patient-${name}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (error) {
-      console.log(error);
-    }
-  };
   const handlePatientUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -428,7 +397,6 @@ export default function DashOutPatients() {
       patientProfilePicture,
     });
   };
-  console.log(formData);
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -490,7 +458,6 @@ export default function DashOutPatients() {
               <Table.HeadCell>Patient Details</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
-              <Table.HeadCell>Additional</Table.HeadCell>
             </Table.Head>
             {patients.map((patient) => (
               <Table.Body className="divide-y" key={patient._id}>
@@ -502,25 +469,11 @@ export default function DashOutPatients() {
                   <Table.Cell>{patient.contactEmail}</Table.Cell>
                   <Table.Cell>{patient.contactPhone}</Table.Cell>
                   <Table.Cell>
-                    <HiEye
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() =>
-                        handlePatientDetailsView(
-                          patient.name,
-                          patient.gender,
-                          patient.contactEmail,
-                          patient.contactPhone,
-                          patient.createdAt,
-                          patient.illness,
-                          patient.dateOfBirth,
-                          patient.address,
-                          patient.identification,
-                          patient.emergencyContact.name,
-                          patient.emergencyContact.phoneNumber,
-                          patient.patientProfilePicture
-                        )
-                      }
-                    />
+                    <Link
+                      to={`/dashboard?tab=PatientProfile&id=${patient._id}`}
+                    >
+                      <HiEye className="text-blue-500 cursor-pointer" />
+                    </Link>
                   </Table.Cell>
                   <Table.Cell>
                     <Link className="text-teal-500 hover:underline">
@@ -557,17 +510,6 @@ export default function DashOutPatients() {
                       className="font-medium text-red-500 hover:underline cursor-pointer"
                     >
                       Delete
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        handleDownloadPdf(patient.name);
-                        setPatientIdDownloadPDF(patient._id);
-                      }}
-                      className="font-medium text-green-700 hover:underline cursor-pointer"
-                    >
-                      Download PDF
                     </span>
                   </Table.Cell>
                 </Table.Row>
