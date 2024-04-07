@@ -452,7 +452,7 @@ export default function DashOutPatients() {
         show={AddInventoryItemModal}
         onClose={() => setAddInventoryItemModal(false)}
         popup
-        size="md"
+        size="lg"
       >
         <Modal.Header />
         <Modal.Body>
@@ -587,7 +587,7 @@ export default function DashOutPatients() {
         show={showItemDetailsModal}
         onClose={() => setShowItemDetailsModal(false)}
         popup
-        size="md"
+        size="lg"
       >
         <Modal.Header />
         <Modal.Body>

@@ -65,6 +65,8 @@ export default function Dashboard() {
       {tab==="receptionist" && <ReceptionistDashBoard/>}
       {/**<DashPatientProfile */}
       {tab==="PatientProfile" && <DashOutPatientProfile/>}
+      {/**<DashAddDiesease */}
+      {tab==="AddDisease" && <DashAddDisease/>}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import Inventory from "../models/inventory.model.js";
 import { errorHandler } from "../utils/error.js";
 export const getInventoryData = async (req, res) => {
-  if (!req.user.isAdmin && !req.user.isPharmacist) {
+  if (!req.user.isAdmin && !req.user.isPharmacist && !req.user.isReceptionist && !req.user.isHeadNurse && !req.user.isDoctor && !req.user.isNurse ) {
     return next(
       errorHandler(
         403,
@@ -86,5 +86,26 @@ export const deleteInventoryData = async (req, res) => {
     console.log(error);
   }
 };
+
+
+export const medicineInstock = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isPharmacist && !req.user.isReceptionist && !req.user.isHeadNurse && !req.user.isDoctor && !req.user.isNurse) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access this route. Only Admin and Pharmacist can access this route"
+      )
+    );
+  }
+  try {
+    const items = await Inventory.find({ itemQuantity: { $gt: 0 } }, 'itemName');
+    res.status(200).json({ items });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+
 
 export const updateInventoryData = async (req, res) => {};

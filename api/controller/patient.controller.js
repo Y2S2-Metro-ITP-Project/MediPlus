@@ -94,7 +94,7 @@ export const registerOutPatient = async (req, res, next) => {
   }
 };
 
-export const getPatients = async (req, res) => {
+export const getPatients = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(
@@ -358,7 +358,7 @@ export const downloadPDFPatient = async (req, res, next) => {
     const emergencyName = patient.emergencyContact.name;
     const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
     const patientProfilePicture = patient.patientProfilePicture;
-    const age= new Date().getFullYear()-new Date(dateOfBirth).getFullYear();
+    const age = new Date().getFullYear() - new Date(dateOfBirth).getFullYear();
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -450,4 +450,4 @@ export const getPatient = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+};

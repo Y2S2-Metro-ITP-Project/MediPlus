@@ -68,7 +68,7 @@ export const getvitals = async (req, res) => {
     const latestVitals = await Vitals.findOne({patientId}).sort({ date: -1 });
 
     // Check if latestVitals exists and contains data
-    if (latestVitals) {
+    /*if (latestVitals) {
       const { temperature, heartRate, bloodGlucose } = latestVitals;
     
       console.log("Latest Temperature:", temperature);
@@ -76,7 +76,7 @@ export const getvitals = async (req, res) => {
       console.log("Latest Blood Glucose Level:", bloodGlucose);
     } else {
       console.log("No vitals data found.");
-    }
+    }*/
     res.status(200).json({vitals,latestVitals});
   } catch (error) {
     res.status(500).json({ message: error.message });
