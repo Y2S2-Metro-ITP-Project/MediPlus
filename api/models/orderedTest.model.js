@@ -2,29 +2,39 @@ import mongoose from "mongoose";
 
 const orderedTestSchema = new mongoose.Schema(
   {
-    testId: {
-      type: String,
-      required: true,
-    },
+    testId: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
 
     patientId: {
       type: String,
       required: true,
     },
 
-    orderPriority: {
-      type: String,
-      enums: ["High", "Normal"],
-      default: "Normal",
+    hightPriority: {
+      type: Boolean,
+      default: false,
     },
 
-    orderStatus: {
-      type: String,
-      enums: ["OnHold", "Processing", "Complete"],
-      default: "OnHold",
+    paymentComplete: {
+      type: Boolean,
+      default: false,
     },
 
-    CompletionTime: {
+    orderStages: {
+      type: String,
+      enums: ["sampleCollection", "inStorage", "Processing", "Complete"],
+      default: "inStorage",
+    },
+
+    orderCompletionTime: {
+      type: String,
+    },
+
+    totalPrice: {
       type: String,
     },
   },
