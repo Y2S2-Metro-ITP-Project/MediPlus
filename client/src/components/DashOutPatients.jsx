@@ -303,9 +303,10 @@ export default function DashOutPatients() {
         setImageFileUploadingError(null);
         toast.success("Patient Added Successfully");
       } else {
-        toast.error(data.error);
+        toast.error(data.message);
       }
     } catch (error) {
+      toast.error(error.message);
       toast.error(error.message);
     }
   };

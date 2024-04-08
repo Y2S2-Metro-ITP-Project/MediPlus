@@ -79,7 +79,13 @@ export default function DashUserInquiries() {
         console.log(error);
       }
     };
-    if (currentUser.isUser || currentUser.isHeadNurse || currentUser.isReceptionist) {
+    if (
+      currentUser.isUser ||
+      currentUser.isHeadNurse ||
+      currentUser.isReceptionist ||
+      currentUser.isOutPatient ||
+      currentUser.isInPatient
+    ) {
       fetchUserInquires();
     }
   }, [currentUser._id]);
@@ -137,23 +143,26 @@ export default function DashUserInquiries() {
     e.preventDefault();
     const selectedOption = e.target.value;
     try {
-      const res = await fetch(`/api/inquiry/filterUserInquiry/${currentUser._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ filterOption: selectedOption }),
-      });
+      const res = await fetch(
+        `/api/inquiry/filterUserInquiry/${currentUser._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ filterOption: selectedOption }),
+        }
+      );
       const data = await res.json();
-      if(res.ok){
+      if (res.ok) {
         setInquirires(data);
         setShowMore(data.length >= 9);
-      }else{
+      } else {
         setInquirires([]);
       }
     } catch (error) {
       console.log(error.message);
-      toast.error(error.message)
+      toast.error(error.message);
     }
   };
   const handleReplySubmit = async (e) => {
@@ -290,7 +299,8 @@ export default function DashUserInquiries() {
       </div>
       {(currentUser.isUser ||
         currentUser.isReceptionist ||
-        currentUser.isUser) &&
+        currentUser.isOutPatient ||
+        currentUser.isInPatient) &&
       inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">

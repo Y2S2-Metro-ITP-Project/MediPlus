@@ -21,7 +21,7 @@ export default function DashEMPLeave() {
 
   const fetchLeaves = async () => {
     try {
-      const response = await fetch(`/api/user/getAllLeaves`);
+      const response = await fetch(`/api/leaves/getAllLeaves`);
       if (!response.ok) {
         throw new Error("Failed to fetch leaves");
       }
@@ -35,7 +35,7 @@ export default function DashEMPLeave() {
       console.error("Error fetching leaves:", error);
     }
   };
-
+  console.log(userLeaves);
   // useEffect hook to fetch leaves on component mount or when currentUser changes
   useEffect(() => {
     fetchLeaves();

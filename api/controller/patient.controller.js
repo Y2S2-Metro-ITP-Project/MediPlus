@@ -5,6 +5,16 @@ import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
 import pdf from "html-pdf";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+function generateRandomPassword(length) {
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[{]}|;:,<.>/?";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
+}
 export const registerOutPatient = async (req, res, next) => {
   const {
     name,
@@ -20,7 +30,39 @@ export const registerOutPatient = async (req, res, next) => {
     doctor,
     patientPicture,
   } = req.body;
-  const password = Math.random().toString(36).slice(-8);
+  if (!req.body.contactPhone.match(/^[0-9]+$/)) {
+    return next(
+      errorHandler(400, "Contact Phone Number must contain only numbers")
+    );
+  }
+  if (req.body.contactPhone.length !== 10) {
+    return next(
+      errorHandler(400, "Contact Phone Number must be 10 characters")
+    );
+  }
+  if (req.body.name < 7 || req.body.name > 50) {
+    return next(errorHandler(400, "Name must be between 7 and 50 characters"));
+  }
+  if (!req.body.name.match(/^[a-zA-Z\s]+$/)) {
+    return next(
+      errorHandler(400, "Name must contain only alphabets and spaces")
+    );
+  }
+  if (req.body.identification.length !== 12) {
+    return next(errorHandler(400, "Identification must be 13 characters"));
+  }
+  if (!req.body.identification.match(/^[0-9]+$/)) {
+    return next(errorHandler(400, "Identification must contain only numbers"));
+  }
+  if (req.body.dateOfBirth) {
+    const dob = new Date(req.body.dateOfBirth);
+    const minDate = new Date("1900-01-01");
+    const maxDate = new Date();
+    if (dob < minDate || dob > maxDate) {
+      return next(errorHandler(400, "Invalid Date of Birth"));
+    }
+  }
+  const password = generateRandomPassword(12);
   const hashPassword = bcryptjs.hashSync(password, 10);
   const newUser = new User({
     username:
@@ -34,7 +76,7 @@ export const registerOutPatient = async (req, res, next) => {
   try {
     await newUser.save();
   } catch (error) {
-    return next(errorHandler(500, "Error occurred while saving the user"));
+    return next(errorHandler(500, "The email is already in use"));
   }
   const newPatient = new Patient({
     name,

@@ -36,9 +36,9 @@ const THRESHOLDS = {
 };
 
 const COLORS = {
-  low: "bg-blue-700", // Low value color
-  high: "bg-red-700", // High value color
-  normal: "bg-green-600", // Normal value color
+  low: "text-blue-700", // Low value color
+  high: "text-red-700", // High value color
+  normal: "text-green-700", // Normal value color
 };
 
 function getColorClass(value, thresholds) {
@@ -59,10 +59,10 @@ const BMI_RANGES = {
 };
 
 const BMI_COLORS = {
-  underweight: "bg-blue-700",
-  healthyWeight: "bg-green-700",
-  overweight: "bg-yellow-700",
-  obese: "bg-red-700",
+  underweight: "text-blue-700",
+  healthyWeight: "text-green-700",
+  overweight: "text-yellow-700",
+  obese: "text-red-700",
 };
 
 function getBMICategory(value) {
