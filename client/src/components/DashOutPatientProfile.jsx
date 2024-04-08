@@ -318,7 +318,7 @@ export default function DashOutPatientProfile() {
       body: JSON.stringify(formData),
     });
     if (!res.ok) {
-      console.log("Failed to add vitals");
+      toast.error("Failed to add vitals");
     }
     toast.success("Vitals added successfully");
     setFormData([]);
@@ -419,14 +419,14 @@ export default function DashOutPatientProfile() {
         console.log(data);
       } else {
         toast.success("Prescription added successfully");
-        setFormData([]);
-        setPrescriptionModal(false);
-        fetchPatient();
-        fetchPatientVital();
-        fetchPrescriptions();
-        fetchDieseases();
-        fetchDiagnosticData();
       }
+      setFormData([]);
+      setPrescriptionModal(false);
+      fetchPatient();
+      fetchPatientVital();
+      fetchPrescriptions();
+      fetchDieseases();
+      fetchDiagnosticData();
     } catch (error) {
       console.log(error);
     }
@@ -561,19 +561,16 @@ export default function DashOutPatientProfile() {
       });
       const data = await res.json();
       if (!res.ok) {
-        console.log("Failed to add diagnosis");
         toast.error(data.message);
-        console.log(data);
-      } else {
-        toast.success("Diagnosis added successfully");
-        setFormData([]);
-        setDiagnosisModal(false);
-        fetchPatient();
-        fetchPatientVital();
-        fetchPrescriptions();
-        fetchDieseases();
-        fetchDiagnosticData();
       }
+      toast.success("Diagnosis added successfully");
+      setFormData([]);
+      setDiagnosisModal(false);
+      fetchPatient();
+      fetchPatientVital();
+      fetchPrescriptions();
+      fetchDieseases();
+      fetchDiagnosticData();
     } catch (error) {
       console.log(error);
     }
@@ -613,7 +610,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
   };
   return (

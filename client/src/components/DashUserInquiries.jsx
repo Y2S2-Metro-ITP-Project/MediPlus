@@ -189,7 +189,28 @@ export default function DashUserInquiries() {
       console.log(error.message);
     }
   };
-  const handleSearch = async (e) => {};
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/inquiry/searchUserInquiries/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ searchTerm }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setInquirires(data);
+        setShowMore(data.length >= 9);
+      } else {
+        setInquirires([]);
+      }
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message);
+    }
+  };
 
   const handleReset = async () => {
     setSearchTerm("");
@@ -263,7 +284,7 @@ export default function DashUserInquiries() {
       <ToastContainer />
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <form onSubmit={handleSearch}>
+          <form>
             <TextInput
               type="text"
               placeholder="Search...."

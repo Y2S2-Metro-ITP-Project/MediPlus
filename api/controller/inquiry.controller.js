@@ -310,3 +310,33 @@ export const filterUserInquiry = async (req, res, next) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
+const searchUserInquiries = async (req, res, next) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    const userId = req.params.userId;
+    const searchTerm = req.body.searchTerm;
+    console.log(req.body);
+    const inquiries = await Inquiry.find({
+      userId,
+      $or: [{ name: { $regex: new RegExp(searchTerm, "i") } }],
+    });
+    if (!inquiries || inquiries.length === 0) {
+      return next(errorHandler(404, "Inquiry not found"));
+    }
+    res.status(200).json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+}

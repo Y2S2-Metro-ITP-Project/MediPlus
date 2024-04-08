@@ -4,7 +4,7 @@ import { verifyToken } from '../utils/verifyUser.js';
 const router = express.Router();
 
 router.post('/addDiagnosticData/:id',verifyToken,addDiagnosisData);
-router.get('/getDiagnosticData/:id',verifyToken,getDiagnosisData);
+router.get('/getDiagnosticData/:patientId',verifyToken,getDiagnosisData);
 router.delete('/deleteDiagnosticData/:id',verifyToken,deleteDiagnosisData);
 
 export default router;
