@@ -20,6 +20,8 @@ import { FaUserPlus } from "react-icons/fa";
 import { FaBed } from "react-icons/fa";
 import { GiHospital } from "react-icons/gi";
 import { BiCapsule } from "react-icons/bi";
+import { FaClipboardList } from "react-icons/fa";
+import { FaHeartbeat } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -228,15 +230,35 @@ export default function DashSideBar() {
             </Link>
           )}
           {(currentUser.isOutPatient || currentUser.isInPatient) && (
-            <Link to="/dashboard?tab=PatientPrescriptions">
-              <Sidebar.Item
-                active={tab === "PatientPrescriptions"}
-                icon={BiCapsule} // Use the capsule icon here
-                as="div"
-              >
-                Prescriptions
-              </Sidebar.Item>
-            </Link>
+            <>
+              <Link to="/dashboard?tab=PatientPrescriptions">
+                <Sidebar.Item
+                  active={tab === "PatientPrescriptions"}
+                  icon={BiCapsule} // Use the capsule icon here
+                  as="div"
+                >
+                  Prescriptions
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=PatientDiagnosis">
+                <Sidebar.Item
+                  active={tab === "PatientDiagnosis"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Diagnosis
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=PatientVitals">
+                <Sidebar.Item
+                  active={tab === "PatientVitals"}
+                  icon={FaHeartbeat} 
+                  as="div"
+                >
+                  Vitals
+                </Sidebar.Item>
+              </Link>
+            </>
           )}
           {currentUser.isHRM && (
             <>

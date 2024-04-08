@@ -7,53 +7,79 @@ import ReactPaginate from "react-paginate";
 import Select from "react-select";
 import { format } from "date-fns";
 import { BiCapsule } from "react-icons/bi";
-export default function PatientPrescriptions() {
+import { FaClipboardList } from "react-icons/fa";
+import { set } from "mongoose";
+export default function PatientDiagnosis() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [pageNumber, setPageNumber] = useState(0);
-  const prescriptionsPerPage = 5;
+  const DiagnosisPerPage = 5;
   const { currentUser } = useSelector((state) => state.user);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dates, setDates] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [totalPrescriptions, setTotalPrescriptions] = useState([]);
-  const [totalPrescriptionsLastMonth, setTotalPrescriptionsLastMonth] =
-    useState([]);
+  const [diagnosis, setDiagnosis] = useState([]);
+  const [severDiagnosticData, setSevereDiagnosticData] = useState("");
+  const [mildDiagnosticData, setMildDiagnosticData] = useState("");
+  const [moderateDiagnosticData, setModerateDiagnosticData] = useState("");
+  const [lastMonthSevereDiagnosticData, setLastMonthSevereDiagnosticData] =
+    useState("");
+  const [lastMonthMildDiagnosticData, setLastMonthMildDiagnosticData] =
+    useState("");
+  const [lastMonthModerateDiagnosticData, setLastMonthModerateDiagnosticData] =
+    useState("");
   const id = currentUser._id;
+  const getColorClass2 = (level) => {
+    switch (level) {
+      case "Mild":
+        return "text-green-500";
+      case "Moderate":
+        return "text-yellow-500";
+      case "Severe":
+        return "text-red-500";
+      default:
+        return "";
+    }
+  };
   useEffect(() => {
     const fetchPrescriptions = async () => {
       try {
         const res = await fetch(
-          `/api/prescription/getPatientPrescription/${currentUser._id}`
+          `/api/diagnosis/getPatientDiagnosticData/${currentUser._id}`
         );
         const data = await res.json();
         if (res.ok) {
-          const filteredPrescriptions = data.prescriptions.filter(
-            (prescription) =>
-              prescription.doctorId.username
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())
+          const filteredDiagnosis = data.diagnosis.filter((diagnosis) =>
+            diagnosis.doctorId.username
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
           );
-          const uniqueDates = [
-            ...new Set(
-              data.prescriptions.map((prescription) =>
-                format(new Date(prescription.date), "MMMM dd, yyyy")
-              )
-            ),
-          ];
           const uniQueDoctors = [
             ...new Set(
-              data.prescriptions.map(
-                (prescription) => prescription.doctorId.username
+              data.diagnosis.map((diagnosis) => diagnosis.doctorId.username)
+            ),
+          ];
+          const uniqueDates = [
+            ...new Set(
+              data.diagnosis.map((diagnosis) =>
+                format(new Date(diagnosis.date), "MMMM dd, yyyy")
               )
             ),
           ];
-          setDoctors(uniQueDoctors);
           setDates(uniqueDates);
-          setTotalPrescriptions(data.totalPrescriptions);
-          setTotalPrescriptionsLastMonth(data.totalPrescriptionsLastMonth);
-          setPrescriptions(filteredPrescriptions);
+          setDoctors(uniQueDoctors);
+          setDiagnosis(filteredDiagnosis);
+          setMildDiagnosticData(data.totalMildDiagnosisData);
+          setModerateDiagnosticData(data.totalModerateDiagnosisData);
+          setSevereDiagnosticData(data.totalSevereDiagnosisData);
+          setLastMonthMildDiagnosticData(data.totalMildDiagnosisDataLastMonth);
+          setLastMonthModerateDiagnosticData(
+            data.totalModerateDiagnosisDataLastMonth
+          );
+          setLastMonthSevereDiagnosticData(
+            data.totalSevereDiagnosisDataLastMonth
+          );
         }
       } catch (error) {
         console.error("Error fetching prescriptions:", error);
@@ -65,29 +91,24 @@ export default function PatientPrescriptions() {
 
   console.log(doctors);
   console.log(dates);
-  const pageCount = Math.ceil(prescriptions.length / prescriptionsPerPage);
+  const pageCount = Math.ceil(diagnosis.length / DiagnosisPerPage);
 
   const handlePageChange = ({ selected }) => {
     setPageNumber(selected);
   };
 
-  const displayPrescriptions = prescriptions
-    .slice(
-      pageNumber * prescriptionsPerPage,
-      (pageNumber + 1) * prescriptionsPerPage
-    )
-    .map((prescription) => (
-      <Table.Body className="divide-y" key={prescription._id}>
+  const displayDiagnosis = diagnosis
+    .slice(pageNumber * DiagnosisPerPage, (pageNumber + 1) * DiagnosisPerPage)
+    .map((diagnosis) => (
+      <Table.Body className="divide-y" key={diagnosis._id}>
         <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-          <Table.Cell>{prescription.medicine}</Table.Cell>
-          <Table.Cell>
-            {prescription.dosage} {prescription.dosageType}
+          <Table.Cell>{diagnosis.type}</Table.Cell>
+          <Table.Cell className={getColorClass2(diagnosis.level)}>
+            {diagnosis.level}
           </Table.Cell>
-          <Table.Cell>{prescription.frequency} Times/Day</Table.Cell>
-          <Table.Cell>{prescription.duration} Days</Table.Cell>
-          <Table.Cell>{prescription.route}</Table.Cell>
-          <Table.Cell>{prescription.foodRelation}</Table.Cell>
-          <Table.Cell>{prescription.doctorId.username}</Table.Cell>
+          <Table.Cell>{diagnosis.diagnosis}</Table.Cell>
+          <Table.Cell>{diagnosis.ICD10}</Table.Cell>
+          <Table.Cell>{diagnosis.doctorId.username}</Table.Cell>
         </Table.Row>
       </Table.Body>
     ));
@@ -103,7 +124,7 @@ export default function PatientPrescriptions() {
     if (selectedDate !== null) {
       try {
         const res = await fetch(
-          `/api/prescription/DownloadPDFPatientPrescription/${id}`,
+          `/api/diagnosis/DownloadPDFPatientDiagnostic/${id}`,
           {
             method: "POST",
             headers: {
@@ -132,7 +153,7 @@ export default function PatientPrescriptions() {
     if (selectedDoctor !== null) {
       try {
         const res = await fetch(
-          `/api/prescription/DownloadPDFPatientDoctorPrescription/${id}`,
+          `/api/diagnosis/DownloadPDFPatientDoctorDiagnostic/${id}`,
           {
             method: "POST",
             headers: {
@@ -170,16 +191,52 @@ export default function PatientPrescriptions() {
             <div className="flex justify-between">
               <div className="">
                 <h3 className="text-gray-500 text-md uppercase">
-                  Total Prescriptions
+                  Severe Diagnosis
                 </h3>
-                <p className="text-2xl">{totalPrescriptions}</p>
+                <p className="text-2xl">{severDiagnosticData}</p>
               </div>
-              <BiCapsule className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+              <FaClipboardList className="bg-red-500 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
             <div className="flex gap-2 text-sm">
               <span className="text-green-500 flex items-center">
                 <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-                {totalPrescriptionsLastMonth}
+                {lastMonthSevereDiagnosticData}
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Moderate Diagnosis
+                </h3>
+                <p className="text-2xl">{moderateDiagnosticData}</p>
+              </div>
+              <FaClipboardList className="bg-yellow-500 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+                {lastMonthModerateDiagnosticData}
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Mild Diagnosis
+                </h3>
+                <p className="text-2xl">{mildDiagnosticData}</p>
+              </div>
+              <FaClipboardList className="bg-green-500 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+                {lastMonthMildDiagnosticData}
               </span>
               <div className="text-gray-500">Last Month</div>
             </div>
@@ -263,20 +320,33 @@ export default function PatientPrescriptions() {
           </Button>
         </div>
       </div>
-
-      {prescriptions.length > 0 ? (
+      <div className="flex items-center mb-2">
+        <div className="flex ml-4">
+          <span className="flex items-center text-sm font-medium text-gray-900 dark:text-white me-3">
+            <span className="w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5"></span>
+            Mild
+          </span>
+          <span className="flex items-center text-sm font-medium text-gray-900 dark:text-white me-3">
+            <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full mr-1.5"></span>
+            Moderate
+          </span>
+          <span className="flex items-center text-sm font-medium text-gray-900 dark:text-white me-3">
+            <span className="w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5"></span>
+            Severe
+          </span>
+        </div>
+      </div>
+      {diagnosis.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
-              <Table.HeadCell>Medicine</Table.HeadCell>
-              <Table.HeadCell>Dosage</Table.HeadCell>
-              <Table.HeadCell>Frequency</Table.HeadCell>
-              <Table.HeadCell>Duration</Table.HeadCell>
-              <Table.HeadCell>Route</Table.HeadCell>
-              <Table.HeadCell>Food Relation</Table.HeadCell>
+              <Table.HeadCell>Type</Table.HeadCell>
+              <Table.HeadCell>Category-Severity Level</Table.HeadCell>
+              <Table.HeadCell>Diagnosis</Table.HeadCell>
+              <Table.HeadCell>ICD 10 Code</Table.HeadCell>
               <Table.HeadCell>Doctor</Table.HeadCell>
             </Table.Head>
-            {displayPrescriptions}
+            {displayDiagnosis}
           </Table>
           <div className="mt-9 center">
             <ReactPaginate
@@ -297,7 +367,7 @@ export default function PatientPrescriptions() {
           </div>
         </>
       ) : (
-        <p>No prescriptions found</p>
+        <p>No Diagnostic Data found</p>
       )}
     </div>
   );

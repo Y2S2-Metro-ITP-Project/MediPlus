@@ -110,6 +110,7 @@ export default function DashOutPatientProfile() {
   const [icdCode, setIcdCode] = useState("");
   const [diagnosticData, setDiagnosticData] = useState([]);
   const [diagnosisIDDelete, setDiagnosisIDDelete] = useState("");
+  const [searchTerm1, setSearchTerm1] = useState("");
   const itemsPerPage = 2; // Adjust as needed
 
   const handlePageClick = ({ selected }) => {
@@ -161,6 +162,12 @@ export default function DashOutPatientProfile() {
       if (!response.ok) {
         throw new Error(data.message);
       }
+      const filteredPrescriptions = data.prescriptions.filter(
+        (prescription) =>
+          prescription.doctorId.username
+            .toLowerCase()
+            .includes(searchTerm1.toLowerCase())
+      );
       const uniqueDates = [
         ...new Set(
           data.prescriptions.map((prescription) =>
@@ -169,7 +176,7 @@ export default function DashOutPatientProfile() {
         ),
       ];
       setDates(uniqueDates);
-      setPrescriptions(data.prescriptions);
+      setPrescriptions(filteredPrescriptions);
     } catch (error) {
       console.error("Error fetching prescriptions:", error);
     }
@@ -780,7 +787,7 @@ export default function DashOutPatientProfile() {
                 </span>
               </div>
             </div>
-            {vitals.length > 0 ? (
+            {diagnosticData.length > 0 ? (
               <>
                 <Table hoverable className="shadow-md">
                   <Table.Head>
@@ -998,8 +1005,8 @@ export default function DashOutPatientProfile() {
               </Button>
               <TextInput
                 type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchTerm1}
+                onChange={(e) => setSearchTerm1(e.target.value)}
                 placeholder="Search by doctor name"
                 rightIcon={AiOutlineSearch}
                 className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
@@ -1041,7 +1048,7 @@ export default function DashOutPatientProfile() {
               </Button>
               <div className="flex ml-4"></div>
             </div>
-            {vitals.length > 0 ? (
+            {prescriptions.length > 0 ? (
               <>
                 <Table hoverable className="shadow-md">
                   <Table.Head>

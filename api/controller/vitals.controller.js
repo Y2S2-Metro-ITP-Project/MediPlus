@@ -1,3 +1,4 @@
+import Patient from "../models/patient.model.js";
 import Vitals from "../models/vitals.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
 
@@ -65,7 +66,7 @@ export const getvitals = async (req, res) => {
   const { patientId } = req.params;
   try {
     const vitals = await Vitals.find({ patientId });
-    const latestVitals = await Vitals.findOne({patientId}).sort({ date: -1 });
+    const latestVitals = await Vitals.findOne({ patientId }).sort({ date: -1 });
 
     // Check if latestVitals exists and contains data
     /*if (latestVitals) {
@@ -77,7 +78,7 @@ export const getvitals = async (req, res) => {
     } else {
       console.log("No vitals data found.");
     }*/
-    res.status(200).json({vitals,latestVitals});
+    res.status(200).json({ vitals, latestVitals });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -119,7 +120,7 @@ export const downloadPDFVitals = async (req, res) => {
       .status(403)
       .json({ message: "You are not allowed to access these resources" });
   }
-  const patientId= req.body.patientId;
+  const patientId = req.body.patientId;
   const vitals = await Vitals.find({ patientId });
   console.log(vitals);
   try {
@@ -203,6 +204,37 @@ export const downloadPDFVitals = async (req, res) => {
       "Content-Length": pdfBuffer.length,
     });
     res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserpatientVitals = async (req, res) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isDoctor &&
+    !req.user.isNurse &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to access these resources" });
+  }
+  const UserId = req.params.UserId;
+  //console.log(UserId);
+  const patientId = await Patient.find({ user: UserId }).select("_id");
+  console.log(patientId[0]._id);
+  const ID = patientId[0]._id;
+  try {
+    const vitals = await Vitals.find({ patientId: ID });
+    const latestVitals = await Vitals.findOne({ patientId: ID }).sort({
+      date: -1,
+    });
+    res.status(200).json({ vitals, latestVitals });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
