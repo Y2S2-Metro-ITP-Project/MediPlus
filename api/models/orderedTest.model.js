@@ -26,8 +26,14 @@ const orderedTestSchema = new mongoose.Schema(
 
     orderStages: {
       type: String,
-      enums: ["sampleCollection", "inStorage", "Processing", "Complete"],
-      default: "inStorage",
+      enums: [
+        "awaitingPayment",
+        "sampleCollection",
+        "inStorage",
+        "Processing",
+        "Complete",
+      ],
+      default: "awaitingPayment",
     },
 
     orderCompletionTime: {
@@ -41,6 +47,6 @@ const orderedTestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const testOrder = mongoose.model("testOrder", orderedTestSchema);
+const TestOrder = mongoose.model("TestOrder", orderedTestSchema);
 
-export default testOrder;
+export default TestOrder;

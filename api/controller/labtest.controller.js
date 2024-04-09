@@ -2,14 +2,24 @@ import LabTest from "../models/labtest.model.js";
 import { errorHandler } from "../utils/error.js";
 
 //GET ALL LAB TEST TYPES
-export const getLabTests = async (req, res) => {
+ export const getLabTests = async (req, res, next) => {
+
+  if(!req.user.isAdmin && !req.user.isLabTech){
+    return next(
+      errorHandler(403, "you are not allowed to access all lab tests")
+    );
+  };
   try {
+    
     const labtests = await LabTest.find({});
+   
     res.status(200).json(labtests);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
+
+
 
 //GET UNIQUE LAB TEST
 export const getLabTest = async (req, res) => {
@@ -60,7 +70,7 @@ export const createLabTest = async (req, res) => {
 //UPDATE EXISTING LAB TEST
 
 export const updateLabTest = async (req, res, next) => {
-  if (!req.user.isLabTech || !req.user.isAdmin) {
+  if (!req.user.isLabTech && !req.user.isAdmin) {
     return next(
       errorHandler(403, "You are not allowed to modify these resources")
     );
@@ -83,7 +93,14 @@ export const updateLabTest = async (req, res, next) => {
 
 //DELETE EXISTING LAB TEST
 
-export const deleteLabTest = async (req, res) => {
+export const deleteLabTest = async (req, res, next) => {
+
+  if(!req.user.isAdmin && !req.user.isLabTech){
+    return next(
+      errorHandler(403, "you are not allowed to delete this entry")
+    );
+  }
+
   try {
     const { id } = req.params;
 
@@ -95,14 +112,7 @@ export const deleteLabTest = async (req, res) => {
 
     res.status(200).json({ message: "Lab test deleted succesfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-// module.exports = {
-//   getLabTests,
-//   getLabTest,
-//   createLabTest,
-//   updateLabTest,
-//   deleteLabTest,
-// };

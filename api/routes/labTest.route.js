@@ -11,7 +11,7 @@ import {
 
 const router = express.Router();
 
-router.get("/getTests",verifyToken, getLabTests);
+router.get("/getTests", verifyToken,getLabTests);
 router.get("/getTest/:id",verifyToken, getLabTest);
 router.post("/createTest",verifyToken, createLabTest);
 router.put("/updateTest/:id",verifyToken, updateLabTest);

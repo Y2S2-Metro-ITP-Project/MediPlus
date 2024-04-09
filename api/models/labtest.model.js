@@ -9,9 +9,9 @@ const testSchema = new mongoose.Schema(
 
     sampleType: {
       type: String,
-      enum:["BLOOD","URINE","STOOL","SALIVA","MUCUS"],
+      enum: ["BLOOD", "URINE", "STOOL", "SALIVA", "MUCUS"],
       required: true,
-      default:"BLOOD"
+      default: "BLOOD",
     },
 
     sampleVolume: {
@@ -20,7 +20,7 @@ const testSchema = new mongoose.Schema(
     },
 
     completionTime: {
-      type: String,
+      type: String, //time should be set in seconds only and no other format
     },
 
     price: {
