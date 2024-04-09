@@ -1,5 +1,5 @@
 {
-  "name": "vite-project",
+  "name": "shadcn-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
     "firebase": "^10.8.1",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.7.3",
@@ -23,7 +25,9 @@
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.21.3",
     "react-toastify": "^10.0.4",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "tailwind-merge": "^2.2.2",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",
@@ -37,5 +41,9 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.4"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "postcss.config.js",
+  "author": "",
+  "license": "ISC"
 }

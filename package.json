@@ -22,7 +22,7 @@
     "mongoose": "^8.2.1",
     "nodemailer": "^6.9.13",
     "nodemon": "^3.1.0",
-    "react-crud-table": "^0.3.1"
+    "react-crud-table": "^0.3.1",
     "puppeteer": "^22.6.2"
   }
 }
