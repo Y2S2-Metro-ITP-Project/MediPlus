@@ -62,6 +62,7 @@ export default function Dashboard() {
       {tab === "wards" && <DashWards />}
       {/** <ReceptionistDashBoard/> */}
       {tab==="receptionist" && <ReceptionistDashBoard/>}
-    </div>
+      
+      </div>
   );
-}
+};
