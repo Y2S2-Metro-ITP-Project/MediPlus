@@ -6,6 +6,6 @@ const router = express.Router();
 router.get('/getPrescriptionOrder', verifyToken, getPrescriptionOrderData);
 router.delete('/deletePrescriptionOrder/:id', verifyToken, deletePrescriptionOrderData);
 router.get('/getPrescriptionPatientOrder/:id', verifyToken, getPrescriptionPatientOrder);
-router.get('/confirmPrescriptionOrder/:id', verifyToken, confirmPrescriptionOrderData);
+router.post('/confirmPrescriptionOrder/:id', verifyToken, confirmPrescriptionOrderData);
 router.get('/rejectPrescriptionOrder/:id', verifyToken, rejectPrescriptionOrderData);
 export default router;

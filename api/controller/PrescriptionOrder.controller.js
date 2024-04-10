@@ -1,6 +1,8 @@
 import PrescriptionOrder from "../models/PrecriptionOrder.model.js";
 import Prescription from "../models/prescription.model.js";
 import Inventory from "../models/inventory.model.js";
+import Patient from "../models/patient.model.js";
+import { Payment } from "../models/payment.model.js";
 export const getPrescriptionOrderData = async (req, res) => {
   try {
     const prescriptionOrders = await PrescriptionOrder.find()
@@ -22,15 +24,13 @@ export const getPrescriptionOrderData = async (req, res) => {
     const totalRejectedOrders = prescriptionOrders.filter(
       (order) => order.status === "Rejected"
     ).length;
-    res
-      .status(200)
-      .json({
-        prescriptionOrders,
-        totalOrders,
-        totalCompletedOrders,
-        totalPendingOrders,
-        totalRejectedOrders,
-      });
+    res.status(200).json({
+      prescriptionOrders,
+      totalOrders,
+      totalCompletedOrders,
+      totalPendingOrders,
+      totalRejectedOrders,
+    });
     console.log(prescriptionOrders);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -77,21 +77,33 @@ export const confirmPrescriptionOrderData = async (req, res) => {
   }
   const { id } = req.params;
   try {
+    const patient = await PrescriptionOrder.findById(id).populate({
+      path: "patientId",
+      select: "_id",
+    });
+    console.log(patient.patientId._id);
+    const patientFind = await Patient.findById(patient.patientId._id);
+    const patientName = patientFind.name;
+    const patientEmail = patientFind.contactEmail;
+    console.log(req.body);
+    await Payment.create({
+      patientId: patient.patientId._id,
+      patientName: patientName,
+      patientEmail: patientEmail,
+      OrderType: "Pharmacy",
+      totalPayment: req.body.totalPayment,
+    });
+
     const updatedOrder = await PrescriptionOrder.findById(id);
-    // Step 2: Update each pending prescription within the order to "Completed" status
     for (const prescriptionId of updatedOrder.prescriptions) {
       const prescription = await Prescription.findById(prescriptionId);
-      // Check if the prescription is pending before updating
       if (prescription.status === "Pending") {
         await Prescription.findByIdAndUpdate(prescriptionId, {
           status: "Completed",
         });
-        // Step 3: Get the item code associated with the prescription
         const itemCode = prescription.itemId;
-        // Step 4: Update the inventory item based on the item code
         const inventoryItem = await Inventory.findById(itemCode);
         if (inventoryItem) {
-          // Assuming you want to decrease the quantity by 1 for each prescription
           inventoryItem.itemQuantity -= prescription.dosage;
           await inventoryItem.save();
         }

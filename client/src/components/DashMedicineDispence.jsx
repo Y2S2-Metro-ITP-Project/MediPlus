@@ -97,7 +97,14 @@ export default function DashMedicineDispence() {
   const handleOrderConfirmation = async () => {
     try {
       const res = await fetch(
-        `/api/prescriptionOrder/confirmPrescriptionOrder/${id}`
+        `/api/prescriptionOrder/confirmPrescriptionOrder/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ totalPayment: totalPrice }),
+        }
       );
       if (res.ok) {
         toast.success("Order Confirmed Successfully");
