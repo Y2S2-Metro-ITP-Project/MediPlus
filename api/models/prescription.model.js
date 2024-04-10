@@ -9,6 +9,10 @@ const prescriptionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
+    itemId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Inventory",
+    },
     medicine:{
         type: String,
     },
@@ -35,7 +39,7 @@ const prescriptionSchema = new mongoose.Schema({
     },
     status:{
         type: String,
-        enum: ["Pending", "Completed"],
+        enum: ["Pending","Completed","Rejected"],
         default: "Pending",
     },
     date: {

@@ -36,9 +36,9 @@ const THRESHOLDS = {
 };
 
 const COLORS = {
-  low: "text-blue-700", // Low value color
-  high: "text-red-700", // High value color
-  normal: "text-green-700", // Normal value color
+  low: "font-bold text-blue-700", // Low value color
+  high: "font-bold text-red-700", // High value color
+  normal: "font-bold text-green-700", // Normal value color
 };
 
 function getColorClass(value, thresholds) {
@@ -59,10 +59,10 @@ const BMI_RANGES = {
 };
 
 const BMI_COLORS = {
-  underweight: "text-blue-700",
-  healthyWeight: "text-green-700",
-  overweight: "text-yellow-700",
-  obese: "text-red-700",
+  underweight: "font-bold text-blue-700",
+  healthyWeight: "font-bold text-green-700",
+  overweight: "font-bold text-yellow-700",
+  obese: "font-bold text-red-700",
 };
 
 function getBMICategory(value) {
@@ -162,11 +162,10 @@ export default function DashOutPatientProfile() {
       if (!response.ok) {
         throw new Error(data.message);
       }
-      const filteredPrescriptions = data.prescriptions.filter(
-        (prescription) =>
-          prescription.doctorId.username
-            .toLowerCase()
-            .includes(searchTerm1.toLowerCase())
+      const filteredPrescriptions = data.prescriptions.filter((prescription) =>
+        prescription.doctorId.username
+          .toLowerCase()
+          .includes(searchTerm1.toLowerCase())
       );
       const uniqueDates = [
         ...new Set(
@@ -265,7 +264,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
     }
-  }, [currentUser._id]);
+  }, [currentUser._id, searchTerm1]);
   const formatDateOfBirth = (dateOfBirth) => {
     const date = new Date(dateOfBirth);
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -449,7 +448,8 @@ export default function DashOutPatientProfile() {
     console.log("Selected Option:", selectedOption);
     setFormData({
       ...formData,
-      medicine: selectedOption.value,
+      medicine: selectedOption.label,
+      itemId: selectedOption.value,
     });
   };
   const onRouteChange = (selectedOption) => {
@@ -585,11 +585,11 @@ export default function DashOutPatientProfile() {
   const getColorClass2 = (level) => {
     switch (level) {
       case "Mild":
-        return "text-green-500";
+        return "font-bold text-green-500";
       case "Moderate":
-        return "text-yellow-500";
+        return "font-bold text-yellow-500";
       case "Severe":
-        return "text-red-500";
+        return "font-bold text-red-500";
       default:
         return "";
     }
@@ -1083,11 +1083,15 @@ export default function DashOutPatientProfile() {
                             color:
                               prescription.status === "Pending"
                                 ? "orange"
+                                : prescription.status === "Rejected"
+                                ? "red"
                                 : "green",
+                            fontWeight: "bold",
                           }}
                         >
                           {prescription.status}
                         </Table.Cell>
+
                         <Table.Cell>
                           <span
                             onClick={() => {
@@ -1262,7 +1266,7 @@ export default function DashOutPatientProfile() {
                 <Label htmlFor="Medicine">Medicine</Label>
                 <Select
                   options={medicine.map((item) => ({
-                    value: item.itemName,
+                    value: item._id,
                     label: item.itemName,
                   }))}
                   placeholder="Select a Medicine"

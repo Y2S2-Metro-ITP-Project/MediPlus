@@ -227,7 +227,6 @@ export const getUserpatientVitals = async (req, res) => {
   const UserId = req.params.UserId;
   //console.log(UserId);
   const patientId = await Patient.find({ user: UserId }).select("_id");
-  console.log(patientId[0]._id);
   const ID = patientId[0]._id;
   try {
     const vitals = await Vitals.find({ patientId: ID });

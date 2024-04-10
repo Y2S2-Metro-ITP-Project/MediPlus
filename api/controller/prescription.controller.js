@@ -1,8 +1,10 @@
 import Patient from "../models/patient.model.js";
+import PrescriptionOrder from "../models/PrecriptionOrder.model.js";
 import Prescription from "../models/prescription.model.js";
 import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import Inventory from "../models/inventory.model.js";
 export const addPrescription = async (req, res, next) => {
   if (
     !req.user.isAdmin &&
@@ -18,6 +20,7 @@ export const addPrescription = async (req, res, next) => {
   }
   const patientId = req.body.patientId;
   const doctorId = req.body.DoctorId;
+  const itemId = req.body.formData.itemId;
   const medicine = req.body.formData.medicine;
   const dosage = req.body.formData.dosageAmount;
   const route = req.body.formData.route;
@@ -26,9 +29,9 @@ export const addPrescription = async (req, res, next) => {
   const foodRelation = req.body.formData.foodRelation;
   const instructions = req.body.formData.instructions;
   const dosageType = req.body.formData.dosageType;
-  console.log(req.body);
   if (
     !patientId ||
+    !itemId ||
     !doctorId ||
     !medicine ||
     !dosage ||
@@ -54,6 +57,7 @@ export const addPrescription = async (req, res, next) => {
     const newPrescription = new Prescription({
       patientId,
       doctorId,
+      itemId,
       medicine,
       dosage,
       dosageType,
@@ -65,6 +69,28 @@ export const addPrescription = async (req, res, next) => {
     });
     console.log(newPrescription);
     await newPrescription.save();
+    const orders = await PrescriptionOrder.find({ patientId, doctorId });
+
+    let order;
+
+    for (const existingOrder of orders) {
+      if (existingOrder.status === "Pending") {
+        order = existingOrder;
+        break;
+      }
+    }
+
+    if (!order) {
+      order = new PrescriptionOrder({
+        patientId,
+        doctorId,
+        prescriptions: [newPrescription._id],
+      });
+    } else {
+      order.prescriptions.push(newPrescription._id);
+    }
+
+    await order.save();
     res.status(201).json({ message: "Prescription added successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -98,7 +124,7 @@ export const getPrescription = async (req, res) => {
   }
 };
 
-export const deletePrescription = async (req, res) => {
+export const deletePrescription = async (req, res, next) => {
   if (
     !req.user.isAdmin &&
     !req.user.isDoctor &&
@@ -111,11 +137,25 @@ export const deletePrescription = async (req, res) => {
       .status(403)
       .json({ message: "You are not allowed to access these resources" });
   }
+
   try {
-    await Prescription.findByIdAndDelete(req.params.prescriptionId);
+    const prescriptionId = req.params.prescriptionId;
+    const prescription = await Prescription.findById(prescriptionId);
+
+    if (!prescription) {
+      return res.status(404).json({ message: "Prescription not found" });
+    }
+
+    await Prescription.findByIdAndDelete(prescriptionId);
+    await PrescriptionOrder.updateMany(
+      { prescriptions: prescriptionId },
+      { $pull: { prescriptions: prescriptionId } }
+    );
+    await PrescriptionOrder.deleteMany({ prescriptions: { $size: 0 } });
+
     res.status(200).json({ message: "Prescription deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
@@ -274,7 +314,9 @@ export const getPatientPrescription = async (req, res) => {
         $lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
       },
     }).countDocuments();
-    res.status(200).json({ prescriptions, totalPrescriptions, totalLastMonthPrescriptions});
+    res
+      .status(200)
+      .json({ prescriptions, totalPrescriptions, totalLastMonthPrescriptions });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -399,12 +441,12 @@ export const downloadPatientPDFPrescription = async (req, res, next) => {
       const formattedDate = new Date(date).toLocaleString();
 
       // Check if the current date and doctor are the same as the previous one
-        htmlContent += `
+      htmlContent += `
             <div class="section">
             <h2>Doctor who Prescribed: ${username}</h2>`;
 
-        // Add the vital sign information to the HTML content
-        htmlContent += `
+      // Add the vital sign information to the HTML content
+      htmlContent += `
                 <p><strong>Medicine:</strong> ${medicine} </p>
                 <p><strong>Dosage:</strong> ${dosage}</p>
                 <p><strong>Dosage Type:</strong> ${dosageType}</p>
@@ -580,5 +622,59 @@ export const downloadPatientDocotorPDFPrescription = async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPrescriptiondata = async (req, res) => {
+  if (req.user.isPharmacist) {
+    try {
+      const prescription = await Prescription.findById(req.params.id)
+        .populate("patientId")
+        .populate("doctorId")
+        .populate("itemId");
+      res.status(200).json({ prescription });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+};
+
+export const getPrescriptionOrdersInventoryData = async (req, res) => {
+  if (req.user.isPharmacist) {
+    try {
+      const patientID = req.params.id;
+      const prescriptions = await Prescription.find({
+        patientId: patientID,
+        status: "Pending",
+      });
+
+      // Array to store prescription details with price and quantity
+      const prescriptionDetails = [];
+
+      for (const prescription of prescriptions) {
+        const inventoryItem = await Inventory.findById(prescription.itemId);
+
+        if (inventoryItem) {
+          // Construct prescription details object with item details and total price
+          const prescriptionDetail = {
+            itemName: inventoryItem.itemName,
+            dosage: prescription.dosage,
+            itemPrice: inventoryItem.itemPrice,
+            quantity: inventoryItem.itemQuantity,
+            totalPrice: inventoryItem.itemPrice * prescription.dosage, // Calculate total price
+            itemQuantity: inventoryItem.itemQuantity, // Add item quantity to the prescription details
+          };
+
+          prescriptionDetails.push(prescriptionDetail);
+        }
+        console.log(prescriptionDetails);
+      }
+
+      res.status(200).json({ prescriptions: prescriptionDetails });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  } else {
+    res.status(403).json({ message: "Unauthorized access" });
   }
 };

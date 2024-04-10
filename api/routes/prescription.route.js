@@ -8,6 +8,7 @@ import {
   getPatientPrescription,
   downloadPatientPDFPrescription,
   downloadPatientDocotorPDFPrescription,
+  getPrescriptionOrdersInventoryData,
 } from "../controller/prescription.controller.js";
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.post(
   verifyToken,
   downloadPatientDocotorPDFPrescription
 );
+router.get("/getPrescriptionsDataOrders/:id", verifyToken, getPrescriptionOrdersInventoryData);
 
 export default router;

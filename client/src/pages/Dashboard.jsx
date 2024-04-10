@@ -20,6 +20,7 @@ import PatientPrescriptions from "../components/PatientPrescriptions";
 import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
 import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
+import DashMedicineDispence from "../components/DashMedicineDispence";
 
 
 
@@ -78,7 +79,9 @@ export default function Dashboard() {
       {/**<DashPatientVitals/> */}
       {tab==="PatientVitals" && <PatientVitals/>}
       {/** <DashPrecritionOrder/> */}
-      {tab==="PrescriptionOrder" && <DashDoctorsOrdersPrecriptions/>}
+      {tab==="orderPrescritions" && <DashDoctorsOrdersPrecriptions/>}
+      {/** <DashMedicineDispence/> */}
+      {tab==="Dispence" && <DashMedicineDispence/>}
     </div>
   );
 }

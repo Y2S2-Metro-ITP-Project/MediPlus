@@ -177,8 +177,27 @@ export const deletePatient = async (req, res) => {
   }
 
   try {
-    await Patient.findByIdAndDelete(req.params.patientId);
-    res.status(200).json({ message: "Patient Data deleted successfully" });
+    const patientId = req.params.patientId;
+    const patient = await Patient.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+
+    const userId = patient.user;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await Patient.findByIdAndDelete(patientId);
+    await User.findByIdAndDelete(userId);
+
+    res
+      .status(200)
+      .json({ message: "Patient and user accounts deleted successfully" });
   } catch (error) {
     next(error);
   }
@@ -478,7 +497,7 @@ export const downloadPDFPatient = async (req, res, next) => {
 };
 
 export const getPatient = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor && !req.user.isPharmacist) {
     return next(
       errorHandler(403, "You are not allowed to access this resource")
     );
