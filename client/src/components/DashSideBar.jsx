@@ -184,6 +184,29 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
+          {currentUser.isPharmacist && (
+            <>
+              <Link to="/dashboard?tab=orderPrescritions">
+                <Sidebar.Item
+                  active={tab === "orderPrescritions"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Doctor Orders
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inventory">
+                <Sidebar.Item
+                  active={tab === "inventory"}
+                  icon={FaBox}
+                  as="div"
+                >
+                  Inventory
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+
           {currentUser.isReceptionist && (
             <>
               <Link to="/dashboard?tab=patients">
@@ -252,7 +275,7 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=PatientVitals">
                 <Sidebar.Item
                   active={tab === "PatientVitals"}
-                  icon={FaHeartbeat} 
+                  icon={FaHeartbeat}
                   as="div"
                 >
                   Vitals

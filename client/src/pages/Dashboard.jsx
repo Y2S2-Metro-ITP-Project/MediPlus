@@ -19,6 +19,7 @@ import DashOutPatientProfile from "../components/DashOutPatientProfile";
 import PatientPrescriptions from "../components/PatientPrescriptions";
 import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
+import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
 
 
 
@@ -76,6 +77,8 @@ export default function Dashboard() {
       {tab==="PatientDiagnosis" && <PatientDiagnosis/>}
       {/**<DashPatientVitals/> */}
       {tab==="PatientVitals" && <PatientVitals/>}
+      {/** <DashPrecritionOrder/> */}
+      {tab==="PrescriptionOrder" && <DashDoctorsOrdersPrecriptions/>}
     </div>
   );
 }
