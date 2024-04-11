@@ -13,7 +13,7 @@ export const createBooking = async (req, res, next) => {
   } = req.body;
 
   // Check if all required fields are present
-  if (!type || !doctorId || !date || !time || !roomNo) {
+  if (!type || !doctorId || !date || !time) {
     return res.status(400).json({ error: "All fields are required" });
   }
 

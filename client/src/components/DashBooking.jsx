@@ -158,13 +158,13 @@ export default function Booking() {
     try {
       const { type, date, time, roomNo } = formData;
       const doctorId = currentUser._id; // Get doctorId from currentUser
-  
+
       // Check if type, date, time, roomNo are provided
-      if (!type || !date || !time || !roomNo) {
+      if (!type || !date || !time) {
         toast.error("All fields are required");
         return;
       }
-  
+
       const res = await fetch("/api/booking/create", {
         method: "POST",
         headers: {
@@ -186,9 +186,6 @@ export default function Booking() {
       console.error(error);
     }
   };
-  
-  
-  
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -365,6 +362,17 @@ export default function Booking() {
                   <option value="Hospital Booking">Hospital Booking</option>
                 </Select>
               </div>
+              {formData.type === "Hospital Booking" && (
+              <div>
+                <Label htmlFor="roomNo">Room No.</Label>
+                <TextInput
+                  type="number"
+                  id="roomNo"
+                  onChange={onChange}
+                  className="input-field"
+                />
+              </div>
+            )}
               <div>
                 <Label htmlFor="date">Date</Label>
                 <TextInput
@@ -383,15 +391,6 @@ export default function Booking() {
                   className="input-field"
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="roomNo">Room No.</Label>
-              <TextInput
-                type="number"
-                id="roomNo"
-                onChange={onChange}
-                className="input-field"
-              />
             </div>
             <div className="flex justify-center mt-3">
               <Button color="blue" type="submit" outline>
