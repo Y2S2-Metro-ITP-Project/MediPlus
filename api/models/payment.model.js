@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 //create a payment model
-const paymentSchema = mongoose.Schema(
+const paymentSchema = new mongoose.Schema(
   {
     dateAndTime: {
       type: String,
@@ -14,8 +14,8 @@ const paymentSchema = mongoose.Schema(
     patientName: {
       type: String,
     },
-    patientEmail: {
-      type: String,
+    patientEmail:{
+        type:String
     },
 
     OrderType: {
@@ -43,4 +43,6 @@ const paymentSchema = mongoose.Schema(
   }
 );
 
-export const Payment = mongoose.model("payments", paymentSchema);
+const Payment = mongoose.model("payment", paymentSchema);
+
+export default Payment;

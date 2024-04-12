@@ -2,13 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Table, TextInput, Button, Modal } from "flowbite-react";
 import { AiOutlineSearch } from "react-icons/ai";
-import { HiAnnotation, HiArrowNarrowUp, HiOutlineExclamationCircle } from "react-icons/hi";
+import {
+  HiAnnotation,
+  HiArrowNarrowUp,
+  HiOutlineExclamationCircle,
+} from "react-icons/hi";
 import ReactPaginate from "react-paginate";
 import Select from "react-select";
 import { format } from "date-fns";
 import { BiCapsule } from "react-icons/bi";
 import { Link } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
+import { set } from "mongoose";
 export default function DashDoctorsOrdersPrecriptions() {
   const [orders, setOrders] = useState([]);
   const [pageNumber, setPageNumber] = useState(0);
@@ -21,6 +26,12 @@ export default function DashDoctorsOrdersPrecriptions() {
   const [totalCompletedOrders, setTotalCompletedOrders] = useState(0);
   const [totalPendingOrders, setTotalPendingOrders] = useState(0);
   const [totalRejectedOrders, setTotalRejectedOrders] = useState(0);
+  const [doctors, setDoctors] = useState([]);
+  const [dates, setDates] = useState([]);
+  const [uniquePatients, setUniquePatients] = useState([]);
+  const [seleactedDoctor, setSeleactedDoctor] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const fetchOrders = async () => {
     try {
       const res = await fetch(`/api/prescriptionOrder/getPrescriptionOrder`);
@@ -35,6 +46,33 @@ export default function DashDoctorsOrdersPrecriptions() {
               .toLowerCase()
               .includes(searchTerm.toLowerCase())
         );
+        const uniqueDoctors = [
+          ...new Set(
+            data.prescriptionOrders.map((prescriptionOrders) => ({
+              doctorId: prescriptionOrders.doctorId,
+              username: prescriptionOrders.doctorId.username,
+            }))
+          ),
+        ];
+        const uniqueDates = [
+          ...new Set(
+            data.prescriptionOrders.map((prescriptionOrders) =>
+              format(new Date(prescriptionOrders.date), "yyyy-MM-dd")
+            )
+          ),
+        ];
+        const uniquePatients = [
+          ...new Set(
+            data.prescriptionOrders.map((prescriptionOrders) => ({
+              patientId: prescriptionOrders.patientId,
+              name: prescriptionOrders.patientId.name,
+            }))
+          ),
+        ];
+
+        setDoctors(uniqueDoctors);
+        setDates(uniqueDates);
+        setUniquePatients(uniquePatients);
         setTotalOrders(data.totalOrders);
         setTotalCompletedOrders(data.totalCompletedOrders);
         setTotalPendingOrders(data.totalPendingOrders);
@@ -45,6 +83,7 @@ export default function DashDoctorsOrdersPrecriptions() {
       console.log(error);
     }
   };
+  console.log(orders);
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -60,6 +99,39 @@ export default function DashDoctorsOrdersPrecriptions() {
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase())
           );
+          const uniqueDoctors = [
+            ...new Set(
+              data.prescriptionOrders.map((order) =>
+                JSON.stringify({
+                  doctorId: order.doctorId._id,
+                  username: order.doctorId.username,
+                })
+              )
+            ),
+          ].map((str) => JSON.parse(str));
+
+          const uniqueDates = [
+            ...new Set(
+              data.prescriptionOrders.map((order) =>
+                format(new Date(order.date), "yyyy-MM-dd")
+              )
+            ),
+          ];
+
+          const uniquePatients = [
+            ...new Set(
+              data.prescriptionOrders.map((order) =>
+                JSON.stringify({
+                  patientId: order.patientId._id,
+                  name: order.patientId.name,
+                })
+              )
+            ),
+          ].map((str) => JSON.parse(str));
+
+          setDoctors(uniqueDoctors);
+          setDates(uniqueDates);
+          setUniquePatients(uniquePatients);
           setTotalOrders(data.totalOrders);
           setTotalCompletedOrders(data.totalCompletedOrders);
           setTotalPendingOrders(data.totalPendingOrders);
@@ -94,6 +166,8 @@ export default function DashDoctorsOrdersPrecriptions() {
         return "black";
     }
   };
+  const [rejectModal, setRejectModal] = useState(false);
+  const [OrderIdToReject, setOrderIdToReject] = useState("");
 
   const displayPrescriptionOrders = orders
     .slice(
@@ -120,8 +194,25 @@ export default function DashDoctorsOrdersPrecriptions() {
               {order.status}
             </span>
           </Table.Cell>
+          <Table.Cell style={{ color: getStatusColor(order.payment?.status) }}>
+            {order.payment?.status}
+          </Table.Cell>
+
           <Table.Cell>
-          {order.status === "Pending" && (
+            <div></div>
+            {order.payment?.status === "Rejected" &&
+              order.status === "Completed" && (
+                <span
+                  className="font-medium text-yellow-500 hover:underline cursor-pointer"
+                  onClick={() => {
+                    setRejectModal(true);
+                    setOrderIdToReject(order._id);
+                  }}
+                >
+                  Reject
+                </span>
+              )}
+            {order.status === "Pending" && (
               <Link
                 to={`/dashboard?tab=Dispence&id=${order._id}`}
                 style={{ color: "green" }}
@@ -164,13 +255,129 @@ export default function DashDoctorsOrdersPrecriptions() {
       console.log(error);
     }
   };
+  const handleOnDoctorChange = (selectedOption) => {
+    setSeleactedDoctor(selectedOption);
+  };
+  const handleOnDateChange = (selectedOption) => {
+    setSelectedDate(selectedOption);
+  };
+  const handleOnPatientChange = (selectedOption) => {
+    setSelectedPatient(selectedOption);
+  };
+  const handleDownloadPDF = async () => {
+    if (selectedPatient !== null) {
+      try {
+        const res = await fetch(
+          `/api/prescriptionOrder/downloadPatientOrder/${selectedPatient.value}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              patientID: selectedPatient.value,
+            }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
 
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${selectedPatient.label}-PrescriptionReport.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {}
+    }
+    if (selectedDate !== null) {
+      try {
+        const res = await fetch(
+          `/api/prescriptionOrder/downloadPatientOrderDate/${selectedDate.value}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              date: selectedDate.value,
+            }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Date-${selectedDate.label}-PrescriptionReport.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {}
+    }
+    if (seleactedDoctor !== null) {
+      try {
+        const res = await fetch(
+          `/api/prescriptionOrder/downloadDoctorOrderReport/${seleactedDoctor.value}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              seleactedDoctor,
+            }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Doctor-${seleactedDoctor.label}-PrescriptionReport.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {}
+    }
+  };
+
+  const handleRejectOrder = async () => {
+    try {
+      const res = await fetch(
+        `/api/prescriptionOrder/fullOrderRejection/${OrderIdToReject}`,
+        {
+          method: "GET",
+        }
+      );
+      if (res.ok) {
+        toast.success("Order rejected successfully");
+        fetchOrders();
+        setRejectModal(false);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  console.log(seleactedDoctor)
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
       <div className="p-3 md:mx-auto">
         <div className=" flex-wrap flex gap-4 justify-center">
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
             <div className="flex justify-between">
               <div className="">
                 <h3 className="text-gray-500 text-md uppercase">
@@ -257,6 +464,11 @@ export default function DashDoctorsOrdersPrecriptions() {
             placeholder="Select Doctor"
             isSearchable
             isClearable
+            value={seleactedDoctor}
+            options={doctors.map((doctor) => ({
+              value: doctor.doctorId,
+              label: doctor.username,
+            }))}
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -271,12 +483,14 @@ export default function DashDoctorsOrdersPrecriptions() {
                 color: "black",
               }),
             }}
+            onChange={handleOnDoctorChange}
           />
           <Select
             className="ml-4"
             placeholder="Select Date"
             isSearchable
             isClearable
+            value={selectedDate}
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -291,8 +505,48 @@ export default function DashDoctorsOrdersPrecriptions() {
                 color: "black",
               }),
             }}
+            options={dates.map((date) => ({
+              value: date,
+              label: date,
+            }))}
+            onChange={handleOnDateChange}
           />
-          <Button outline gradientDuoTone="greenToBlue" className=" ml-4">
+          <Select
+            className="ml-4"
+            placeholder="Select Patient"
+            isSearchable
+            isClearable
+            value={selectedPatient}
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                width: "200px",
+              }),
+              option: (provided) => ({
+                ...provided,
+                color: "black",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "black",
+              }),
+            }}
+            options={uniquePatients.map((patient) => ({
+              value: patient.patientId,
+              label: patient.name,
+            }))}
+            onChange={handleOnPatientChange}
+          />
+          <Button
+            outline
+            gradientDuoTone="greenToBlue"
+            className=" ml-4"
+            onClick={handleDownloadPDF}
+            disabled={
+              (seleactedDoctor && selectedDate && selectedPatient) ||
+              (!seleactedDoctor && !selectedPatient && !selectedDate)
+            }
+          >
             Download Prescription Order Report
           </Button>
         </div>
@@ -308,7 +562,8 @@ export default function DashDoctorsOrdersPrecriptions() {
               <Table.HeadCell>Contact Email</Table.HeadCell>
               <Table.HeadCell>Doctor</Table.HeadCell>
               <Table.HeadCell>No of Prescriptions</Table.HeadCell>
-              <Table.HeadCell>Status</Table.HeadCell>
+              <Table.HeadCell>Dispense Status</Table.HeadCell>
+              <Table.HeadCell>Payment Status</Table.HeadCell>
               <Table.HeadCell>Action</Table.HeadCell>
             </Table.Head>
             {displayPrescriptionOrders}
@@ -354,6 +609,34 @@ export default function DashDoctorsOrdersPrecriptions() {
               Yes,I am sure
             </Button>
             <Button color="gray" onClick={() => setShowModal(false)}>
+              No,cancel
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+      {/** Reject Modal */}
+      <Modal
+        show={rejectModal}
+        onClose={() => setRejectModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
+              Are you sure you want to reject this Order?{" "}
+              <p className="text-red-500 font-bold">
+                This action cannot be undone
+              </p>
+            </h3>
+          </div>
+          <div className="flex justify-center gap-4">
+            <Button color="failure" onClick={handleRejectOrder}>
+              Yes,I am sure
+            </Button>
+            <Button color="gray" onClick={() => setRejectModal(false)}>
               No,cancel
             </Button>
           </div>

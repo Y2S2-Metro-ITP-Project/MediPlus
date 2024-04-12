@@ -21,6 +21,10 @@ const prescriptionOrderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  payment:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "payment",
+  },
   status: {
     type: String,
     enum: ["Pending", "Completed", "Rejected"],
