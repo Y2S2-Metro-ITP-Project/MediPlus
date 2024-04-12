@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Table, TableHeadCell, Button, TextInput, Label , Select} from "flowbite-react";
+import {
+  Table,
+  TableHeadCell,
+  Button,
+  TextInput,
+  Label,
+  Select,
+} from "flowbite-react";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -13,15 +20,15 @@ import { ToastContainer, toast } from "react-toastify";
 export default function DashTestManager() {
   const { currentUser } = useSelector((state) => state.user);
   const [labTests, setLabTests] = useState([]);
-  const [showMore, setShowMore] = useState(true);
+  // const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [testIdToDelete, setTestIdToDelete] = useState(" ");
   const [addTestModal, setAddTestModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [testIdToUpdate, setTestIdToUpdate] = useState("");
-  const [updateTestModal,setUpdateTestModal] = useState(false);
-  cosnt [showTestData, setShowTestData] = useState(false);
-  cosnt [testData , setTestData] = useState ({
+  const [updateTestModal, setUpdateTestModal] = useState(false);
+  const[showTestData, setShowTestData] = useState(false);
+  const[testData, setTestData] = useState({
     name: false,
     sampleType: false,
     sampleVolume: false,
@@ -33,28 +40,24 @@ export default function DashTestManager() {
   const formatSeconds = (s) =>
     new Date(s * 1000).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
 
-    const handleChange = (e) => {
-      setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
+  const fetchTests = async () => {
+    try {
+      const res = await fetch(`/api/labTest/getTests`);
+      const data = await res.json();
 
-
-    const fetchTests = async () => {
-      try {
-        const res = await fetch(`/api/labTest/getTests`);
-        const data = await res.json();
-
-        if (res.ok) {
-          setLabTests(data);
-        }
-      } catch (error) {
-        console.error(error.message);
+      if (res.ok) {
+        setLabTests(data);
       }
-    };
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
 
   useEffect(() => {
-  
-
     // Fetch all tests
     const fetchTests = async () => {
       try {
@@ -139,54 +142,68 @@ export default function DashTestManager() {
     }
   };
 
-  // VIEW TEST DATA 
-   const handleTestDetailsView =(
-    name,
-    sampleType,
-    sampleVolume,
-    completionTime,
-    price,
-   ) => setTestData({
-    name,
-    sampleType,
-    sampleVolume,
-    completionTime,
-    price,
-   });
-   setShowTestData(true);
-
+  // // VIEW TEST DATA
+  // const handleTestDetailsView = (
+  //   name,
+  //   sampleType,
+  //   sampleVolume,
+  //   completionTime,
+  //   price
+  // ) =>
+  //   setTestData({
+  //     name,
+  //     sampleType,
+  //     sampleVolume,
+  //     completionTime,
+  //     price,
+  //   });
+  // setShowTestData(true);
 
   // UPDATE TESTS HANDLER
 
-    const handleTestUpdate = async (e) => {
-      e.preventDefault();
+  const handleTestUpdate = async (e) => {
+    e.preventDefault();
 
-      try {
-        const res = await fetch(`/api/labTest/updateTest/${testIdToUpdate}` , {
-          method: "PUT",
-          headers: {
-            "Content-Type" : "application/json",
-          },
-          body: JSON.stringify(formData),
-        });
+    try {
+      const res = await fetch(`/api/labTest/updateTest/${testIdToUpdate}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if(res.ok){
-          setUpdateTestModal(false);
-          setFormData({});
-          fetchTests();
-          toast.success("Test Updated Succesfully");
-        }else{
-          toast.error(data.message);
-        }
-      } catch (error) {
-        toast.error(error)
+      if (res.ok) {
+        setUpdateTestModal(false);
+        setFormData({});
+        fetchTests();
+        toast.success("Test Updated Succesfully");
+      } else {
+        toast.error(data.message);
       }
-    };
+    } catch (error) {
+      toast.error(error);
+    }
+  };
 
-    
 
+    const handleSetTestDetails =(
+      name,
+    sampleType,
+    sampleVolume,
+    completionTime,
+    price
+  ) => {
+    setTestData({
+      name,
+      sampleType,
+      sampleVolume,
+      completionTime,
+      price,
+    });
+  };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 ">
@@ -222,11 +239,11 @@ export default function DashTestManager() {
               <Table.Body className=" divide-y text-center ">
                 <Table.Row>
                   <div className=" text-left ">
-                  <Table.Cell>
-                    <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
-                      {labtest.name}
-                    </Link>
-                  </Table.Cell>
+                    <Table.Cell>
+                      <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
+                        {labtest.name}
+                      </Link>
+                    </Table.Cell>
                   </div>
                   <Table.Cell>{labtest.sampleType.toLowerCase()}</Table.Cell>
                   <Table.Cell>{labtest.sampleVolume} ml</Table.Cell>
@@ -246,7 +263,17 @@ export default function DashTestManager() {
                     </span>
                   </Table.Cell>
                   <Table.Cell>
-                    <span className="text-green-500 hover: cursor-pointer ">
+                    <span className="text-green-500 hover: cursor-pointer "
+                    onClick={() => {
+                      setTestIdToUpdate(labtest._id);
+                      handleSetTestDetails(
+                        labtest.name,
+                        labtest.sampleType,
+                        labtest.sampleVolume,
+                        labtest.completionTime,
+                        labtest.price
+                      );setUpdateTestModal(true);
+                    }}>
                       <FaEdit />
                     </span>
                   </Table.Cell>
@@ -313,7 +340,7 @@ export default function DashTestManager() {
               </div>
 
               <div>
-                <Label htmlFor="sampleType">Gender</Label>
+                <Label htmlFor="sampleType">Sample Type</Label>
                 <Select
                   id="sampleType"
                   onChange={handleChange}
@@ -333,7 +360,7 @@ export default function DashTestManager() {
                   type="text"
                   placeholder="--ml"
                   id="sampleVolume"
-                  onChange={ handleChange}
+                  onChange={handleChange}
                   className="input-field"
                 />
               </div>
@@ -377,7 +404,7 @@ export default function DashTestManager() {
         </Modal.Body>
       </Modal>
 
-                 {/* UPDATE TEST MODAL */}
+      {/* UPDATE TEST MODAL */}
       <Modal
         show={updateTestModal}
         onClose={() => setUpdateTestModal(false)}
@@ -388,7 +415,7 @@ export default function DashTestManager() {
         <Modal.Body>
           <div className="text-center">
             <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-                UPDATE
+              UPDATE
             </h3>
           </div>
           <form onSubmit={handleTestUpdate}>
@@ -397,7 +424,7 @@ export default function DashTestManager() {
                 <Label htmlFor="name">Test Name</Label>
                 <TextInput
                   type="text"
-                  placeholder= "name"
+                  placeholder={testData.name}
                   id="name"
                   onChange={handleChange}
                   className="input-field"
@@ -405,13 +432,13 @@ export default function DashTestManager() {
               </div>
 
               <div>
-                <Label htmlFor="sampleType">Gender</Label>
+                <Label htmlFor="sampleType">Sample Type</Label>
                 <Select
                   id="sampleType"
                   onChange={handleChange}
                   className="input-field"
                 >
-                  <option value="">Select Sample Type</option>
+                  <option value="">{testData.sampleType}</option>
                   <option value="BLOOD">Blood</option>
                   <option value="URINE">Urine</option>
                   <option value="MUCUS">Mucus</option>
@@ -423,9 +450,9 @@ export default function DashTestManager() {
                 <Label htmlFor="sampleVolume">Sample Volume</Label>
                 <TextInput
                   type="text"
-                  placeholder="--ml"
+                  placeholder={testData.sampleVolume}
                   id="sampleVolume"
-                  onChange={ handleChange}
+                  onChange={handleChange}
                   className="input-field"
                 />
               </div>
@@ -433,8 +460,8 @@ export default function DashTestManager() {
                 <Label htmlFor="completionTime">Time for completion</Label>
                 <TextInput
                   type="text"
-                  placeholder="submit time as seconds"
-                  id="completionTime"
+                  placeholder={testData.completionTime}
+                  id= "completionTime"
                   onChange={handleChange}
                   className="input-field"
                 />
@@ -443,7 +470,7 @@ export default function DashTestManager() {
                 <Label htmlFor="price">Price</Label>
                 <TextInput
                   type="text"
-                  placeholder="9999"
+                  placeholder={testData.price}
                   id="price"
                   onChange={handleChange}
                   className="input-field"
@@ -468,8 +495,6 @@ export default function DashTestManager() {
           </form>
         </Modal.Body>
       </Modal>
-
-      
     </div>
   );
 }
