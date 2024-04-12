@@ -18,6 +18,18 @@ export default function DashTestManager() {
   const [testIdToDelete, setTestIdToDelete] = useState(" ");
   const [addTestModal, setAddTestModal] = useState(false);
   const [formData, setFormData] = useState({});
+  const [testIdToUpdate, setTestIdToUpdate] = useState("");
+  const [updateTestModal,setUpdateTestModal] = useState(false);
+  cosnt [showTestData, setShowTestData] = useState(false);
+  cosnt [testData , setTestData] = useState ({
+    name: false,
+    sampleType: false,
+    sampleVolume: false,
+    completionTime: false,
+    price: false,
+  });
+
+  // format seconds to dd-hh-ss format
   const formatSeconds = (s) =>
     new Date(s * 1000).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
 
@@ -126,6 +138,55 @@ export default function DashTestManager() {
       toast.error(error.message);
     }
   };
+
+  // VIEW TEST DATA 
+   const handleTestDetailsView =(
+    name,
+    sampleType,
+    sampleVolume,
+    completionTime,
+    price,
+   ) => setTestData({
+    name,
+    sampleType,
+    sampleVolume,
+    completionTime,
+    price,
+   });
+   setShowTestData(true);
+
+
+  // UPDATE TESTS HANDLER
+
+    const handleTestUpdate = async (e) => {
+      e.preventDefault();
+
+      try {
+        const res = await fetch(`/api/labTest/updateTest/${testIdToUpdate}` , {
+          method: "PUT",
+          headers: {
+            "Content-Type" : "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await res.json();
+
+        if(res.ok){
+          setUpdateTestModal(false);
+          setFormData({});
+          fetchTests();
+          toast.success("Test Updated Succesfully");
+        }else{
+          toast.error(data.message);
+        }
+      } catch (error) {
+        toast.error(error)
+      }
+    };
+
+    
+
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 ">
@@ -315,6 +376,100 @@ export default function DashTestManager() {
           </form>
         </Modal.Body>
       </Modal>
+
+                 {/* UPDATE TEST MODAL */}
+      <Modal
+        show={updateTestModal}
+        onClose={() => setUpdateTestModal(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+                UPDATE
+            </h3>
+          </div>
+          <form onSubmit={handleTestUpdate}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="name">Test Name</Label>
+                <TextInput
+                  type="text"
+                  placeholder= "name"
+                  id="name"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="sampleType">Gender</Label>
+                <Select
+                  id="sampleType"
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  <option value="">Select Sample Type</option>
+                  <option value="BLOOD">Blood</option>
+                  <option value="URINE">Urine</option>
+                  <option value="MUCUS">Mucus</option>
+                  <option value="SALIVA">Saliva</option>
+                  <option value="STOOL">Stool</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="sampleVolume">Sample Volume</Label>
+                <TextInput
+                  type="text"
+                  placeholder="--ml"
+                  id="sampleVolume"
+                  onChange={ handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="completionTime">Time for completion</Label>
+                <TextInput
+                  type="text"
+                  placeholder="submit time as seconds"
+                  id="completionTime"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Price</Label>
+                <TextInput
+                  type="text"
+                  placeholder="9999"
+                  id="price"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+            </div>
+            <div className="flex justify-center mt-3">
+              <Button className="mr-4" color="blue" type="submit" outline>
+                Submit
+              </Button>
+              <Button
+                className="ml-4"
+                color="red"
+                onClick={() => {
+                  setUpdateTestModal(false);
+                  setFormData({});
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+
+      
     </div>
   );
 }
