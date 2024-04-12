@@ -111,82 +111,6 @@ export default function DashOutPatientProfile() {
   const [diagnosticData, setDiagnosticData] = useState([]);
   const [diagnosisIDDelete, setDiagnosisIDDelete] = useState("");
   const [searchTerm1, setSearchTerm1] = useState("");
-  const [prescriptionUpdate, setPrescriptionUpdate] = useState(false);
-  const [prescriptionUpdateModal, setPrescriptionUpdateModal] = useState(false);
-  const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [precriptionDetails, setPrescriptionDetails] = useState({
-    medicine: "",
-    dosage: "",
-    dosageType: "",
-    route: "",
-    frequency: "",
-    duration: "",
-    foodRelation: "",
-    instructions: "",
-  });
-
-  const handleSetPrescriotionDetails = (
-    medicine,
-    dosage,
-    dosageType,
-    route,
-    frequency,
-    duration,
-    foodRelation,
-    instructions
-  ) => {
-    setPrescriptionDetails({
-      medicine,
-      dosage,
-      dosageType,
-      route,
-      frequency,
-      duration,
-      foodRelation,
-      instructions,
-    });
-  };
-
-  {
-    /** Handle precription update */
-  }
-  const handlePrescriptionUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`/api/prescription/updatePrescription`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          formData,
-          prescriptionId: prescriptionUpdate,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log("Failed to update prescription");
-        toast.error(data.message);
-      } else {
-        toast.success("Prescription updated successfully");
-        setPrescriptionUpdateModal(false);
-      }
-      fetchPatient();
-      setFormData([]);
-      fetchPrescriptions();
-      fetchPatientVital();
-      fetchDieseases();
-      fetchDiagnosticData();
-    } catch (error) {
-      toast.error("Failed to update prescription");
-      console.log(error);
-    }
-  };
-
-  {
-    /** Pagination implementation */
-  }
   const itemsPerPage = 2; // Adjust as needed
 
   const handlePageClick = ({ selected }) => {
@@ -195,10 +119,6 @@ export default function DashOutPatientProfile() {
   const offset = currentPage * itemsPerPage;
   const pageCount = Math.ceil(prescriptions.length / itemsPerPage);
   const currentPageData = prescriptions.slice(offset, offset + itemsPerPage);
-
-  {
-    /** Handle fetch diseases to be shown in the select diesease */
-  }
   const fetchDieseases = async () => {
     try {
       const res = await fetch(`/api/disease/getDisease`, {
@@ -222,12 +142,6 @@ export default function DashOutPatientProfile() {
       console.error("Error fetching diseases:", error);
     }
   };
-
-  {
-    /** Handle fetch diagnostic data */
-  }
-  const [diagnosisdate, setDiagnosisDate] = useState([]);
-  const [diagnosisDoctor, setDiagnosisDoctor] = useState([]);
   const fetchDiagnosticData = async () => {
     try {
       const res = await fetch(`/api/diagnosis/getDiagnosticData/${id}`);
@@ -235,36 +149,12 @@ export default function DashOutPatientProfile() {
       if (!res.ok) {
         throw new Error(data.message);
       }
-
-      const uniqueDates = [
-        ...new Set(
-          data.diagnosis.map((diagnosis) =>
-            format(new Date(diagnosis.date), "MMMM dd, yyyy")
-          )
-        ),
-      ];
-
-      const uniqueDoctors = [
-        ...new Set(
-          data.diagnosis.map((diagnosis) => ({
-            doctorId: diagnosis.doctorId,
-            username: diagnosis.doctorId.username,
-          }))
-        ),
-      ];
-      setDiagnosisDate(uniqueDates);
-      setDiagnosisDoctor(uniqueDoctors);
       setDiagnosticData(data.diagnosis);
     } catch (error) {
       console.error("Error fetching diagnosis:", error);
     }
   };
   console.log(diagnosticData);
-  console.log(selectedDate);
-
-  {
-    /** Handle fetch precriptions */
-  }
   const fetchPrescriptions = async () => {
     try {
       const response = await fetch(`/api/prescription/getPrescriptions/${id}`);
@@ -284,15 +174,6 @@ export default function DashOutPatientProfile() {
           )
         ),
       ];
-      const uniqueDoctors = [
-        ...new Set(
-          data.prescriptions.map((prescription) => ({
-            doctorId: prescription.doctorId,
-            username: prescription.doctorId.username,
-          }))
-        ),
-      ];
-      setDoctors(uniqueDoctors);
       setDates(uniqueDates);
       setPrescriptions(filteredPrescriptions);
     } catch (error) {
@@ -300,10 +181,6 @@ export default function DashOutPatientProfile() {
     }
   };
   console.log(prescriptions);
-
-  {
-    /** Handle fetch medicine to show in prescription */
-  }
   const fetchMedicine = async () => {
     try {
       const response = await fetch("/api/inventory/getInventoryInstock");
@@ -316,10 +193,6 @@ export default function DashOutPatientProfile() {
       console.error("Error fetching prescriptions:", error);
     }
   };
-
-  {
-    /** Handle fetch patients vitals */
-  }
   const fetchPatientVital = async () => {
     const res = await fetch(`/api/vital/getVitals/${id}`, {
       method: "GET",
@@ -335,10 +208,6 @@ export default function DashOutPatientProfile() {
       setLatestVitals(data.latestVitals);
     }
   };
-
-  {
-    /** Handle fetch patients */
-  }
   const fetchPatient = async () => {
     const res = await fetch(`/api/patient/getPatient/${id}`, {
       method: "GET",
@@ -353,7 +222,6 @@ export default function DashOutPatientProfile() {
       setPatient(data);
     }
   };
-
   useEffect(() => {
     const fetchPatientVital = async () => {
       const res = await fetch(`/api/vital/getVitals/${id}`, {
@@ -402,10 +270,6 @@ export default function DashOutPatientProfile() {
     const options = { year: "numeric", month: "long", day: "numeric" };
     return date.toLocaleDateString("en-US", options);
   };
-
-  {
-    /** Handle Patient PDF Download */
-  }
   const handlePdfDownload = async () => {
     try {
       const res = await fetch(
@@ -450,40 +314,8 @@ export default function DashOutPatientProfile() {
     });
   };
   console.log(formData);
-
-  {
-    /** Handle Vitals Submit */
-  }
   const handleVitalSubmit = async (e) => {
     e.preventDefault();
-
-    // Define validation ranges for each field
-    const validationRanges = {
-      bloodGlucose: { min: 70, max: 140 },
-      bloodPressureDiastolic: { min: 60, max: 90 },
-      bloodPressureSystolic: { min: 90, max: 120 },
-      heartRate: { min: 40, max: 100 },
-      oxygenSaturation: { min: 90, max: 100 },
-      respiratoryRate: { min: 12, max: 20 },
-      temperature: { min: 36, max: 38 },
-    };
-    const errors = {};
-
-    Object.entries(formData).forEach(([field, value]) => {
-      const range = validationRanges[field];
-      if (range && (value < range.min || value > range.max)) {
-        errors[
-          field
-        ] = `${field} value must be between ${range.min} and ${range.max}`;
-      }
-    });
-    if (Object.keys(errors).length > 0) {
-      Object.values(errors).forEach((error) => {
-        toast.error(error);
-      });
-      return;
-    }
-
     const res = await fetch(`/api/vital/addVitals/${id}`, {
       method: "POST",
       headers: {
@@ -493,21 +325,16 @@ export default function DashOutPatientProfile() {
     });
     if (!res.ok) {
       toast.error("Failed to add vitals");
-    } else {
-      toast.success("Vitals added successfully");
-      setFormData([]);
-      setVitalsModal(false);
-      fetchPatient();
-      fetchPatientVital();
-      fetchPrescriptions();
-      fetchDieseases();
-      fetchDiagnosticData();
     }
+    toast.success("Vitals added successfully");
+    setFormData([]);
+    setVitalsModal(false);
+    fetchPatient();
+    fetchPatientVital();
+    fetchPrescriptions();
+    fetchDieseases();
+    fetchDiagnosticData();
   };
-
-  {
-    /** Handle vitals delete */
-  }
   const handleVitalDelete = async (e) => {
     const res = await fetch(`/api/vital/deleteVitals/${vitalIdToDelete}`, {
       method: "DELETE",
@@ -527,10 +354,6 @@ export default function DashOutPatientProfile() {
     fetchDieseases();
     fetchDiagnosticData();
   };
-
-  {
-    /** Handle download vitals report */
-  }
   const handlePdfDownloadVitals = async () => {
     try {
       const res = await fetch(`/api/vital/DownloadPDFVitals/${id}`, {
@@ -557,11 +380,6 @@ export default function DashOutPatientProfile() {
       console.log(error);
     }
   };
-
-  {
-    /** Handle Prescription Submit */
-  }
-
   const deliveryOptions = [
     { value: "Oral", label: "Oral" },
     { value: "Intravenous", label: "Intravenous" },
@@ -586,10 +404,6 @@ export default function DashOutPatientProfile() {
     { value: "Intravitreal", label: "Intravitreal" },
     { value: "Intracardiac", label: "Intracardiac" },
   ];
-
-  {
-    /** Handle Prescription Submit */
-  }
   const handlePrescriptionSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -611,9 +425,9 @@ export default function DashOutPatientProfile() {
         console.log(data);
       } else {
         toast.success("Prescription added successfully");
-        setPrescriptionModal(false);
       }
       setFormData([]);
+      setPrescriptionModal(false);
       fetchPatient();
       fetchPatientVital();
       fetchPrescriptions();
@@ -652,10 +466,6 @@ export default function DashOutPatientProfile() {
       dosageType: selectedOption.value,
     });
   };
-
-  {
-    /** Hnadle prescription delete */
-  }
   const handlePrescriptionDelete = async (e) => {
     const res = await fetch(
       `/api/prescription/deletePrescription/${prescriptionIdToDelete}`,
@@ -679,83 +489,38 @@ export default function DashOutPatientProfile() {
     fetchDiagnosticData();
   };
   console.log(prescriptions);
-
-  {
-    /** Handle Prescription Report download */
-  }
-  const handleDateChange = (selectedOption) => {
-    setSelectedDate(selectedOption);
-  };
-  const handleDoctorChange = (selectedOption) => {
-    setSelectedDoctor(selectedOption);
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
   };
   const handleDownloadPrescriptionReport = async () => {
-    if (selectedDate !== null) {
-      try {
-        const res = await fetch(
-          `/api/prescription/DownloadPDFPrescription/${id}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ patientId: id, selectedDate: selectedDate }),
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
+    try {
+      const res = await fetch(
+        `/api/prescription/DownloadPDFPrescription/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ patientId: id, selectedDate: selectedDate }),
         }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${patient.name}-Prescriptions.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
+      );
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF");
       }
-    }
-    if (selectedDoctor !== null) {
-      try {
-        const res = await fetch(
-          `/api/prescription/DownloadPDFPrescriptionDoctor/${id}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              patientId: id,
-              selectedDoctor: selectedDoctor,
-            }),
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
+      const pdfBlob = await res.blob();
 
-        const url = window.URL.createObjectURL(pdfBlob);
+      const url = window.URL.createObjectURL(pdfBlob);
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${patient.name}-Prescriptions.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Patient-${patient.name}-Prescriptions.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      console.log(error);
     }
   };
-
-  {
-    /** Handle Diagnosis Select */
-  }
   const handleDiseaseSelect = (selectedOption) => {
     setSelectedDisease(selectedOption);
     if (selectedOption) {
@@ -787,10 +552,6 @@ export default function DashOutPatientProfile() {
       category: selectedOption.value,
     });
   };
-
-  {
-    /** Handle New Diagonsis Submit */
-  }
   const handleDiagnosisSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -821,10 +582,6 @@ export default function DashOutPatientProfile() {
       console.log(error);
     }
   };
-
-  {
-    /** Colors for serverity level */
-  }
   const getColorClass2 = (level) => {
     switch (level) {
       case "Mild":
@@ -837,10 +594,6 @@ export default function DashOutPatientProfile() {
         return "";
     }
   };
-
-  {
-    /** Handle Diagnosis Delete */
-  }
   const handleDiagnosisDelete = async (e) => {
     try {
       const res = await fetch(
@@ -867,82 +620,6 @@ export default function DashOutPatientProfile() {
       console.log(error);
     }
   };
-
-  {
-    /** Handle Diagnosis Report Download */
-  }
-  const [selectedDiagnosisDate, setSelectedDiagnosisDate] = useState("");
-  const [selectedDiagnosisDoctor, setSelectedDiagnosisDoctor] = useState("");
-
-  const handleDiagnosisDateChange = (selectedOption) => {
-    setSelectedDiagnosisDate(selectedOption);
-  };
-
-  const handleDiagnosisDoctorChange = (selectedOption) => {
-    setSelectedDiagnosisDoctor(selectedOption);
-  };
-
-  const handleDownloadDiagnosisReport = async () => {
-    if (selectedDiagnosisDate !== null) {
-      try {
-        const res = await fetch(
-          `/api/diagnosis/DownloadPDFDateDiagnosis/${id}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ patientId: id, selectedDiagnosisDate }),
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${patient.name}-Diagnosis.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    if (selectedDiagnosisDoctor !== null) {
-      try {
-        const res = await fetch(
-          `/api/diagnosis/DownloadPDFDiagnosisDoctor/${id}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ patientId: id, selectedDoctor:selectedDiagnosisDoctor }),
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${patient.name}-Diagnosis.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
@@ -1109,77 +786,11 @@ export default function DashOutPatientProfile() {
                   Severe
                 </span>
               </div>
-              <Select
-                id="filter"
-                className="ml-4 mb-2"
-                onChange={handleDiagnosisDateChange}
-                placeholder="Select a date"
-                value={selectedDiagnosisDate}
-                styles={{
-                  control: (provided) => ({
-                    ...provided,
-                    width: "200px",
-                  }),
-                  option: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                  singleValue: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                }}
-                options={diagnosisdate.map((date) => ({
-                  value: date,
-                  label: date,
-                }))}
-                isClearable
-              />
-              <Select
-                id="filter"
-                className="ml-4 mb-2"
-                onChange={handleDiagnosisDoctorChange}
-                placeholder="Select a doctor"
-                value={selectedDiagnosisDoctor}
-                styles={{
-                  control: (provided) => ({
-                    ...provided,
-                    width: "200px",
-                  }),
-                  option: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                  singleValue: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                }}
-                options={diagnosisDoctor.map((doctor) => ({
-                  value: doctor.doctorId,
-                  label: doctor.username,
-                }))}
-                isClearable
-              />
-
-              <Button
-                outline
-                gradientDuoTone="greenToBlue"
-                className="mb-2 ml-4"
-                onClick={handleDownloadDiagnosisReport}
-                disabled={
-                  (selectedDiagnosisDate && selectedDiagnosisDoctor) ||
-                  (!selectedDiagnosisDate && !selectedDiagnosisDoctor)
-                }
-              >
-                Download Prescription Report
-              </Button>
             </div>
             {diagnosticData.length > 0 ? (
               <>
                 <Table hoverable className="shadow-md">
                   <Table.Head>
-                    <Table.HeadCell>Date</Table.HeadCell>
                     <Table.HeadCell>Type</Table.HeadCell>
                     <Table.HeadCell>Category-Severity Level</Table.HeadCell>
                     <Table.HeadCell>Diagnosis</Table.HeadCell>
@@ -1190,16 +801,6 @@ export default function DashOutPatientProfile() {
                   {diagnosticData.map((diagnosis) => (
                     <Table.Body className="divide-y" key={diagnosis._id}>
                       <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell>
-                          {new Date(diagnosis.date).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </Table.Cell>
                         <Table.Cell>{diagnosis.type}</Table.Cell>
                         <Table.Cell className={getColorClass2(diagnosis.level)}>
                           {diagnosis.level}
@@ -1434,33 +1035,6 @@ export default function DashOutPatientProfile() {
                   value: date,
                   label: date,
                 }))}
-                isClearable
-              />
-              <Select
-                id="filter"
-                className="ml-4 mb-2"
-                onChange={handleDoctorChange}
-                placeholder="Select a doctor"
-                value={selectedDoctor}
-                styles={{
-                  control: (provided) => ({
-                    ...provided,
-                    width: "200px",
-                  }),
-                  option: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                  singleValue: (provided) => ({
-                    ...provided,
-                    color: "black",
-                  }),
-                }}
-                options={doctors.map((doctor) => ({
-                  value: doctor.doctorId,
-                  label: doctor.username,
-                }))}
-                isClearable
               />
 
               <Button
@@ -1468,10 +1042,7 @@ export default function DashOutPatientProfile() {
                 gradientDuoTone="greenToBlue"
                 className="mb-2 ml-4"
                 onClick={handleDownloadPrescriptionReport}
-                disabled={
-                  (selectedDate && selectedDoctor) ||
-                  (!selectedDate && !selectedDoctor)
-                }
+                disabled={!selectedDate}
               >
                 Download Prescription Report
               </Button>
@@ -1522,29 +1093,6 @@ export default function DashOutPatientProfile() {
                         </Table.Cell>
 
                         <Table.Cell>
-                          {prescription.status === "Pending" ? (
-                            <span
-                              onClick={() => {
-                                setPrescriptionUpdate(prescription._id);
-                                handleSetPrescriotionDetails(
-                                  prescription.medicine,
-                                  prescription.dosage,
-                                  prescription.dosageType,
-                                  prescription.route,
-                                  prescription.frequency,
-                                  prescription.duration,
-                                  prescription.foodRelation,
-                                  prescription.instructions
-                                );
-                                setPrescriptionUpdateModal(true);
-                              }}
-                              className="font-medium text-green-500 hover:underline cursor-pointer mr-4"
-                            >
-                              Update
-                            </span>
-                          ) : (
-                            <p>No Update</p>
-                          )}
                           <span
                             onClick={() => {
                               setPrescriptionIdToDelete(prescription._id);
@@ -1820,137 +1368,6 @@ export default function DashOutPatientProfile() {
                 color="red"
                 onClick={() => {
                   setPrescriptionModal(false);
-                  setFormData([]);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
-      {/** Update Prescription Modal */}
-      <Modal
-        show={prescriptionUpdateModal}
-        onClose={() => {
-          setPrescriptionUpdateModal(false), setFormData([]);
-        }}
-        popup
-        size="lg"
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Update Prescription
-            </h3>
-          </div>
-          <form onSubmit={handlePrescriptionUpdate}>
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-              <div>
-                <Label htmlFor="Medicine">Medicine</Label>
-                <Select
-                  options={medicine.map((item) => ({
-                    value: item._id,
-                    label: item.itemName,
-                  }))}
-                  placeholder={precriptionDetails.medicine}
-                  id="medicine"
-                  onChange={onMedicineChange}
-                  isSearchable
-                  isClearable
-                />
-              </div>
-              <div className="">
-                <Label htmlFor="dosageType">Dosage Type</Label>
-                <div className="flex">
-                  <Select
-                    id="dosageType"
-                    className="max-w-xs"
-                    placeholder={precriptionDetails.dosageType}
-                    options={["Tablet", "Capsule", "Syrup", "Injection"].map(
-                      (option) => ({
-                        value: option,
-                        label: option,
-                      })
-                    )}
-                    onChange={onDosageTypeChange}
-                    isClearable
-                  />
-                  <TextInput
-                    type="number"
-                    id="dosageAmount"
-                    className="input-field ml-5"
-                    placeholder={precriptionDetails.dosage}
-                    onChange={onPrescriptionChange}
-                    isClearable
-                    style={{ maxWidth: "200px" }} // Add left margin to separate it from the select
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="noofdays">No Of Days</Label>
-                <TextInput
-                  type="number"
-                  id="noOfDays"
-                  className="input-field"
-                  placeholder={precriptionDetails.duration}
-                  onChange={onPrescriptionChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="route">Route</Label>
-                <Select
-                  options={deliveryOptions}
-                  placeholder={precriptionDetails.route}
-                  id="route"
-                  onChange={onRouteChange}
-                  isSearchable
-                  isClearable
-                />
-              </div>
-              <div>
-                <Label htmlFor="frequency">Frequency</Label>
-                <TextInput
-                  type="number"
-                  id="frequency"
-                  className="input-field"
-                  placeholder={precriptionDetails.frequency}
-                  onChange={onPrescriptionChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="foodRealtion">Food Relations</Label>
-                <Select
-                  options={["Before Food", "After Food"].map((option) => ({
-                    value: option,
-                    label: option,
-                  }))}
-                  placeholder={precriptionDetails.foodRelation}
-                  id="foodRelations"
-                  onChange={onChangeFoodRelation}
-                  isSearchable
-                />
-              </div>
-              <div>
-                <Label htmlFor="Instructions">Instructions</Label>
-                <Textarea
-                  type="text"
-                  id="instructions"
-                  placeholder={precriptionDetails.instructions}
-                  onChange={onPrescriptionChange}
-                />
-              </div>
-            </div>
-            <div className="flex justify-center mt-3">
-              <Button color="blue" type="submit" outline>
-                update
-              </Button>
-              <Button
-                className="ml-4"
-                color="red"
-                onClick={() => {
-                  setPrescriptionUpdateModal(false);
                   setFormData([]);
                 }}
               >

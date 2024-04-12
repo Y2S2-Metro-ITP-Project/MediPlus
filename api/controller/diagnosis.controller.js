@@ -163,16 +163,18 @@ export const getPatientDiagnosisData = async (req, res, next) => {
           $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)),
         },
       });
-    res.status(200).json({
-      diagnosis,
-      totalDiagnosis,
-      totalSevereDiagnosisData,
-      totalMildDiagnosisData,
-      totalModerateDiagnosisData,
-      totalMildDiagnosisDataLastMonth,
-      totalModerateDiagnosisDataLastMonth,
-      totalSevereDiagnosisDataLastMonth,
-    });
+    res
+      .status(200)
+      .json({
+        diagnosis,
+        totalDiagnosis,
+        totalSevereDiagnosisData,
+        totalMildDiagnosisData,
+        totalModerateDiagnosisData,
+        totalMildDiagnosisDataLastMonth,
+        totalModerateDiagnosisDataLastMonth,
+        totalSevereDiagnosisDataLastMonth,
+      });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -323,6 +325,7 @@ export const downloadPatientPDFDiagnosis = async (req, res) => {
   }
 };
 
+
 export const downloadPatientDoctorPDFDiagnosis = async (req, res) => {
   if (
     !req.user.isAdmin &&
@@ -339,14 +342,15 @@ export const downloadPatientDoctorPDFDiagnosis = async (req, res) => {
       .json({ message: "You are not allowed to access these resources" });
   }
 
+
   const userId = req.params.Id;
-  const name = req.body.selectedDoctor.value;
+  const name= req.body.selectedDoctor.value;
   const patient = await Patient.findOne({ user: userId }).select("_id");
   const patientName = await Patient.findOne({ user: userId }).select("name");
-  const DoctorId = await User.findOne({ username: name }).select("_id");
+  const DoctorId= await User.findOne({ username:name }).select("_id");
   const diagnosis1 = await PatientDiagnosis.find({
     patientId: patient._id,
-    doctorId: DoctorId._id,
+    doctorId:DoctorId._id
   }).populate("doctorId", "username");
 
   try {
@@ -458,275 +462,5 @@ export const downloadPatientDoctorPDFDiagnosis = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-export const downloadDoctorDiagnosis = async (req, res) => {
-  if (
-    !req.user.isAdmin &&
-    !req.user.isDoctor &&
-    !req.user.isNurse &&
-    !req.user.isPharmacist &&
-    !req.user.isReceptionist &&
-    !req.user.isHeadNurse &&
-    !req.user.isOutPatient &&
-    !req.user.isInPatient
-  ) {
-    return res
-      .status(403)
-      .json({ message: "You are not allowed to access these resources" });
-  }
-  const patientID = req.body.patientId;
-  const patient = await Patient.findById(patientID);
-  const patientName = patient.name;
-  const DoctorID = req.body.selectedDoctor.value._id;
-  console.log(DoctorID);
-  const diagnosis1 = await PatientDiagnosis.find({
-    patientId: patientID,
-    doctorId: DoctorID,
-  }).populate("doctorId", "username");
-  try {
-    let htmlContent = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <title>Patient Prescription Report</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  margin: 20px;
-              }
-              h1, h2 {
-                  margin-bottom: 10px;
-                  color: #333;
-                  text-align: center; /* Center the headings */
-              }
-              p {
-                  margin-bottom: 5px;
-                  color: #666;
-              }
-              .section {
-                  margin-bottom: 20px;
-              }
-              .patient-picture {
-                  width: 200px;
-                  height: auto;
-                  border: 1px solid #ccc;
-                  margin: 0 auto; /* Center the picture */
-                  display: block; /* Ensure the picture is displayed as a block element */
-              }
-              body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-            }
-            h1, h2 {
-                margin-bottom: 10px;
-                color: #333;
-                text-align: center;
-            }
-            .section {
-                margin-bottom: 20px;
-                border: 1px solid #ccc;
-                padding: 15px;
-                border-radius: 10px;
-            }
-            .section h2 {
-                color: #555;
-                margin-bottom: 10px;
-            }
-            .section p {
-                color: #666;
-                margin-bottom: 5px;
-            }
-            .section p strong {
-                color: #333;
-            }
-          </style>
-      </head>
-      <body>
-          <div class="header">
-              <h1>Patient Diagnostic Report</h1>
-          </div>
-          <h2>Doctor: ${req.body.selectedDoctor.label}</h2>
-          <h2>Patient Name: ${patientName}</h2>
-    `;
-
-    diagnosis1.forEach((diagnosis1) => {
-      const { type, ICD10, Symptoms, level, diagnosis, date } = diagnosis1;
-
-      const formattedDate = new Date(date).toLocaleString();
-
-      // Check if the current date and doctor are the same as the previous one
-      htmlContent += `
-            <div class="section">
-            <h2>Date of Diagnosis: ${formattedDate}</h2>`;
-
-      // Add the vital sign information to the HTML content
-      htmlContent += `
-                <p><strong>level:</strong> ${level}</p>
-                <p><strong>Type:</strong> ${type} </p>
-                <p><strong>Condition:</strong> ${diagnosis} </p>
-                <p><strong>ICD10:</strong> ${ICD10}</p>
-                <p><strong>Remarks:</strong> ${Symptoms}</p>
-            </div>`;
-    });
-
-    // Close the HTML content
-    htmlContent += `
-        </body>
-        </html>`;
-
-    const pdfBuffer = await generatePdfFromHtml(htmlContent);
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Length": pdfBuffer.length,
-    });
-    res.send(pdfBuffer);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const downloadDateDiagnosis = async (req, res) => {
-  if (
-    !req.user.isAdmin &&
-    !req.user.isDoctor &&
-    !req.user.isNurse &&
-    !req.user.isPharmacist &&
-    !req.user.isReceptionist &&
-    !req.user.isHeadNurse &&
-    !req.user.isOutPatient &&
-    !req.user.isInPatient
-  ) {
-    return res
-      .status(403)
-      .json({ message: "You are not allowed to access these resources" });
-  }
-  console.log(req.body);
-  const selectedDate = req.body.selectedDiagnosisDate.value;
-  const isoDate = new Date(selectedDate).toISOString();
-
-  // Extract year, month, and day from the ISODate
-  const year = new Date(isoDate).getFullYear();
-  const month = new Date(isoDate).getMonth() + 1; // Months are 0-indexed in JavaScript, so add 1
-  const day = new Date(isoDate).getDate();
-  const patientid = req.body.patientId;
-  const patientName = await Patient.findOne({ _id: patientid }).select("name");
-  const diagnosis1 = await PatientDiagnosis.find({
-    patientId: patientid,
-    date: {
-      $gte: new Date(year, month - 1, day),
-      $lt: new Date(year, month - 1, day + 1),
-    },
-  }).populate("doctorId", "username");
-
-  try {
-    let htmlContent = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <title>Patient Prescription Report</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  margin: 20px;
-              }
-              h1, h2 {
-                  margin-bottom: 10px;
-                  color: #333;
-                  text-align: center; /* Center the headings */
-              }
-              p {
-                  margin-bottom: 5px;
-                  color: #666;
-              }
-              .section {
-                  margin-bottom: 20px;
-              }
-              .patient-picture {
-                  width: 200px;
-                  height: auto;
-                  border: 1px solid #ccc;
-                  margin: 0 auto; /* Center the picture */
-                  display: block; /* Ensure the picture is displayed as a block element */
-              }
-              body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-            }
-            h1, h2 {
-                margin-bottom: 10px;
-                color: #333;
-                text-align: center;
-            }
-            .section {
-                margin-bottom: 20px;
-                border: 1px solid #ccc;
-                padding: 15px;
-                border-radius: 10px;
-            }
-            .section h2 {
-                color: #555;
-                margin-bottom: 10px;
-            }
-            .section p {
-                color: #666;
-                margin-bottom: 5px;
-            }
-            .section p strong {
-                color: #333;
-            }
-          </style>
-      </head>
-      <body>
-          <div class="header">
-              <h1>Patient Diagnostic Report</h1>
-          </div>
-          <h2>Date: ${req.body.selectedDiagnosisDate.value}</h2>
-          <h2>Patient Name: ${patientName.name}</h2>
-    `;
-
-    diagnosis1.forEach((diagnosis1) => {
-      const {
-        type,
-        ICD10,
-        Symptoms,
-        level,
-        diagnosis,
-        doctorId: { username },
-        date,
-      } = diagnosis1;
-
-      const formattedDate = new Date(date).toLocaleString();
-
-      // Check if the current date and doctor are the same as the previous one
-      htmlContent += `
-            <div class="section">
-            <h2>Doctor who diagnosed: ${username}</h2>`;
-
-      // Add the vital sign information to the HTML content
-      htmlContent += `
-                <p><strong>level:</strong> ${level}</p>
-                <p><strong>Type:</strong> ${type} </p>
-                <p><strong>Condition:</strong> ${diagnosis} </p>
-                <p><strong>ICD10:</strong> ${ICD10}</p>
-                <p><strong>Remarks:</strong> ${Symptoms}</p>
-            </div>`;
-    });
-
-    // Close the HTML content
-    htmlContent += `
-        </body>
-        </html>`;
-
-    const pdfBuffer = await generatePdfFromHtml(htmlContent);
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Length": pdfBuffer.length,
-    });
-    res.send(pdfBuffer);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  
+}
