@@ -31,7 +31,7 @@ export const getInventoryData = async (req, res) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const addInventoryData = async (req, res) => {
   if (!req.user.isAdmin && !req.user.isPharmacist) {
@@ -87,4 +87,59 @@ export const deleteInventoryData = async (req, res) => {
   }
 };
 
-export const updateInventoryData = async (req, res) => {};
+
+// im create uptade function 
+export const updateInventoryData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isPharmacist) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access this route. Only Admin and Pharmacist can access this route"
+      )
+    );
+  }
+
+  try {
+    // Extract inventory data to update from request body
+    const {
+      itemName,
+      itemCategory,
+      itemDescription,
+      itemPrice,
+      itemQuantity,
+      itemMinValue,
+      itemImage,
+      itemExpireDate,
+    } = req.body;
+
+    // Find the inventory item to update by ID and update its properties
+    const updatedInventory = await Inventory.findByIdAndUpdate(
+      req.params.itemId,
+      {
+        $set: {
+          itemName,
+          itemCategory,
+          itemDescription,
+          itemPrice,
+          itemQuantity,
+          itemMinValue,
+          itemImage,
+          itemExpireDate,
+        },
+      },
+      { new: true }
+    );
+
+    // Check if the item exists
+    if (!updatedInventory) {
+      return res.status(404).json({ message: "Inventory item not found" });
+    }
+
+    // Send response with updated inventory item
+    res.status(200).json({ inventory: updatedInventory });
+  } catch (error) {
+    // Handle errors
+    res.status(400).json({ message: error.message });
+  }
+
+};
