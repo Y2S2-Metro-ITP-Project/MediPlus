@@ -9,9 +9,13 @@ import LabTestRoutes from "./routes/labTest.route.js";
 import sampleRoutes from "./routes/sample.route.js";
 import inventoryRoutes from "./routes/inventory.route.js";
 import testOrderRoutes from "./routes/testOrder.route.js"
+import vitalRoutes from "./routes/vitals.route.js";
 import cookieParser from "cookie-parser";
-import empleaveRoutes from "./routes/empleave.route.js"
-
+import empleaveRoutes from "./routes/empleave.route.js";
+import prescriptionRoutes from "./routes/prescription.route.js";
+import dieseaseRoutes from "./routes/diesease.route.js";
+import diagnosisRoutes from "./routes/diagnosis.route.js";
+import PrescriptionOrderRoutes from "./routes/PrecriptionOrder.route.js";
 dotenv.config();
 
 mongoose
@@ -40,6 +44,11 @@ app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/labOrder", testOrderRoutes);
 
+app.use("/api/vital", vitalRoutes);
+app.use("/api/prescription", prescriptionRoutes);
+app.use("/api/disease", dieseaseRoutes);
+app.use("/api/diagnosis", diagnosisRoutes);
+app.use("/api/prescriptionOrder", PrescriptionOrderRoutes);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

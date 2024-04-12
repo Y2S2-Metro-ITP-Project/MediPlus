@@ -20,6 +20,9 @@ import { FaUserPlus } from "react-icons/fa";
 import { FaBed } from "react-icons/fa";
 import { GiHospital } from "react-icons/gi";
 
+import { BiCapsule } from "react-icons/bi";
+import { FaClipboardList } from "react-icons/fa";
+import { FaHeartbeat } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -49,7 +52,7 @@ export default function DashSideBar() {
     }
   };
   return (
-    <Sidebar className="w-full md:w-56">
+    <Sidebar className="w-full md:w-55">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-1">
           {currentUser.isReceptionist && (
@@ -95,6 +98,10 @@ export default function DashSideBar() {
                   ? "Head Nurse"
                   : currentUser.isHRM
                   ? "HRM"
+                  : currentUser.isOutPatient
+                  ? "OutPatient"
+                  : currentUser.isInPatient
+                  ? "InPatient"
                   : "User"
               }
               labelColor="dark"
@@ -178,6 +185,29 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
+          {currentUser.isPharmacist && (
+            <>
+              <Link to="/dashboard?tab=orderPrescritions">
+                <Sidebar.Item
+                  active={tab === "orderPrescritions"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Doctor Orders
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=inventory">
+                <Sidebar.Item
+                  active={tab === "inventory"}
+                  icon={FaBox}
+                  as="div"
+                >
+                  Inventory
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+
           {currentUser.isReceptionist && (
             <>
               <Link to="/dashboard?tab=patients">
@@ -210,16 +240,51 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
-          {(currentUser.isUser || currentUser.isOutPatient) && (
+
+          {(currentUser.isUser ||
+            currentUser.isOutPatient ||
+            currentUser.isHeadNurse) && (
             <Link to="/dashboard?tab=userInquiries">
               <Sidebar.Item
-                active={tab === "inquiries"}
+                active={tab === "userInquiries"}
+
                 icon={HiAnnotation}
                 as="div"
               >
                 Inquiries
               </Sidebar.Item>
             </Link>
+          )}
+          {(currentUser.isOutPatient || currentUser.isInPatient) && (
+            <>
+              <Link to="/dashboard?tab=PatientPrescriptions">
+                <Sidebar.Item
+                  active={tab === "PatientPrescriptions"}
+                  icon={BiCapsule} // Use the capsule icon here
+                  as="div"
+                >
+                  Prescriptions
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=PatientDiagnosis">
+                <Sidebar.Item
+                  active={tab === "PatientDiagnosis"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Diagnosis
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=PatientVitals">
+                <Sidebar.Item
+                  active={tab === "PatientVitals"}
+                  icon={FaHeartbeat}
+                  as="div"
+                >
+                  Vitals
+                </Sidebar.Item>
+              </Link>
+            </>
           )}
           {currentUser.isHRM && (
             <>
@@ -283,6 +348,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Wards
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item
+                  active={tab === "EMPleave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Leave
                 </Sidebar.Item>
               </Link>
             </>

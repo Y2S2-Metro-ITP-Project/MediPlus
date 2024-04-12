@@ -119,7 +119,9 @@ export const signin = async (req, res, next) => {
         isPharmacist: validUser.isPharmacist,
         isNurse: validUser.isNurse,
         isDoctor: validUser.isDoctor,
-        isPatient: validUser.isPatient,
+        isOutPatient: validUser.isOutPatient,
+        isInPatient: validUser.isInPatient,
+        isLabTech: validUser.isLabTech,
         isUser: validUser.isUser,
       },
       process.env.JWT_SECRET
