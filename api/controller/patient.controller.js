@@ -137,7 +137,14 @@ export const registerOutPatient = async (req, res, next) => {
 };
 
 export const getPatients = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isDoctor &&
+    !req.user.isPharmacist &&
+    !req.user.isLabTechnician &&
+    !req.user.isNurse
+  ) {
     return next(
       errorHandler(
         403,
@@ -149,11 +156,11 @@ export const getPatients = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const patients = await Patient.find()
+    const patients = await Patient.find({patientType: "Outpatient"})
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
-    const totalUser = await Patient.countDocuments();
+    const totalUser = await Patient.countDocuments({patientType: "Outpatient"});
     const now = new Date();
     const oneMonthAgo = new Date(
       now.getFullYear(),
@@ -162,6 +169,7 @@ export const getPatients = async (req, res, next) => {
     );
     const lastMonthUser = await Patient.countDocuments({
       createdAt: { $gte: oneMonthAgo },
+      patientType: "Outpatient"
     });
     res.status(200).json({ patients, totalUser, lastMonthUser });
   } catch (error) {
@@ -183,7 +191,6 @@ export const deletePatient = async (req, res) => {
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
     }
-
 
     const userId = patient.user;
     const user = await User.findById(userId);
@@ -497,7 +504,12 @@ export const downloadPDFPatient = async (req, res, next) => {
 };
 
 export const getPatient = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor && !req.user.isPharmacist) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isDoctor &&
+    !req.user.isPharmacist
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access this resource")
     );
