@@ -13,7 +13,7 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
-import { set } from "mongoose";
+import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
 export default function DashInquiries() {
   const { currentUser } = useSelector((state) => state.user);
   const [inquiries, setInquirires] = useState([]);
@@ -28,6 +28,32 @@ export default function DashInquiries() {
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredInquiries, setFilteredInquiries] = useState([]);
+  const [totalInquiries, setTotalInquiries] = useState(0);
+  const [lastmonthInquiries, setLastMonthInquiries] = useState(0);
+  const [totalAnsweredInquiries, setTotalAnsweredInquiries] = useState(0);
+  const [totalUnAnsweredInquiries, setTotalUnAnsweredInquiries] = useState(0);
+  const [totalAnweredOneMonth, setTotalAnsweredOneMonth] = useState(0);
+  const [totalUnAnsweredOneMonth, setTotalUnAnsweredOneMonth] = useState(0);
+  const fetchInquires = async () => {
+    try {
+      const res = await fetch(`/api/inquiry/getinquiries`);
+      const data = await res.json();
+      if (res.ok) {
+        setInquirires(data.inquiries);
+        setTotalInquiries(data.totalInquiries);
+        setLastMonthInquiries(data.lastMonthInquiries);
+        setTotalAnsweredInquiries(data.totalAnswered);
+        setTotalUnAnsweredInquiries(data.totalNotAnswered);
+        setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
+        setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
+        if (data.inquiries.length < 9) {
+          setShowMore(false);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
     const fetchInquires = async () => {
       try {
@@ -35,6 +61,12 @@ export default function DashInquiries() {
         const data = await res.json();
         if (res.ok) {
           setInquirires(data.inquiries);
+          setTotalInquiries(data.totalInquiries);
+          setLastMonthInquiries(data.lastMonthInquiries);
+          setTotalAnsweredInquiries(data.totalAnswered);
+          setTotalUnAnsweredInquiries(data.totalNotAnswered);
+          setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
+          setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
           if (data.inquiries.length < 9) {
             setShowMore(false);
           }
@@ -78,6 +110,7 @@ export default function DashInquiries() {
         );
         setShowModal(false);
         toast.success(data.message);
+        fetchInquires();
       } else {
         console.log(data.message);
       }
@@ -109,7 +142,7 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if(res.ok){
-        setInquirires(data);
+        setInquirires(data.inquiries);
         setShowMore(data.length >= 9);
       }else{
         setInquirires([]);
@@ -134,6 +167,7 @@ export default function DashInquiries() {
         setInquirires((prev) =>
           prev.filter((inquiry) => inquiry._id !== inquiryIdToReply)
         );
+        fetchInquires();
         setShowReplyModal(false);
         toast.success("Reply Submitted Successfully");
       } else {
@@ -178,7 +212,67 @@ export default function DashInquiries() {
     }
   };
   return (
+    
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+      <div className="p-3 md:mx-auto">
+      <div className=" flex-wrap flex gap-4 justify-center">
+        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex justify-between">
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Total Inquiries
+              </h3>
+              <p className="text-2xl">{totalInquiries}</p>
+            </div>
+            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+          <div className="flex gap-2 text-sm">
+            <span className="text-green-500 flex items-center">
+              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              {lastmonthInquiries}
+            </span>
+            <div className="text-gray-500">Last Month</div>
+          </div>
+        </div>
+        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex justify-between">
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Completed Inquiries
+              </h3>
+              <p className="text-2xl">{totalAnsweredInquiries}</p>
+            </div>
+            <HiAnnotation className="bg-green-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+          <div className="flex gap-2 text-sm">
+            <span className="text-green-500 flex items-center">
+              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              {totalAnweredOneMonth}
+            </span>
+            <div className="text-gray-500">Last Month</div>
+          </div>
+        </div>
+        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex justify-between">
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Pending Inquiries
+              </h3>
+              <p className="text-2xl">{totalUnAnsweredInquiries}</p>
+            </div>
+            <HiAnnotation className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+          <div className="flex gap-2 text-sm">
+            <span className="text-green-500 flex items-center">
+              <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              {totalUnAnsweredOneMonth}
+            </span>
+            <div className="text-gray-500">Last Month</div>
+          </div>
+        </div>
+      </div>
+      
+      </div>
       <ToastContainer />
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">

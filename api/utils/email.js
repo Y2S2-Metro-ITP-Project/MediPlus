@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-export const sendEmail = async ({ to, subject, text }) => {
+export const sendEmail = async ({ to, subject, text,html}) => {
   const transporter = nodemailer.createTransport({
     host: "smtp-mail.outlook.com",
     port: 587,
@@ -19,6 +19,7 @@ export const sendEmail = async ({ to, subject, text }) => {
     to,
     subject,
     text,
+    html,
   };
 
   try {
