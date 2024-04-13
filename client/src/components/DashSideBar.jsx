@@ -114,15 +114,6 @@ export default function DashSideBar() {
                   Users
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=appointment">
-                <Sidebar.Item
-                  active={tab === "appointment"}
-                  icon={HiOutlineUserGroup}
-                  as="div"
-                >
-                  Appointment
-                </Sidebar.Item>
-              </Link>
               <Link to="/dashboard?tab=booking">
                 <Sidebar.Item
                   active={tab === "booking"}
