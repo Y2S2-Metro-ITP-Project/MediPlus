@@ -10,7 +10,6 @@ import vitalRoutes from "./routes/vitals.route.js";
 import cookieParser from "cookie-parser";
 import empleaveRoutes from "./routes/empleave.route.js";
 import bookingRoutes  from "./routes/booking.route.js";
-import doctorRoutes from "./routes/doctor.route.js";
 
 import prescriptionRoutes from "./routes/prescription.route.js";
 import dieseaseRoutes from "./routes/diesease.route.js";
@@ -41,7 +40,6 @@ app.use("/api/patient", patientRoutes);
 app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/booking", bookingRoutes);
-app.use("/api/doctor", doctorRoutes);
 app.use("/api/vital", vitalRoutes);
 app.use("/api/prescription", prescriptionRoutes);
 app.use("/api/disease", dieseaseRoutes);
