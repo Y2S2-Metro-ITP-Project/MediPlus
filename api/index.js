@@ -7,8 +7,9 @@ import inquiryRoutes from "./routes/inquiry.route.js";
 import patientRoutes from "./routes/patient.route.js";
 import inventoryRoutes from "./routes/inventory.route.js";
 import cookieParser from "cookie-parser";
-import empleaveRoutes from "./routes/empleave.route.js"
-import bookingRoutes  from "./routes/booking.route.js"
+import empleaveRoutes from "./routes/empleave.route.js";
+import bookingRoutes  from "./routes/booking.route.js";
+import doctorRoutes from "./routes/doctor.route.js";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use("/api/patient", patientRoutes);
 app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/booking", bookingRoutes);
+app.use("/api/doctor", doctorRoutes);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
