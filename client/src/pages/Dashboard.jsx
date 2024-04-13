@@ -53,7 +53,7 @@ export default function Dashboard() {
       {/**<Leave/> */}
       {tab==="leave" && <DashLeave/>}
        {/**<EMPleave/> */}
-       {tab==="EMPleave" && <DashLeave/>}
+       {tab==="EMPleave" && <DashEMPLeave/>}
       {/**<AddEmployee/> */}
       {tab==="Add_staff" && <DashaddEmp/>}
       {/** <DashBedManagement/> */}
