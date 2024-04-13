@@ -15,7 +15,6 @@ import { DashaddEmp } from "../components/DashaddEmp";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
 import DashBooking from "../components/DashBooking";
-import DashDoctor from "../components/DashDoctor";
 import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
 import DashOutPatientProfile from "../components/DashOutPatientProfile";
 import PatientPrescriptions from "../components/PatientPrescriptions";
@@ -48,8 +47,6 @@ export default function Dashboard() {
       {tab === "users" && <DashUserProfiles />}
       {/** <DashBooking /> */}
       {tab === "booking" && <DashBooking />}
-      {/** <DashDoctor /> */}
-      {tab === "doctor" && <DashDoctor />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
