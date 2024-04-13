@@ -231,7 +231,7 @@ export const addEMP = async (req, res, next) => {
     // Send a success response to the client
     res.status(201).json({ message: "Employee created successfully", newUser });
   } catch (error) {
-    // Handle any errors and pass them to the error handling middleware
+    next(error);
 };
 }
 
