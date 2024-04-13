@@ -26,6 +26,9 @@ export default function Booking() {
   const [formData, setFormData] = useState({});
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
+  const [selectAll, setSelectAll] = useState(false); // State to track select all checkbox
 
   const fetchBookings = async () => {
     try {
@@ -70,10 +73,10 @@ export default function Booking() {
     }
   };
 
-  const handleBookingDelete = async (e) => {
+  const handleBookingDelete = async (bookingId) => {
     try {
       const res = await fetch(
-        `/api/booking/delete/${bookingIdToDelete}`, // Use backticks for string interpolation
+        `/api/booking/delete/${bookingId}`, // Use backticks for string interpolation
         {
           method: "DELETE",
         }
@@ -81,9 +84,8 @@ export default function Booking() {
       const data = await res.json();
       if (res.ok) {
         setBookings((prev) =>
-          prev.filter((booking) => booking._id !== bookingIdToDelete)
+          prev.filter((booking) => booking._id !== bookingId)
         );
-        setShowModal(false);
         toast.success(data.message);
       } else {
         console.log(data.message);
@@ -156,33 +158,104 @@ export default function Booking() {
   const handleAddBooking = async (e) => {
     e.preventDefault();
     try {
-      const { type, date, time, roomNo } = formData;
-      const doctorId = currentUser._id; // Get doctorId from currentUser
-
-      // Check if type, date, time, roomNo are provided
-      if (!type || !date || !time) {
-        toast.error("All fields are required");
+      const { type, date, roomNo } = formData;
+      const doctorId = currentUser._id;
+  
+      if (!type || !date || selectedTimeSlots.length === 0) {
+        toast.error("Type, date, and at least one time slot are required");
         return;
       }
-
-      const res = await fetch("/api/booking/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ type, doctorId, date, time, roomNo }), // Include doctorId in the request body
-      });
-      const data = await res.json();
-      if (res.ok) {
-        fetchBookings();
-        setShowAddModal(false);
-        setFormData({});
-        toast.success("Booking Added Successfully");
-      } else {
-        toast.error(data.error || "Failed to add booking");
+  
+      // Iterate over each selected time slot and create a booking
+      for (const time of selectedTimeSlots) {
+        const newBooking = {
+          type,
+          doctorId,
+          date,
+          time,
+          roomNo,
+        };
+  
+        // Call the backend API to add the booking
+        const res = await fetch("/api/booking/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newBooking),
+        });
+  
+        const data = await res.json();
+  
+        if (!res.ok) {
+          // Handle error if booking creation fails
+          throw new Error(data.error || "Failed to add booking");
+        }
       }
+  
+      // Reset form data and selected time slots after successful booking creation
+      setFormData({});
+      setSelectedTimeSlots([]);
+      toast.success("Bookings Added Successfully");
     } catch (error) {
-      toast.error("Failed to add booking");
+      toast.error(error.message || "Failed to add bookings");
+      console.error(error);
+    }
+  };
+
+  const generateTimeSlots = () => {
+    const timeSlots = [];
+    const startTime = 9; // Start time in 24-hour format (9 AM)
+    const endTime = 24; // End time in 24-hour format (12 AM)
+  
+    for (let hour = startTime; hour <= endTime; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const formattedHour = hour < 10 ? `0${hour}` : hour;
+        const formattedMinute = minute === 0 ? '00' : minute;
+        const timeSlot = `${formattedHour}:${formattedMinute}`;
+        timeSlots.push(timeSlot);
+      }
+    }
+  
+    return timeSlots;
+  };
+  
+
+  useEffect(() => {
+    const timeSlots = generateTimeSlots();
+    
+    setTimeSlots(timeSlots); 
+  }, []);
+  
+
+  // Function to toggle select all checkbox
+  const toggleSelectAll = () => {
+    setSelectAll(!selectAll);
+    const updatedBookings = bookings.map((booking) => {
+      return { ...booking, isSelected: !selectAll };
+    });
+    setBookings(updatedBookings);
+  };
+
+  // Function to handle individual booking selection
+  const handleSelectBooking = (index) => {
+    const updatedBookings = [...bookings];
+    updatedBookings[index].isSelected = !updatedBookings[index].isSelected;
+    setBookings(updatedBookings);
+  };
+
+  // Function to handle deletion of selected bookings
+  const handleDeleteSelected = async () => {
+    try {
+      const selectedIds = bookings
+        .filter((booking) => booking.isSelected)
+        .map((booking) => booking._id);
+
+      const promises = selectedIds.map((id) => handleBookingDelete(id));
+      await Promise.all(promises);
+      toast.success("Selected bookings deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete selected bookings");
       console.error(error);
     }
   };
@@ -244,6 +317,13 @@ export default function Booking() {
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
+              <Table.HeadCell>
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={toggleSelectAll}
+                />
+              </Table.HeadCell>
               <Table.HeadCell>Date</Table.HeadCell>
               <Table.HeadCell>Time</Table.HeadCell>
               <Table.HeadCell>Type</Table.HeadCell>
@@ -255,9 +335,20 @@ export default function Booking() {
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
-            {bookings.map((booking) => (
+            {bookings.map((booking, index) => (
               <Table.Body className="divide-y" key={booking._id}>
-                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+                <Table.Row
+                  className={`bg-white dar:border-gray-700 dark:bg-gray-800 ${
+                    booking.isSelected ? "bg-gray-200" : ""
+                  }`}
+                >
+                  <Table.Cell>
+                    <input
+                      type="checkbox"
+                      checked={booking.isSelected}
+                      onChange={() => handleSelectBooking(index)}
+                    />
+                  </Table.Cell>
                   <Table.Cell>
                     {new Date(booking.date).toLocaleDateString()}
                   </Table.Cell>
@@ -268,7 +359,7 @@ export default function Booking() {
                   <Table.Cell>{booking.reason}</Table.Cell>
                   <Table.Cell>{booking.roomNo}</Table.Cell>
                   <Table.Cell>
-                    {booking.status === "PENDING" ? (
+                    {booking.status === "Not Booked" ? (
                       <FaTimes className="text-yellow-500" />
                     ) : (
                       <FaCheck className="text-green-500" />
@@ -301,6 +392,11 @@ export default function Booking() {
               </Table.Body>
             ))}
           </Table>
+          <div className="flex justify-end">
+            <Button color="red" onClick={handleDeleteSelected}>
+              Delete Selected
+            </Button>
+          </div>
           {showMore && (
             <button
               onClick={handleShowMore}
@@ -328,7 +424,7 @@ export default function Booking() {
             </h3>
           </div>
           <div className="flex justify-center gap-4">
-            <Button color="failure" onClick={handleBookingDelete}>
+            <Button color="failure" onClick={() => handleBookingDelete(bookingIdToDelete)}>
               Yes, I am sure
             </Button>
             <Button color="gray" onClick={() => setShowModal(false)}>
@@ -382,14 +478,29 @@ export default function Booking() {
                   className="input-field"
                 />
               </div>
+              
               <div>
                 <Label htmlFor="time">Time</Label>
-                <TextInput
-                  type="time"
+                <Select
                   id="time"
-                  onChange={onChange}
+                  onChange={(e) =>
+                    setSelectedTimeSlots([...selectedTimeSlots, e.target.value])
+                  }
                   className="input-field"
-                />
+                  value="" // Clear selected option after it's added to array
+                >
+                  <option value="">Select Time</option>
+                  {timeSlots.map((slot) => (
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </Select>
+                <div>
+                  {selectedTimeSlots.map((time) => (
+                    <span key={time}>{time}</span>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="flex justify-center mt-3">
@@ -402,6 +513,7 @@ export default function Booking() {
                 onClick={() => {
                   setShowAddModal(false);
                   setFormData({});
+                  setSelectedTimeSlots([]);
                 }}
               >
                 Cancel
