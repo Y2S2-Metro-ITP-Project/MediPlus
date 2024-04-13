@@ -39,6 +39,7 @@ export default function DashOutPatients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [itemId, setItemId] = useState("");
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
+
   const [selectedItemDetails, setSelectedItemDetails] = useState({
     itemName: "",
     itemCategory: "",
@@ -82,6 +83,30 @@ export default function DashOutPatients() {
       fetchInventory();
     }
   }, [currentUser._id]);
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/inventory/updateItem/${itemId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedItemData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchInventory(); // Refresh the inventory data after successful update
+        setShowUpdateModal(false); // Close the update modal
+        setFormData({});
+        toast.success(data.message); // Show success message
+      } else {
+        toast.error(data.message); // Show error message
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error updating item");
+    }
+  };
 
   const handleShowMore = async () => {
     const startIndex = patients.length;
@@ -222,6 +247,19 @@ export default function DashOutPatients() {
       }
     );
   };
+  // Define state variables for update
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedItemToUpdate, setSelectedItemToUpdate] = useState(null);
+  const [updatedItemData, setUpdatedItemData] = useState({
+    itemName: false,
+    itemCategory: false,
+    itemDescription: false,
+    itemPrice: false,
+    itemQuantity: false,
+    itemMinValue: false,
+    itemImage: false,
+    itemExpireDate: false,
+  });
 
   const handleInventoryItemSubmit = async (e) => {
     e.preventDefault();
@@ -269,6 +307,34 @@ export default function DashOutPatients() {
     });
     setShowItemDetailsModal(true);
   };
+  // Add this function to handle the update
+  const handleUpdate = (item) => {
+    setSelectedItemToUpdate(item);
+    setShowUpdateModal(true);
+  };
+
+  const handlesetItemDetails = (
+    itemName,
+    itemCategory,
+    itemDescription,
+    itemPrice,
+    itemQuantity,
+    itemMinValue,
+    itemImage,
+    itemExpireDate
+  ) => {
+    setUpdatedItemData({
+      itemName,
+      itemCategory,
+      itemDescription,
+      itemPrice,
+      itemQuantity,
+      itemMinValue,
+      itemImage,
+      itemExpireDate,
+    });
+  };
+
   const handleItemDelete = async () => {
     try {
       const res = await fetch(`/api/inventory/deleteItem/${itemId}`, {
@@ -391,8 +457,17 @@ export default function DashOutPatients() {
                       <span
                         className="mr-2"
                         onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
+                          handlesetItemDetails(
+                            item.itemName,
+                            item.itemCategory,
+                            item.itemDescription,
+                            item.itemPrice,
+                            item.itemQuantity,
+                            item.itemMinValue,
+                            item.itemExpireDate
+                          );
+                          setShowUpdateModal(true);
+                          setItemId(item._id);
                         }}
                       >
                         Update
@@ -650,6 +725,104 @@ export default function DashOutPatients() {
               <p>{selectedItemDetails.itemExpireDate}</p>
             </div>
           </div>
+        </Modal.Body>
+      </Modal>
+      // Inside the return statement, add the update modal component
+      <Modal
+        show={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-2 text-lg text-gray-500 dark:text-gray-400">
+              Update Inventory Item
+            </h3>
+          </div>
+          <form onSubmit={handleUpdateSubmit}>
+            <div className="mb-4">
+              <TextInput
+                type="text"
+                id="itemName"
+                placeholder={updatedItemData.itemName}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            {/* Other input fields follow the same pattern */}
+            <div className="mb-4">
+              <Select
+                id="itemCategory"
+                label="Item Category"
+                required
+                onChange={handleChange}
+              >
+                <option value="">{updatedItemData.itemCategory}</option>
+                <option value="OTC">OTC</option>
+                <option value="prescription medicine">
+                  Prescription medicine
+                </option>
+                <option value="pediatric medicine">Pediatric medicine</option>
+              </Select>
+            </div>
+            <div className="mb-4">
+              <TextInput
+                type="text"
+                id="itemDescription"
+                placeholder={updatedItemData.itemDescription}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <TextInput
+                type="number"
+                id="itemPrice"
+                placeholder={updatedItemData.itemPrice}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <TextInput
+                type="number"
+                id="itemQuantity"
+                placeholder={updatedItemData.itemQuantity}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <TextInput
+                type="number"
+                id="itemMinValue"
+                placeholder={updatedItemData.itemMinValue}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <TextInput
+                type="date"
+                id="itemExpireDate"
+                placeholder={updatedItemData.itemExpireDate}
+                required
+                onChange={handleChange}
+              />
+            </div>
+            {/* Add an input field for item image if needed */}
+            {/* Add other input fields for item properties */}
+            <Button
+              type="submit"
+              gradientDuoTone="pinkToPurple"
+              color="red"
+              outline
+            >
+              Update Item
+            </Button>
+          </form>
         </Modal.Body>
       </Modal>
     </div>

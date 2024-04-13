@@ -108,7 +108,6 @@ export const updateInventoryData = async (req, res) => {
       itemPrice,
       itemQuantity,
       itemMinValue,
-      itemImage,
       itemExpireDate,
     } = req.body;
 
@@ -123,7 +122,6 @@ export const updateInventoryData = async (req, res) => {
           itemPrice,
           itemQuantity,
           itemMinValue,
-          itemImage,
           itemExpireDate,
         },
       },
