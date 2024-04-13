@@ -7,7 +7,7 @@ import {
   downloadPatientPDFDiagnosis,
   downloadPatientDoctorPDFDiagnosis,
   downloadDoctorDiagnosis,
-  downloadDateDiagnosis
+  downloadDateDiagnosis,
 } from "../controller/diagnosis.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
@@ -36,9 +36,9 @@ router.post(
   downloadDoctorDiagnosis
 );
 router.post(
-    "/DownloadPDFDateDiagnosis/:id",
-    verifyToken,
-    downloadDateDiagnosis
-)
+  "/DownloadPDFDateDiagnosisDate/:id",
+  verifyToken,
+  downloadDateDiagnosis
+);
 
 export default router;
