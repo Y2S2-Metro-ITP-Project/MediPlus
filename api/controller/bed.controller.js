@@ -184,7 +184,8 @@ export const admitPatientToBed = async (req, res, next) => {
 export const getAllBeds = async (req, res, next) => {
     try {
       const beds = await Bed.find().populate('patient');
-      res.status(200).json({ success: true, beds });
+      const totalbeds = await Bed.countDocuments();
+      res.status(200).json({ success: true, beds ,totalbeds});
     } catch (error) {
       next(errorHandler(500, "Server Error"));
     }

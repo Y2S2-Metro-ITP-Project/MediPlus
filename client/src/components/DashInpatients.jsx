@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Modal, TextInput, Button } from "flowbite-react";
+import { Modal, TextInput, Button, Table } from "flowbite-react";
+import { AiOutlineSearch } from "react-icons/ai";
+import { FaCheck, FaTimes } from "react-icons/fa";
+import { HiEye } from "react-icons/hi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const DashInpatients = () => {
   const [patients, setPatients] = useState([]);
@@ -18,8 +23,10 @@ const DashInpatients = () => {
         const res = await fetch("/api/patient/get");
         const data = await res.json();
         setPatients(data.patients);
+        console.log(data.patients);
       } catch (error) {
         console.error("Error fetching patients:", error);
+        toast.error("Error fetching patients");
       }
     };
 
@@ -34,8 +41,10 @@ const DashInpatients = () => {
       });
       // Remove the deleted patient from the state
       setPatients(patients.filter((patient) => patient._id !== id));
+      toast.success("Patient deleted successfully");
     } catch (error) {
       console.error("Error deleting patient:", error);
+      toast.error("Error deleting patient");
     }
   };
 
@@ -66,8 +75,10 @@ const DashInpatients = () => {
       const res = await fetch("/api/patient/get");
       const data = await res.json();
       setPatients(data.patients);
+      toast.success("Patient updated successfully");
     } catch (error) {
       console.error("Error updating patient:", error);
+      toast.error("Error updating patient");
     }
   };
 
@@ -94,6 +105,7 @@ const DashInpatients = () => {
     });
     if (!res.ok) {
       console.error("Error downloading PDF:", res.statusText);
+      toast.error("Error downloading PDF");
       return;
     }
     const blob = await res.blob();
@@ -111,25 +123,114 @@ const DashInpatients = () => {
     // Remove link from DOM
     document.body.removeChild(a);
     setPatientIDPDF("");
+    toast.success("PDF downloaded successfully");
   };
 
   // Filter patients based on search term
-  const filteredPatients = patients.filter((patient) =>
+  const filteredPatients = (patients || []).filter((patient) =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="container mx-auto py-8">
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Inpatient List</h2>
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchTerm}
-          onChange={handleSearch}
-          className="border px-4 py-2 rounded-md w-full md:w-1/2 lg:w-1/3"
-        />
+    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+      <ToastContainer />
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <form onSubmit={(e) => e.preventDefault()}>
+            <TextInput
+              type="text"
+              placeholder="Search...."
+              rightIcon={AiOutlineSearch}
+              className="hidden lg:inline"
+              id="search"
+              value={searchTerm}
+              onChange={handleSearch}
+              style={{ width: "300px" }}
+            />
+            <Button className="w-12 h-10 lg:hidden" color="gray">
+              <AiOutlineSearch />
+            </Button>
+          </form>
+        </div>
       </div>
+      {(patients || []).length > 0 ? (
+        <>
+          <Table hoverable className="shadow-md">
+            <Table.Head>
+              <Table.HeadCell>Date Admitted</Table.HeadCell>
+              <Table.HeadCell>Name</Table.HeadCell>
+              <Table.HeadCell>Illness</Table.HeadCell>
+              <Table.HeadCell>Ward</Table.HeadCell>
+              <Table.HeadCell>Patient Details</Table.HeadCell>
+              <Table.HeadCell>Update</Table.HeadCell>
+              <Table.HeadCell>Delete</Table.HeadCell>
+              <Table.HeadCell>Download PDF</Table.HeadCell>
+            </Table.Head>
+            {filteredPatients.map((patient) => (
+              <Table.Body className="divide-y" key={patient._id}>
+                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+                  <Table.Cell>
+                    {new Date(patient.admissionDate).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell>{patient.name}</Table.Cell>
+                  <Table.Cell>{patient.illness}</Table.Cell>
+                  <Table.Cell>{patient.roomPreferences}</Table.Cell>
+                  <Table.Cell>
+                    <HiEye
+                      className="text-blue-500 cursor-pointer"
+                      onClick={() =>
+                        handlePatientDetailsView(
+                          patient.name,
+                          patient.gender,
+                          patient.contactEmail,
+                          patient.contactPhone,
+                          patient.createdAt,
+                          patient.illness,
+                          patient.dateOfBirth,
+                          patient.address,
+                          patient.identification,
+                          patient.emergencyContact.name,
+                          patient.emergencyContact.phoneNumber,
+                          patient.patientProfilePicture
+                        )
+                      }
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => handleEdit(patient)}
+                      className="font-medium text-teal-500 hover:underline cursor-pointer"
+                    >
+                      Update
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => handleDeleteConfirm(patient)}
+                      className="font-medium text-red-500 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => {
+                        handleDownloadPDF(patient.name);
+                        setPatientIDPDF(patient._id);
+                      }}
+                      className="font-medium text-green-700 hover:underline cursor-pointer"
+                    >
+                      Download PDF
+                    </span>
+                  </Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            ))}
+          </Table>
+        </>
+      ) : (
+        <p>You have no Inpatients</p>
+      )}
       {isModalOpen && (
         <Modal
           show={isModalOpen}
@@ -137,14 +238,17 @@ const DashInpatients = () => {
             setIsModalOpen(false);
             setEditingPatient(null);
           }}
+          popup
           size="xlg"
         >
           <Modal.Header>Edit Patient</Modal.Header>
           <Modal.Body>
             {editingPatient && (
-              <form className="flex flex-col gap-4">
-                <div>
-                  <label htmlFor="name">Patient Name</label>
+              <form
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                onSubmit={handleEditSubmit}
+              >
+                <div><label>name</label>
                   <TextInput
                     type="text"
                     placeholder="Patient Name"
@@ -158,8 +262,7 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div>
-                  <label htmlFor="admissionDate">Admission Date</label>
+                <div><label>admissionDate</label>
                   <TextInput
                     type="date"
                     id="admissionDate"
@@ -172,8 +275,7 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div>
-                  <label htmlFor="illness">Illness</label>
+                <div><label>illness</label>
                   <TextInput
                     type="text"
                     placeholder="Illness"
@@ -187,102 +289,53 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div>
-                  <label htmlFor="contactPhone">Contact Phone</label>
+                <div><label>roomPreferences</label>
                   <TextInput
                     type="text"
-                    id="contactPhone"
-                    value={editingPatient.contactPhone}
+                    placeholder="Ward"
+                    id="roomPreferences"
+                    value={editingPatient.roomPreferences}
                     onChange={(e) =>
                       setEditingPatient({
                         ...editingPatient,
-                        contactPhone: e.target.value,
+                        roomPreferences: e.target.value,
                       })
                     }
                   />
                 </div>
-                {/* Add more input fields for other patient details */}
+                <div><label>Patient type</label>
+                  <TextInput
+                    type="text"
+                    placeholder="patienttype"
+                    id="patientType"
+                    value={editingPatient.patientType}
+                    onChange={(e) =>
+                      setEditingPatient({
+                        ...editingPatient,
+                        patientType: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </form>
             )}
           </Modal.Body>
           <Modal.Footer>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors duration-300"
+            <Button
+              color="gray"
+              onClick={() => {
+                setIsModalOpen(false);
+                setEditingPatient(null);
+              }}
             >
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleEditSubmit}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-300"
-            >
+            </Button>
+            <Button color="blue" onClick={handleEditSubmit}>
               Save Changes
-            </button>
+            </Button>
           </Modal.Footer>
         </Modal>
       )}
-      <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPatients.map((patient) => (
-          <li
-            key={patient._id}
-            className="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
-          >
-            <div className="mb-4">
-              <p className="text-lg font-semibold mb-2">Patient Information</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-gray-700">Name:</p>
-                  <p className="text-black font-medium">{patient.name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-700">Admission Date:</p>
-                  <p className="text-black font-medium">
-                    {patient.admissionDate}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-700">Illness:</p>
-                  <p className="text-black font-medium">{patient.illness}</p>
-                </div>
-                <div>
-                  <p className="text-gray-700">Ward:</p>
-                  <p className="text-black font-medium">
-                    {patient.roomPreferences}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-x-4">
-                <Link
-                  to="#"
-                  onClick={() => handleEdit(patient)}
-                  className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDeleteConfirm(patient)}
-                  className="text-red-600 hover:text-red-800 transition-colors duration-300"
-                >
-                  Delete
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  handleDownloadPDF(patient.name);
-                  setPatientIDPDF(patient._id);
-                }}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors duration-300"
-              >
-                Download PDF
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
       {isDeleteModalOpen && (
         <Modal
           show={isDeleteModalOpen}
@@ -290,29 +343,31 @@ const DashInpatients = () => {
             setIsDeleteModalOpen(false);
             setPatientToDelete(null);
           }}
+          popup
           size="md"
         >
-          <Modal.Header>Confirm Deletion</Modal.Header>
+          <Modal.Header />
           <Modal.Body>
-            <p>
-              Are you sure you want to delete the patient{" "}
-              {patientToDelete?.name}?
-            </p>
+            <div className="text-center">
+              <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
+                Are you sure you want to delete this patient?
+              </h3>
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleDeletePatient}>
+                Yes, I am sure
+              </Button>
+              <Button
+                color="gray"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setPatientToDelete(null);
+                }}
+              >
+                No, cancel
+              </Button>
+            </div>
           </Modal.Body>
-          <Modal.Footer>
-            <Button
-              color="gray"
-              onClick={() => {
-                setIsDeleteModalOpen(false);
-                setPatientToDelete(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button color="red" onClick={handleDeletePatient}>
-              Delete
-            </Button>
-          </Modal.Footer>
         </Modal>
       )}
     </div>

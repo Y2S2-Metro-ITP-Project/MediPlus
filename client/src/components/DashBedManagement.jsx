@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Button, Alert, TextInput, Modal, Select, Spinner } from "flowbite-react";
+import { Button, Alert, TextInput, Modal, Select, Spinner, Table } from "flowbite-react";
 import { HiOutlineExclamationCircle, HiEye } from "react-icons/hi";
+import { AiOutlineSearch } from "react-icons/ai";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
 
 const DashBedManagement = () => {
   const [beds, setBeds] = useState([]);
@@ -21,6 +24,8 @@ const DashBedManagement = () => {
   const navigate = useNavigate();
   const [bedNumberPDF, setBedNumberPDF] = useState("");
   const [bedPDFID, setBedPDFID] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalbeds, setTotalbeds] = useState(0);
 
   useEffect(() => {
     fetchBeds();
@@ -31,6 +36,7 @@ const DashBedManagement = () => {
       const response = await axios.get("/api/bed/getbed");
       console.log("Fetched beds :", response.data.beds);
       setBeds(response.data.beds);
+      setTotalbeds(response.data.totalbeds)
     } catch (error) {
       console.error("Error fetching beds:", error);
     }
@@ -38,19 +44,15 @@ const DashBedManagement = () => {
 
   const handleBedClick = async (bed) => {
     try {
-
-      console.log('Clicked bed:', bed); // Add this line
+      console.log('Clicked bed:', bed);
 
       const response = await axios.get(`/api/bed/${bed.number}`);
       setSelectedBed(response.data.bed);
-      
 
       if (bed.isAvailable) {
         console.log('Bed is available, showing patient modal');
-
         setShowPatientModal(true);
         setShowModal(false);
-
       } else {
         setShowModal(true);
       }
@@ -101,7 +103,6 @@ const DashBedManagement = () => {
       setSuccessMessage(response.data.message);
       setShowDeleteModal(false);
       fetchBeds();
-      // Remove the deleted bed from the beds state
       setBeds(beds.filter((bed) => bed.number !== bedNumber));
     } catch (error) {
       setErrorMessage(error.response.data.message);
@@ -122,34 +123,26 @@ const DashBedManagement = () => {
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
 
-    // Create temporary link element
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Bed.pdf"; // Set download attribute
+    a.download = "Bed.pdf";
     document.body.appendChild(a);
 
-    // Click link to initiate download
     a.click();
 
-    // Remove link from DOM
     document.body.removeChild(a);
   };
 
-  
-
-  // Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     const admissionData = { ...formData, bedNumber: selectedBed.number };
-     
-    console.log('admissionData:', admissionData); // Log the admissionData object
 
-    // Validate form data
+    console.log('admissionData:', admissionData);
+
     if (
       !formData.name ||
       !formData.admissionDate ||
@@ -159,7 +152,8 @@ const DashBedManagement = () => {
       !formData.address ||
       !formData.contactPhone ||
       !formData.contactEmail ||
-      !formData.reasonForAdmission
+      !formData.reasonForAdmission||
+      !formData.patientType
     ) {
       setErrorMessage("All fields are required");
       return;
@@ -169,7 +163,6 @@ const DashBedManagement = () => {
       setLoading(true);
       setErrorMessage(null);
 
-      // Submit patient admission data
       const res = await fetch("/api/patient/admit", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,7 +181,7 @@ const DashBedManagement = () => {
         setLoading(false);
         const patientId = data.patient._id;
         setPatientId(patientId);
-        setShowPatientModal(true); // Show the modal after successful registration
+        setShowPatientModal(true);
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -196,7 +189,6 @@ const DashBedManagement = () => {
     }
   };
 
-  // Handle admitting patient to bed
   const handleAdmitPatient = async () => {
     try {
       const response = await axios.post('/api/bed/admitbed', {
@@ -205,10 +197,9 @@ const DashBedManagement = () => {
       });
 
       if (response.data.success) {
-        // Handle successful admission
         console.log(response.data.message);
-        setShowPatientModal(false); // Close the modal after successful admission
-        fetchBeds(); // Refresh the bed list
+        setShowPatientModal(false);
+        fetchBeds();
       } else {
         setErrorMessage(response.data.message);
       }
@@ -217,140 +208,152 @@ const DashBedManagement = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredBeds = beds.filter((bed) =>
+    bed.number.toString().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
       <h1 className="text-3xl font-bold mb-6">Bed Management</h1>
 
-      {/* Create Bed */}
-      <div className="flex items-center mb-4">
-        <TextInput
-          type="text"
-          placeholder="Enter bed number"
-          value={newBedNumber}
-          onChange={(e) => setNewBedNumber(e.target.value)}
-          className="mr-2"
-        />
+      <div className="flex justify-between">
+        
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Total bed
+              </h3>
+              <p className="text-2xl">{totalbeds}</p>
+            </div>
+            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <form onSubmit={(e) => e.preventDefault()}>
+            <TextInput
+              type="text"
+              placeholder="Search..."
+              rightIcon={AiOutlineSearch}
+              className="hidden lg:inline"
+              id="search"
+              value={searchTerm}
+              onChange={handleSearch}
+              style={{ width: "300px" }}
+            />
+            <Button className="w-12 h-10 lg:hidden" color="gray">
+              <AiOutlineSearch />
+            </Button>
+          </form>
+          <div className="flex items-center">
+          <TextInput
+            type="text"
+            placeholder="Enter bed number"
+            value={newBedNumber}
+            onChange={(e) => setNewBedNumber(e.target.value)}
+            className="mr-2"
+          />
+          
+          
+        </div>
         <Button
-          gradientDuoTone="purpleToPink"
-          className="ml-5"
-          onClick={handleCreateBed}
-        >
-          Create Bed
-        </Button>
+            gradientDuoTone="purpleToPink"
+            className="ml-5"
+            onClick={handleCreateBed}
+          >
+            Create Bed
+          </Button>
+        </div>
         <Button
-          gradientDuoTone="purpleToPink"
-          outline
-          className="ml-5"
-          onClick={handleDownloadPDF}
-        >
-          Download PDF
-        </Button>
+            gradientDuoTone="purpleToPink"
+            outline
+            className="ml-5"
+            onClick={handleDownloadPDF}
+          >
+            Download PDF
+          </Button>
       </div>
 
-      <div className="w-full overflow-x-auto">
-        <table
-          className="w-full text-left rounded w-overflow-x-auto "
-          cellSpacing="0"
-        >
-          <thead>
-            <tr className="bg-gray-100">
-              <th
-                scope="col"
-                className="h-12 px-6 text-sm font-medium stroke-slate-700 text-slate-700 bg-slate-100"
-              >
-                Bed Number
-              </th>
-              <th
-                scope="col"
-                className="h-12 px-6 text-sm font-medium stroke-slate-700 text-slate-700 bg-slate-100"
-              >
-                Availability
-              </th>
-              <th
-                scope="col"
-                className="h-12 px-6 text-sm font-medium stroke-slate-700 text-slate-700 bg-slate-100"
-              >
-                Update
-              </th>
-              <th
-                scope="col"
-                className="h-12 px-6 text-sm font-medium stroke-slate-700 text-slate-700 bg-slate-100"
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {beds.map((bed) => (
-              <tr key={bed.number}>
-                <td className="h-12 px-6 text-sm transition duration-300 border-slate-200 stroke-slate-500 text-slate-500">
-                  {bed.number}
-                </td>
-                <td
-                  key={bed.number}
-                  className={`cursor-pointer ${
-                    bed.isAvailable
-                      ? "bg-green-100 hover:bg-green-200"
-                      : "bg-red-100 hover:bg-red-200"
-                  }`}
-                  onClick={() => handleBedClick(bed)}
-                >
-                  {bed.isAvailable ? "Available" : "Unavailable"}
-                </td>
-                <td className="h-12 px-6 text-sm transition duration-300 border-slate-200 stroke-slate-500 text-slate-500">
-                  <Button
-                    color={bed.isAvailable ? "success" : "failure"}
-                    size="xs"
-                    onClick={() =>
-                      handleUpdateBedAvailability(bed.number, !bed.isAvailable)
-                    }
+      {beds.length > 0 ? (
+        <>
+          <Table hoverable className="shadow-md">
+            <Table.Head>
+              <Table.HeadCell>Bed Number</Table.HeadCell>
+              <Table.HeadCell>Availability</Table.HeadCell>
+              <Table.HeadCell>Update</Table.HeadCell>
+              <Table.HeadCell>Actions</Table.HeadCell>
+              <Table.HeadCell>Download PDF</Table.HeadCell>
+            </Table.Head>
+            {filteredBeds.map((bed) => (
+              <Table.Body className="divide-y" key={bed.number}>
+                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+                  <Table.Cell>{bed.number}</Table.Cell>
+                  <Table.Cell
+                    key={bed.number}
+                    className={`cursor-pointer ${
+                      bed.isAvailable
+                        ? " hover:bg-green-200"
+                        : " hover:bg-red-200"
+                    }`}
+                    onClick={() => handleBedClick(bed)}
                   >
-                    {bed.isAvailable ? "Mark Unavailable" : "Mark Available"}
-                  </Button>
-                </td>
-                <td className="h-12 px-6 text-sm transition duration-300 border-slate-200 stroke-slate-500 text-slate-500">
-                  <Button
-                    color="failure"
-                    size="xs"
-                    onClick={() => {
-                      setSelectedBedNumber(bed.number);
-                      setShowDeleteModal(true);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </td>
-                <td>
-                  {!bed.isAvailable ? (
+                    {bed.isAvailable ? "Bed is not occupied" : "Bed occupied with the patient"}
+                  </Table.Cell>
+                  <Table.Cell>
                     <Button
-                      color="failure"
-                      outline
-                      className="ml-5"
-                      onClick={() => {
-                        setBedNumberPDF(bed.number);
-                        setBedPDFID(bed._id);
-                        handleDownloadPdf(bed.number);
-                      }}
+                      size="xs"
+                      onClick={() =>
+                        handleUpdateBedAvailability(bed.number, !bed.isAvailable)
+                      }
                     >
-                      DownloadPdf
+                      {bed.isAvailable ? "Mark Unavailable" : "Mark Available"}
                     </Button>
-                  ) : (
-                    <p>This bed is not occupied</p>
-                  )}
-                </td>
-              </tr>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => {
+                        setSelectedBedNumber(bed.number);
+                        setShowDeleteModal(true);
+                      }}
+                      className="font-medium text-red-500 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {!bed.isAvailable ? (
+                      <span
+                        onClick={() => {
+                          setBedNumberPDF(bed.number);
+                          setBedPDFID(bed._id);
+                          handleDownloadPdf(bed.number);
+                        }}
+                        className="font-medium text-green-700 hover:underline cursor-pointer"
+                      >
+                        DownloadPdf
+                      </span>
+                    ) : (
+                      <p>This bed is not occupied</p>
+                    )}
+                  </Table.Cell>
+                </Table.Row>
+              </Table.Body>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </Table>
+        </>
+      ) : (
+        <p>No beds available</p>
+      )}
 
       <Modal
         show={showModal && selectedBed}
         onClose={() => {
           setShowModal(false);
           setSelectedBed(null);
-          
         }}
         size="md"
       >
@@ -399,7 +402,7 @@ const DashBedManagement = () => {
           )}
         </Modal.Body>
       </Modal>
-      {/* Delete Bed Modal */}
+
       <Modal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -419,10 +422,10 @@ const DashBedManagement = () => {
               color="failure"
               onClick={() => handleDeleteBed(selectedBedNumber)}
             >
-              Yes,I am sure
+              Yes, I am sure
             </Button>
             <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-              No,cancel
+              No, cancel
             </Button>
           </div>
         </Modal.Body>
@@ -437,7 +440,7 @@ const DashBedManagement = () => {
         <Modal.Header>Patient Registration</Modal.Header>
         <Modal.Body>
           {selectedBed && selectedBed.isAvailable ? (
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="bedNumber">Bed Number</label>
               <TextInput
@@ -537,7 +540,7 @@ const DashBedManagement = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="w-full md:w-1/2">
+             <div className="w-full md:w-1/2">
               <div>
                 <label htmlFor="insuranceProvider">Insurance Provider</label>
                 <TextInput
@@ -597,8 +600,15 @@ const DashBedManagement = () => {
                 <Select id="roomPreferences" onChange={handleChange}>
                   <option value="">Select Room Preferences</option>
                   <option value="General Ward">General Ward</option>
-                  <option value="Private Room">Private Room</option>
-                  <option value="Semi-Private Room">Semi-Private Room</option>
+                  <option value="Emergency Ward">Emergency Ward</option>
+                </Select>
+              </div>
+              <div>
+                <label htmlFor="patientType">patientType</label>
+                <Select id="patientType" onChange={handleChange}>
+                  <option value="">Select Room Preferences</option>
+                  <option value="inpatient">inpatient</option>
+                  <option value="outpatient">outpatient</option>
                 </Select>
               </div>
             </div>
@@ -628,13 +638,11 @@ const DashBedManagement = () => {
         </Modal.Body>
         <Modal.Footer>
           {selectedBed && selectedBed.isAvailable && (
-          <Button onClick={handleAdmitPatient}>Confirm Admission</Button>
+            <Button onClick={handleAdmitPatient}>Confirm Admission</Button>
           )}
-          </Modal.Footer>
-         
-      </Modal>
-
-      {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
+        </Modal.Footer>
+        </Modal>
+        {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
       {successMessage && (
         <Alert color="success" onDismiss={() => setSuccessMessage("")}>
           {successMessage}
