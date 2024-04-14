@@ -194,3 +194,34 @@ export const searchAppointments = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateBooking = async (req, res) => {
+  // Check user permissions
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
+      return res.status(403).json({ message: "You are not allowed to update bookings" });
+  }
+  
+  try {
+      // Update the booking data
+      const updatedBooking = await Booking.findByIdAndUpdate(
+          req.params.bookingId, // Extract the booking ID from the request parameters
+          {
+              $set: req.body, // Update with the data from the request body
+          },
+          { new: true } // Return the updated document
+      );
+      
+      // Check if the booking was found and updated successfully
+      if (!updatedBooking) {
+          return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // If successful, return the updated booking
+      res.status(200).json(updatedBooking);
+  } catch (error) {
+      // Handle any errors
+      res.status(500).json({ message: error.message });
+  }
+};
+
+

@@ -94,25 +94,33 @@ export default function Booking() {
 
   const handleBookingDelete = async (bookingId) => {
     try {
-      const res = await fetch(`/api/booking/delete/${bookingId}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setBookings((prev) =>
-          prev.filter((booking) => booking._id !== bookingId)
-        );
-        toast.success(data.message);
-      } else {
-        console.log(data.message);
-      }
+        const res = await fetch(`/api/booking/delete/${bookingId}`, {
+            method: "DELETE",
+        });
+        const data = await res.json();
+        if (res.ok) {
+            setBookings((prev) =>
+                prev.filter((booking) => booking._id !== bookingId)
+            );
+            toast.success(data.message);
+        } else {
+            console.log(data.message);
+        }
     } catch (error) {
-      console.log(error);
+        console.log(error);
+    } finally {
+        // Close the delete confirmation modal
+        setShowDeleteModal(false);
     }
-  };
+};
+
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    if (e.target.id === "time") {
+      setFormData({ ...formData, time: e.target.value });
+    } else {
+      setFormData({ ...formData, [e.target.id]: e.target.value });
+    }
   };
 
   const handleFilterChange = async (e) => {
@@ -172,10 +180,13 @@ export default function Booking() {
 
   const handleUpdateBooking = (booking) => {
     setSelectedBooking(booking);
+    // Format the date to YYYY-MM-DD
+    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
     setFormData({
       type: booking.type,
       roomNo: booking.roomNo,
-      date: booking.date,
+      date: formattedDate,
+      time: booking.time,
     });
     setShowUpdateModal(true);
   };
@@ -241,36 +252,39 @@ export default function Booking() {
     e.preventDefault();
     try {
       const { type, date, roomNo } = formData;
-      const doctorId = currentUser._id;
 
-      if (!type || !date || selectedTimeSlots.length === 0) {
-        toast.error("Type, date, and at least one time slot are required");
+      console.log("Form Data:", formData); // Log form data
+
+      if (!type || !date) {
+        toast.error("Type and date are required");
         return;
       }
 
-      for (const time of selectedTimeSlots) {
-        const updatedBooking = {
-          _id: selectedBooking._id,
-          type,
-          doctorId,
-          date,
-          time,
-          roomNo,
-        };
+      const updatedBooking = {
+        _id: selectedBooking._id,
+        type,
+        date,
+        time: formData.time, // Use the selected time directly from formData
+        roomNo,
+      };
 
-        const res = await fetch("/api/booking/update", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedBooking),
-        });
+      console.log("Updated Booking:", updatedBooking); // Log updated booking object
 
-        const data = await res.json();
+      const res = await fetch(`/api/booking/update/${selectedBooking._id}`, {
+        // Update the API endpoint to include the booking ID
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedBooking),
+      });
 
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to update booking");
-        }
+      const data = await res.json();
+
+      console.log("Response Data:", data); // Log response data
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update booking");
       }
 
       setFormData({});
@@ -435,8 +449,6 @@ export default function Booking() {
               <Table.HeadCell>Time</Table.HeadCell>
               <Table.HeadCell>Type</Table.HeadCell>
               <Table.HeadCell>Doctor</Table.HeadCell>
-              <Table.HeadCell>Patient</Table.HeadCell>
-              <Table.HeadCell>RoomNo</Table.HeadCell>
               <Table.HeadCell>Status</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
@@ -461,8 +473,6 @@ export default function Booking() {
                   <Table.Cell>{booking.time}</Table.Cell>
                   <Table.Cell>{booking.type}</Table.Cell>
                   <Table.Cell>{booking.doctorName}</Table.Cell>
-                  <Table.Cell>{booking.patientId}</Table.Cell>
-                  <Table.Cell>{booking.roomNo}</Table.Cell>
                   <Table.Cell>
                     {booking.status === "Not Booked" ? (
                       <span className="text-yellow-500">Not Booked</span>
@@ -544,7 +554,7 @@ export default function Booking() {
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
         popup
-        size="xlg"
+        size="xl"
       >
         <Modal.Header />
         <Modal.Body>
@@ -627,17 +637,25 @@ export default function Booking() {
                   className="input-field"
                   value=""
                 >
-                  <option value="">Select Time</option>
+                  <option value="" disabled>
+                    Select Time
+                  </option>
                   {timeSlots.map((slot) => (
                     <option key={slot} value={slot}>
                       {slot}
                     </option>
                   ))}
                 </Select>
-                <div>
-                  {selectedTimeSlots.map((time) => (
-                    <span key={time}>{time}</span>
-                  ))}
+                <div className="selected-time-slots">
+                  {selectedTimeSlots.length > 0 ? (
+                    selectedTimeSlots.map((time) => (
+                      <span key={time} className="time-slot">
+                        {time}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="no-time-slot">No time slots selected</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -664,7 +682,7 @@ export default function Booking() {
         show={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
         popup
-        size="xlg"
+        size="xl"
       >
         <Modal.Header />
         <Modal.Body>
@@ -713,26 +731,13 @@ export default function Booking() {
               )}
               <div>
                 <Label htmlFor="time">Time</Label>
-                <Select
+                <TextInput
+                  type="time" // Change type to "time"
                   id="time"
-                  onChange={(e) =>
-                    setSelectedTimeSlots([...selectedTimeSlots, e.target.value])
-                  }
+                  onChange={onChange} // Make sure onChange is correctly defined
                   className="input-field"
-                  value=""
-                >
-                  <option value="">Select Time</option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </Select>
-                <div>
-                  {selectedTimeSlots.map((time) => (
-                    <span key={time}>{time}</span>
-                  ))}
-                </div>
+                  value={formData.time || ""} // Update value to formData.time
+                />
               </div>
             </div>
             <div className="flex justify-center mt-3">

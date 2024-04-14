@@ -7,6 +7,7 @@ import {
   searchBookings,
   filterBookings,
   searchAppointments,
+  updateBooking,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -17,5 +18,7 @@ router.delete("/delete/:bookingId", verifyToken, deleteBooking);
 router.post("/searchBookings", verifyToken, searchBookings);
 router.get("/appointments", verifyToken, searchAppointments);
 router.post("/filterBookings", verifyToken, filterBookings);
+router.put("/update/:bookingId", verifyToken, updateBooking);
+
 
 export default router;
