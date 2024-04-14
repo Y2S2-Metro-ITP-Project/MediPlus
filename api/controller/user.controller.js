@@ -223,5 +223,21 @@ export const filterUsers = async (req, res, next) => {
   }
 };
 
+export const getdoctors = async (req, res, next) => {
+  try {
+    // Find users where isDoctor is true
+    const doctors = await User.find({ isDoctor: true });
 
+    // Check if any doctors are found
+    if (!doctors || doctors.length === 0) {
+      return next(errorHandler(404, "No doctors found"));
+    }
+
+    // Send the list of doctors in the response
+    res.status(200).json(doctors);
+  } catch (error) {
+    // Handle errors
+    next(error);
+  }
+}
 
