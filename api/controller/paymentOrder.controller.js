@@ -2,24 +2,46 @@ import Patient from "../models/patient.model.js";
 import Payment from "../models/payment.model.js";
 import PaymentOrder from "../models/paymentOrder.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import { sendEmail } from "../utils/email.js";
+import { PDFDocument } from "pdf-lib";
 
+async function combinePDFs2(pdfBuffers) {
+  const mergedPdf = await PDFDocument.create();
+
+  for (let i = 0; i < pdfBuffers.length; i++) {
+    try {
+      const pdfBuffer = pdfBuffers[i];
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
+      const copiedPages = await mergedPdf.copyPages(
+        pdfDoc,
+        pdfDoc.getPageIndices()
+      );
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+      console.log(`PDF document ${i + 1} loaded successfully.`);
+    } catch (error) {
+      console.error(`Error loading PDF document ${i + 1}:`, error.message);
+    }
+  }
+  return mergedPdf.save();
+}
+import PDFMerger from "pdf-merger-js";
 export const getPaymentOrders = async (req, res) => {
   try {
     const paymentOrders = await PaymentOrder.aggregate([
-        {
-          $lookup: {
-            from: "patients", // Assuming the name of the patient collection is "patients"
-            localField: "PatientID",
-            foreignField: "_id",
-            as: "patient"
-          }
+      {
+        $lookup: {
+          from: "patients", // Assuming the name of the patient collection is "patients"
+          localField: "PatientID",
+          foreignField: "_id",
+          as: "patient",
         },
-        {
-          $match: {
-            "patient.patientType": "Outpatient"
-          }
-        }
-      ])
+      },
+      {
+        $match: {
+          "patient.patientType": "Outpatient",
+        },
+      },
+    ]);
     const completedPaymentOrder = paymentOrders.filter(
       (paymentOrder) => paymentOrder.status === "Completed"
     ).length;
@@ -421,26 +443,220 @@ export const updatePaymentOrder = async (req, res) => {
     }
 
     res.status(200).json({ message: "Payment order updated successfully." });
+
+    try {
+      await sendEmail({
+        to: paymentOrder.PatientEmail,
+        subject: "Payment Order Completed",
+        html: `<h1>Payment Order Completed.Please proceed to the pharmacy to collect your precription order</h1>`,
+      });
+    } catch (error) {
+      console.log("Error sending email", error);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const rejectPaymentOrder = async (req, res) => {
-    const paymentOrderID = req.params.id;
-    try {
-        await PaymentOrder.findByIdAndUpdate(paymentOrderID, {
-            status: "Rejected",
-            paymentType: "Rejected",
-          });
-          const paymentOrder = await PaymentOrder.findById(paymentOrderID);
+async function combinePDFs(pdfBuffers) {
+  const merger = new PDFMerger();
 
-          for (const paymentID of paymentOrder.Payment) {
-            await Payment.findByIdAndUpdate(paymentID, { status: "Rejected" });
-          }
-      
-          res.status(200).json({ message: "Payment order rejected successfully." });
-    } catch (error) {
-        
-    }
+  for (const pdfBuffer of pdfBuffers) {
+    merger.add(pdfBuffer);
+  }
+
+  const combinedPdfBuffer = await merger.saveAsBuffer();
+  return combinedPdfBuffer;
 }
+
+export const rejectPaymentOrder = async (req, res) => {
+  const paymentOrderID = req.params.id;
+  try {
+    await PaymentOrder.findByIdAndUpdate(paymentOrderID, {
+      status: "Rejected",
+      paymentType: "Rejected",
+    });
+    const paymentOrder = await PaymentOrder.findById(paymentOrderID);
+
+    for (const paymentID of paymentOrder.Payment) {
+      await Payment.findByIdAndUpdate(paymentID, { status: "Rejected" });
+    }
+
+    res.status(200).json({ message: "Payment order rejected successfully." });
+  } catch (error) {}
+};
+
+export const downloadByDatePaymentReport = async (req, res) => {
+  const selectedDate = req.body.date.value;
+  try {
+    const isoDate = new Date(selectedDate).toISOString();
+    // Extract year, month, and day from the ISODate
+    const year = new Date(isoDate).getFullYear();
+    const month = new Date(isoDate).getMonth() + 1; // Months are 0-indexed in JavaScript, so add 1
+    const day = new Date(isoDate).getDate();
+    const paymentOrders = await PaymentOrder.find({
+      date: {
+        $gte: new Date(`${year}-${month}-${day}`),
+        $lt: new Date(`${year}-${month}-${day + 1}`),
+      },
+    })
+      .populate("PatientID")
+      .populate("Payment");
+    let totalPendingPayments = 0;
+    let totalCompletedPayments = 0;
+    let totalRejectedPayments = 0;
+
+    for (const order of paymentOrders) {
+      // Your existing code to iterate through payment orders...
+
+      // Calculate totals based on order status
+      if (order.status === "Pending") {
+        totalPendingPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Completed") {
+        totalCompletedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Rejected") {
+        totalRejectedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      }
+    }
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Patient Prescription Order Report</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          .section {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+          }
+          .section h2 {
+            color: #555;
+            margin-bottom: 10px;
+          }
+          .section p {
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .section p strong {
+            color: #333;
+          }
+          .status {
+            font-weight: bold;
+          }
+          .status.completed {
+            color: green;
+          }
+          .status.rejected {
+            color: red;
+          }
+          ul {
+            list-style-type: none;
+            padding: 0;
+          }
+          ul li {
+            margin-bottom: 10px;
+          }
+          .payment-details {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+          }
+          .status-pending {
+            color: orange;
+          }
+          
+          .status-completed {
+            color: green;
+          }
+          
+          .status-rejected {
+            color: red;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>OutPatient Payment Order Report</h1>
+          <h2>Date: ${selectedDate}</h2>
+          <p><strong>Total Pending Payments:</strong> <span class="status-pending">${totalPendingPayments}</span></p>
+          <p><strong>Total Completed Payments:</strong> <span class="status-completed">${totalCompletedPayments}</span></p>
+          <p><strong>Total Rejected Payments:</strong> <span class="status-rejected">${totalRejectedPayments}</span></p>
+        </div>
+      
+        ${paymentOrders
+          .map(
+            (order, index) => `
+          <div class="section">
+            <h2>Order ${index + 1}</h2>
+            <h3>Date: ${new Date(order.date).toLocaleString()}</h3>
+            <p><strong>Patient Name:</strong> ${order.PatientName || "N/A"}</p>
+            <p><strong>Patient Email:</strong> ${
+              order.PatientEmail || "N/A"
+            }</p>
+            <p><strong>Status:</strong> <span class="status ${order.status.toLowerCase()}">${
+              order.status || "N/A"
+            }</span></p>
+            <p><strong>Payment Type:</strong> ${order.paymentType || "N/A"}</p>
+            <p><strong>Payment Orders:</strong></p>
+            <ul>
+              ${order.Payment.map(
+                (payment) => `
+                <li class="payment-details">
+                  <p><strong>Date:</strong> ${payment.dateAndTime}</p>
+                  <p><strong>Order Type:</strong> ${payment.OrderType}</p>
+                  <p><strong>Total:</strong> ${payment.totalPayment}</p>
+                  <p><strong>Status:</strong> <span class="status ${payment.status.toLowerCase()}">${
+                  payment.status
+                }</span></p>
+                </li>
+              `
+              ).join("")}
+            </ul>
+            <p><strong>Total Order Value:</strong> ${order.Payment.reduce(
+              (acc, payment) => acc + payment.totalPayment,
+              0
+            ).toFixed(2)}</p>
+          </div>
+        `
+          )
+          .join("")}
+      
+      </body>
+      </html>`;
+
+    try {
+      const pdfBuffer = await generatePdfFromHtml(htmlContent);
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Length": pdfBuffer.length,
+        "Content-Disposition": `attachment; filename="patient-prescription-order-report.pdf"`,
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};

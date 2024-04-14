@@ -23,6 +23,8 @@ export default function DashOutPatientBilling() {
   const [searchTerm, setSearchTerm] = useState("");
   const [totalPaymentOrders, setTotalPaymentOrders] = useState(0);
   const [pageNumber, setPageNumber] = useState(0);
+  const [dates, setDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
   const paymentOrdersPerPage = 5;
   const [totalPaymentOrdersLastMonth, setTotalPaymentOrdersLastMonth] =
     useState(0);
@@ -58,6 +60,15 @@ export default function DashOutPatientBilling() {
           const filteredOrders = data.paymentOrders.filter((order) =>
             order.PatientName.toLowerCase().includes(searchTerm.toLowerCase())
           );
+
+          const uniqueDates = [
+            ...new Set(
+              data.paymentOrders.map((orders) =>
+                format(new Date(orders.date), "MMMM dd, yyyy")
+              )
+            ),
+          ];
+          setDates(uniqueDates);
           setPaymentOrders(filteredOrders);
           setTotalPaymentOrders(data.totalPaymentOrders);
           setTotalPaymentOrdersLastMonth(data.totalPaymentOrdersLastMonth);
@@ -128,6 +139,38 @@ export default function DashOutPatientBilling() {
         </Table.Row>
       </Table.Body>
     ));
+  const handleDateChange = (selectedOption) => {
+    setSelectedDate(selectedOption);
+  };
+  console.log(selectedDate);
+  const handleDownloadReport = async () => {
+    try {
+      const res = await fetch(`/api/paymentOrder/downloadPaymentReport`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: selectedDate,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+      const pdfBlob = await res.blob();
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedDate.value}-Payment-Report`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      toast.error("Failed to download report");
+    }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -221,6 +264,12 @@ export default function DashOutPatientBilling() {
             placeholder="Select Date"
             isSearchable
             isClearable
+            onChange={handleDateChange}
+            value={selectedDate}
+            options={dates.map((date) => ({
+              value: date,
+              label: format(new Date(date), "MMMM dd, yyyy"),
+            }))}
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -256,7 +305,12 @@ export default function DashOutPatientBilling() {
               }),
             }}
           />
-          <Button outline gradientDuoTone="greenToBlue" className=" ml-4">
+          <Button
+            outline
+            gradientDuoTone="greenToBlue"
+            className=" ml-4"
+            onClick={handleDownloadReport}
+          >
             Download Payment Order Report
           </Button>
         </div>
