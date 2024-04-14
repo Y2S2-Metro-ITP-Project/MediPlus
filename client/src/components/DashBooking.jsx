@@ -392,7 +392,6 @@ export default function Booking() {
     <Table.HeadCell>Type</Table.HeadCell>
     <Table.HeadCell>Doctor</Table.HeadCell>
     <Table.HeadCell>Patient</Table.HeadCell>
-    <Table.HeadCell>RoomNo</Table.HeadCell>
     <Table.HeadCell>Status</Table.HeadCell>
     <Table.HeadCell>Book</Table.HeadCell>
     <Table.HeadCell>Update</Table.HeadCell>
@@ -415,13 +414,14 @@ export default function Booking() {
     <Table.Cell>{booking.type}</Table.Cell>
     <Table.Cell>{booking.doctorName}</Table.Cell>
     <Table.Cell>{booking.patientId}</Table.Cell>
-    <Table.Cell>{booking.roomNo}</Table.Cell>
     <Table.Cell>
-    {booking.status === "Not Booked" ? (
-    <FaTimes className="text-yellow-500" />
-    ) : (
-    <FaCheck className="text-green-500" />
-    )}
+    <Table.Cell>
+                    {booking.status === "Not Booked" ? (
+                      <span className="text-yellow-500">Not Booked</span>
+                    ) : (
+                      <span className="text-green-500">Booked</span>
+                    )}
+                  </Table.Cell>
     </Table.Cell>
     <Table.Cell>
     <Link className="text-teal-500 hover:underline">
