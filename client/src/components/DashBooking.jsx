@@ -35,13 +35,17 @@ export default function Booking() {
       const res = await fetch("/api/booking/getBookings");
       const data = await res.json();
       if (res.ok) {
-        setBookings(data.bookings);
-        if (data.bookings.length < 9) {
-          setShowMore(false);
-        }
+        // Update bookings with doctor names
+        const updatedBookings = await Promise.all(
+          data.bookings.map(async (booking) => {
+            const doctorName = await fetchDoctorName(booking.doctorId);
+            return { ...booking, doctorName };
+          })
+        );
+        setBookings(updatedBookings);
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -304,6 +308,20 @@ export default function Booking() {
       console.error(error);
     }
     };
+
+    const fetchDoctorName = async (doctorId) => {
+      try {
+        const res = await fetch(`/api/user/${doctorId}`);
+        const data = await res.json();
+        if (res.ok) {
+          return data.username;
+        }
+        return "Unknown";
+      } catch (error) {
+        console.error(error);
+        return "Unknown";
+      }
+    };
     
     return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -395,7 +413,7 @@ export default function Booking() {
     </Table.Cell>
     <Table.Cell>{booking.time}</Table.Cell>
     <Table.Cell>{booking.type}</Table.Cell>
-    <Table.Cell>{booking.doctorId}</Table.Cell>
+    <Table.Cell>{booking.doctorName}</Table.Cell>
     <Table.Cell>{booking.patientId}</Table.Cell>
     <Table.Cell>{booking.roomNo}</Table.Cell>
     <Table.Cell>

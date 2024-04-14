@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Label,
-  Modal,
-  Select,
-  Table,
-  TextInput,
-} from "flowbite-react";
+import { Button, Label, Modal, Select, Table, TextInput } from "flowbite-react";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
@@ -58,22 +51,28 @@ export default function Booking() {
     ) {
       fetchBookings();
     }
-  
+
     if (currentUser.isReceptionist) {
       fetchDoctors()
-        .then(doctors => {
-          setDoctors(doctors);
+        .then((doctors) => {
+          const options = doctors.map((doctor) => ({
+            value: doctor._id,
+            label: doctor.username,
+          }));
+          setDoctorOptions(options);
           if (doctors.length > 0) {
             // Set the first doctor as default
-            setFormData(prev => ({ ...prev, selectedDoctorId: doctors[0]._id }));
+            setFormData((prev) => ({
+              ...prev,
+              selectedDoctorId: doctors[0]._id,
+            }));
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error);
         });
     }
   }, [currentUser._id, currentUser.isReceptionist]);
-  
 
   const handleShowMore = async () => {
     const startIndex = bookings.length;
@@ -185,12 +184,22 @@ export default function Booking() {
     e.preventDefault();
     try {
       const { type, date, roomNo, selectedDoctorId } = formData;
-  
-      if (!type || !date || selectedTimeSlots.length === 0 || !selectedDoctorId) {
-        toast.error("Type, date, doctor, and at least one time slot are required");
+
+      if (
+        !type ||
+        !date ||
+        selectedTimeSlots.length === 0 ||
+        !selectedDoctorId
+      ) {
+        toast.error(
+          "Type, date, doctor, and at least one time slot are required"
+        );
         return;
       }
-  
+
+      console.log("FormData:", formData);
+      console.log("Selected Time Slots:", selectedTimeSlots);
+
       for (const time of selectedTimeSlots) {
         const newBooking = {
           type,
@@ -199,7 +208,9 @@ export default function Booking() {
           time,
           roomNo,
         };
-  
+
+        console.log("New Booking:", newBooking);
+
         const res = await fetch("/api/booking/create", {
           method: "POST",
           headers: {
@@ -207,14 +218,14 @@ export default function Booking() {
           },
           body: JSON.stringify(newBooking),
         });
-  
+
         const data = await res.json();
-  
+
         if (!res.ok) {
           throw new Error(data.error || "Failed to add booking");
         }
       }
-  
+
       setFormData({});
       setSelectedTimeSlots([]);
       setShowAddModal(false);
@@ -225,6 +236,7 @@ export default function Booking() {
       console.error(error);
     }
   };
+
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -270,50 +282,50 @@ export default function Booking() {
     } catch (error) {
       toast.error(error.message || "Failed to update booking");
       console.error(error);
-      }
-      };
-      
-      const generateTimeSlots = () => {
-      const timeSlots = [];
-      const startTime = 9; // Start time in 24-hour format (9 AM)
-      const endTime = 24; // End time in 24-hour format (12 AM)
+    }
+  };
 
-      for (let hour = startTime; hour <= endTime; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const formattedHour = hour < 10 ? `0${hour}` : hour;
-          const formattedMinute = minute === 0 ? "00" : minute;
-          const timeSlot = `${formattedHour}:${formattedMinute}`;
-          timeSlots.push(timeSlot);
-        }
-      }
-      
-      return timeSlots;
-    };
+  const generateTimeSlots = () => {
+    const timeSlots = [];
+    const startTime = 9; // Start time in 24-hour format (9 AM)
+    const endTime = 24; // End time in 24-hour format (12 AM)
 
-    useEffect(() => {
+    for (let hour = startTime; hour <= endTime; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const formattedHour = hour < 10 ? `0${hour}` : hour;
+        const formattedMinute = minute === 0 ? "00" : minute;
+        const timeSlot = `${formattedHour}:${formattedMinute}`;
+        timeSlots.push(timeSlot);
+      }
+    }
+
+    return timeSlots;
+  };
+
+  useEffect(() => {
     const timeSlots = generateTimeSlots();
     setTimeSlots(timeSlots);
-    }, []);
-    
-    const toggleSelectAll = () => {
+  }, []);
+
+  const toggleSelectAll = () => {
     setSelectAll(!selectAll);
     const updatedBookings = bookings.map((booking) => {
-    return { ...booking, isSelected: !selectAll };
+      return { ...booking, isSelected: !selectAll };
     });
     setBookings(updatedBookings);
-    };
-    
-    const handleSelectBooking = (index) => {
+  };
+
+  const handleSelectBooking = (index) => {
     const updatedBookings = [...bookings];
     updatedBookings[index].isSelected = !updatedBookings[index].isSelected;
     setBookings(updatedBookings);
-    };
-    
-    const handleDeleteSelected = async () => {
+  };
+
+  const handleDeleteSelected = async () => {
     try {
-    const selectedIds = bookings
-    .filter((booking) => booking.isSelected)
-    .map((booking) => booking._id);
+      const selectedIds = bookings
+        .filter((booking) => booking.isSelected)
+        .map((booking) => booking._id);
       const promises = selectedIds.map((id) => handleBookingDelete(id));
       await Promise.all(promises);
       toast.success("Selected bookings deleted successfully");
@@ -321,215 +333,213 @@ export default function Booking() {
       toast.error("Failed to delete selected bookings");
       console.error(error);
     }
-    };
+  };
 
-    const fetchDoctorName = async (doctorId) => {
-        try {
-          const res = await fetch(`/api/user/${doctorId}`);
-          const data = await res.json();
-          if (res.ok) {
-            return data.username; 
-          }
-          return "Unknown";
-        } catch (error) {
-          console.error(error);
-          return "Unknown";
-        }
-      };
+  const fetchDoctorName = async (doctorId) => {
+    try {
+      const res = await fetch(`/api/user/${doctorId}`);
+      const data = await res.json();
+      if (res.ok) {
+        return data.username;
+      }
+      return "Unknown";
+    } catch (error) {
+      console.error(error);
+      return "Unknown";
+    }
+  };
 
-      const fetchDoctors = async () => {
-        try {
-          const response = await fetch("/api/user/getdoctors"); // Update the endpoint
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data.message);
-          }
-          // Transform the data into options expected by react-select
-          const options = data.map((doctor) => ({
-            value: doctor._id, // Assuming doctor._id is the unique identifier
-            label: doctor.username,
-          }));
-          setDoctorOptions(options);
-        } catch (error) {
-          console.error("Error fetching Doctors:", error);
-        }
-      };
-    
-    return (
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch("/api/user/getdoctors"); // Update the endpoint
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      // Transform the data into options expected by react-select
+      const options = data.map((doctor) => ({
+        value: doctor._id, // Assuming doctor._id is the unique identifier
+        label: doctor.username,
+      }));
+      setDoctorOptions(options);
+    } catch (error) {
+      console.error("Error fetching Doctors:", error);
+    }
+  };
+
+  return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
-    <ToastContainer />
-    <div className="flex justify-between items-center mb-4">
-    <div className="flex items-center">
-    <Button
-    className="mr-4"
-    gradientDuoTone="purpleToPink"
-    outline
-    onClick={() => setShowAddModal(true)}
-    >
-    Schedule Appointments
-    </Button>
-    <form onSubmit={handleSearch}>
-    <TextInput
-    type="text"
-    placeholder="Search...."
-    rightIcon={AiOutlineSearch}
-    className="hidden lg:inline"
-    id="search"
-    onChange={onChange}
-    style={{ width: "300px" }}
-    />
-    <Button className="w-12 h-10 lg:hidden" color="gray">
-    <AiOutlineSearch />
-    </Button>
-    </form>
-    </div>
-    <Button
-    className="w-200 h-10 ml-6lg:ml-0 lg:w-32"
-    color="gray"
-    onClick={() => handleReset()}
-    >
-    Reset
-    </Button>
-    <select
-           id="filter"
-           onChange={handleFilterChange}
-           className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-         >
-    <option value="defaultvalue">Choose a filter option</option>
-    <option value="today">Today</option>
-    <option value="tomorrow">Tomorrow</option>
-    <option value="comingweek">Coming Week</option>
-    <option value="comingmonth">Coming Month</option>
-    <option value="lastmonth">Last Month</option>
-    <option value="lastyear">Last Year</option>
-    <option value="Bydate">By Date</option>
-    </select>
-    </div>
-    {(currentUser.isAdmin ||
-    currentUser.isDoctor ||
-    currentUser.isReceptionist) &&
-    bookings.length > 0 ? (
-    <>
-    <Table hoverable className="shadow-md">
-    <Table.Head>
-    <Table.HeadCell>
-    <input
-                   type="checkbox"
-                   checked={selectAll}
-                   onChange={toggleSelectAll}
-                 />
-    </Table.HeadCell>
-    <Table.HeadCell>Date</Table.HeadCell>
-    <Table.HeadCell>Time</Table.HeadCell>
-    <Table.HeadCell>Type</Table.HeadCell>
-    <Table.HeadCell>Doctor</Table.HeadCell>
-    <Table.HeadCell>Patient</Table.HeadCell>
-    <Table.HeadCell>RoomNo</Table.HeadCell>
-    <Table.HeadCell>Status</Table.HeadCell>
-    <Table.HeadCell>Book</Table.HeadCell>
-    <Table.HeadCell>Update</Table.HeadCell>
-    <Table.HeadCell>Delete</Table.HeadCell>
-    </Table.Head>
-    {bookings.map((booking, index) => (
-    <Table.Body className="divide-y" key={booking._id}>
-    <Table.Row className={`bg-white dar:border-gray-700 dark:bg-gray-800 ${booking.isSelected ? "bg-gray-200" : ""}`}>
-    <Table.Cell>
-    <input
-    type="checkbox"
-    checked={booking.isSelected}
-    onChange={() => handleSelectBooking(index)}
-    />
-    </Table.Cell>
-    <Table.Cell>
-    {new Date(booking.date).toLocaleDateString()}
-    </Table.Cell>
-    <Table.Cell>{booking.time}</Table.Cell>
-    <Table.Cell>{booking.type}</Table.Cell>
-    <Table.Cell>{booking.doctorName}</Table.Cell>
-    <Table.Cell>{booking.patientId}</Table.Cell>
-    <Table.Cell>{booking.roomNo}</Table.Cell>
-    <Table.Cell>
-    {booking.status === "Not Booked" ? (
-    <FaTimes className="text-yellow-500" />
-    ) : (
-    <FaCheck className="text-green-500" />
-    )}
-    </Table.Cell>
-    <Table.Cell>
-    <Link className="text-teal-500 hover:underline">
-    <span onClick={() => {}}>Book</span>
-    </Link>
-    </Table.Cell>
-    <Table.Cell>
-    <Link className="text-teal-500 hover:underline">
-    <span
-    onClick={() => {
-    handleUpdateBooking(booking);
-    }}
-    >
-    Update
-    </span>
-    </Link>
-    </Table.Cell>
-    <Table.Cell>
-    <span
-    onClick={() => {
-    setShowDeleteModal(true);
-    setBookingIdToDelete(booking._id);
-    }}
-    className="font-medium text-red-500 hover:underline cursor-pointer"
-    >
-    Delete
-    </span>
-    </Table.Cell>
-    </Table.Row>
-    </Table.Body>
-    ))}
-    </Table>
-    <div className="flex justify-end">
-    <Button color="red" onClick={handleDeleteSelected}>
-    Delete Selected
-    </Button>
-    </div>
-    {showMore && (
-    <button
-    onClick={handleShowMore}
-    className="w-full text-teal-500 self-center text-sm py-7"
-    >
-    Show More
-    </button>
-    )}
-    </>
-    ) : (
-    <p>You have no Bookings</p>
-    )}
-    <Modal
-    show={showDeleteModal}
-    onClose={() => setShowDeleteModal(false)}
-    popup
-    size="md"
-    >
-    <Modal.Header />
-    <Modal.Body>
-    <div className="text-center">
-    <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
-    <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
-    Are you sure you want to delete this booking?
-    </h3>
-    </div>
-    <div className="flex justify-center gap-4">
-    <Button
-    color="failure"
-    onClick={() => handleBookingDelete(bookingIdToDelete)}
-    >
-    Yes, I am sure
-    </Button>
-    <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-    No, cancel
-    </Button>
-    </div>
-    </Modal.Body>
-    </Modal>
+      <ToastContainer />
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <Button
+            className="mr-4"
+            gradientDuoTone="purpleToPink"
+            outline
+            onClick={() => setShowAddModal(true)}
+          >
+            Schedule Appointments
+          </Button>
+          <form onSubmit={handleSearch}>
+            <TextInput
+              type="text"
+              placeholder="Search...."
+              rightIcon={AiOutlineSearch}
+              className="hidden lg:inline"
+              id="search"
+              onChange={onChange}
+              style={{ width: "300px" }}
+            />
+            <Button className="w-12 h-10 lg:hidden" color="gray">
+              <AiOutlineSearch />
+            </Button>
+          </form>
+        </div>
+        <Button
+          className="w-200 h-10 ml-6 lg:ml-0 lg:w-32"
+          color="gray"
+          onClick={() => handleReset()}
+        >
+          Reset
+        </Button>
+        <select
+          id="filter"
+          onChange={handleFilterChange}
+          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        >
+          <option value="defaultvalue">Choose a filter option</option>
+          <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
+          <option value="comingweek">Coming Week</option>
+          <option value="comingmonth">Coming Month</option>
+          <option value="lastmonth">Last Month</option>
+          <option value="lastyear">Last Year</option>
+          <option value="Bydate">By Date</option>
+        </select>
+      </div>
+      {(currentUser.isAdmin ||
+        currentUser.isDoctor ||
+        currentUser.isReceptionist) &&
+      bookings.length > 0 ? (
+        <>
+          <Table hoverable className="shadow-md">
+            <Table.Head>
+              <Table.HeadCell>
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={toggleSelectAll}
+                />
+              </Table.HeadCell>
+              <Table.HeadCell>Date</Table.HeadCell>
+              <Table.HeadCell>Time</Table.HeadCell>
+              <Table.HeadCell>Type</Table.HeadCell>
+              <Table.HeadCell>Doctor</Table.HeadCell>
+              <Table.HeadCell>Patient</Table.HeadCell>
+              <Table.HeadCell>RoomNo</Table.HeadCell>
+              <Table.HeadCell>Status</Table.HeadCell>
+              <Table.HeadCell>Update</Table.HeadCell>
+              <Table.HeadCell>Delete</Table.HeadCell>
+            </Table.Head>
+            {bookings.map((booking, index) => (
+              <Table.Body className="divide-y" key={booking._id}>
+                <Table.Row
+                  className={`bg-white dark:border-gray-700 dark:bg-gray-800 ${
+                    booking.isSelected ? "bg-gray-200" : ""
+                  }`}
+                >
+                  <Table.Cell>
+                    <input
+                      type="checkbox"
+                      checked={booking.isSelected}
+                      onChange={() => handleSelectBooking(index)}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    {new Date(booking.date).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell>{booking.time}</Table.Cell>
+                  <Table.Cell>{booking.type}</Table.Cell>
+                  <Table.Cell>{booking.doctorName}</Table.Cell>
+                  <Table.Cell>{booking.patientId}</Table.Cell>
+                  <Table.Cell>{booking.roomNo}</Table.Cell>
+                  <Table.Cell>
+                    {booking.status === "Not Booked" ? (
+                      <span className="text-yellow-500">Not Booked</span>
+                    ) : (
+                      <span className="text-green-500">Booked</span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Link className="text-teal-500 hover:underline">
+                      <span
+                        onClick={() => {
+                          handleUpdateBooking(booking);
+                        }}
+                      >
+                        Update
+                      </span>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => {
+                        setShowDeleteModal(true);
+                        setBookingIdToDelete(booking._id);
+                      }}
+                      className="font-medium text-red-500 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </span>
+                  </Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            ))}
+          </Table>
+          <div className="flex justify-end">
+            <Button color="red" onClick={handleDeleteSelected}>
+              Delete Selected
+            </Button>
+          </div>
+          {showMore && (
+            <button
+              onClick={handleShowMore}
+              className="w-full text-teal-500 self-center text-sm py-7"
+            >
+              Show More
+            </button>
+          )}
+        </>
+      ) : (
+        <p>You have no Bookings</p>
+      )}
+      <Modal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
+              Are you sure you want to delete this booking?
+            </h3>
+          </div>
+          <div className="flex justify-center gap-4">
+            <Button
+              color="failure"
+              onClick={() => handleBookingDelete(bookingIdToDelete)}
+            >
+              Yes, I am sure
+            </Button>
+            <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+              No, cancel
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
       <Modal
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -558,6 +568,32 @@ export default function Booking() {
                   <option value="Online Appointment">Online Appointment</option>
                   <option value="Hospital Booking">Hospital Booking</option>
                 </Select>
+              </div>
+              <div className="mb-4">
+                <Label>Doctor</Label>
+                {currentUser.isDoctor ? (
+                  <TextInput
+                    type="text"
+                    id="doctorId"
+                    value={currentUser._id}
+                    readOnly
+                    className="mt-1 bg-gray-100"
+                  />
+                ) : (
+                  <Select
+                    id="selectedDoctorId"
+                    className="mt-1"
+                    onChange={onChange}
+                    required
+                  >
+                    <option value="">Select Doctor</option>
+                    {doctorOptions.map((doctor) => (
+                      <option key={doctor.value} value={doctor.value}>
+                        {doctor.label}
+                      </option>
+                    ))}
+                  </Select>
+                )}
               </div>
               {formData.type === "Hospital Booking" && (
                 <div>
@@ -653,6 +689,16 @@ export default function Booking() {
                   <option value="Hospital Booking">Hospital Booking</option>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <TextInput
+                  type="date"
+                  id="date"
+                  onChange={onChange}
+                  className="input-field"
+                  value={formData.date || ""}
+                />
+              </div>
               {formData.type === "Hospital Booking" && (
                 <div>
                   <Label htmlFor="roomNo">Room No.</Label>
@@ -665,16 +711,6 @@ export default function Booking() {
                   />
                 </div>
               )}
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <TextInput
-                  type="date"
-                  id="date"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.date || ""}
-                />
-              </div>
               <div>
                 <Label htmlFor="time">Time</Label>
                 <Select
@@ -701,7 +737,7 @@ export default function Booking() {
             </div>
             <div className="flex justify-center mt-3">
               <Button color="blue" type="submit" outline>
-                Update
+                Submit
               </Button>
               <Button
                 className="ml-4"
@@ -720,5 +756,5 @@ export default function Booking() {
         </Modal.Body>
       </Modal>
     </div>
-    );
-} 
+  );
+}
