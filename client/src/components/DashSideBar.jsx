@@ -129,6 +129,15 @@ export default function DashSideBar() {
                   Appointment
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Schedule Appointments
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=inquiries">
                 <Sidebar.Item
                   active={tab === "inquiries"}
@@ -193,6 +202,29 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
+          {currentUser.isDoctor && (
+            <>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Appointment
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Schedule Appointments
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+
           {currentUser.isPharmacist && (
             <>
               <Link to="/dashboard?tab=orderPrescritions">
@@ -225,6 +257,24 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Out Patients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Appointment
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Schedule Appointments
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inquiries">

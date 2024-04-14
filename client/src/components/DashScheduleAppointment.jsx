@@ -22,26 +22,31 @@ export default function Booking() {
   const [bookingIdToDelete, setBookingIdToDelete] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [formData, setFormData] = useState({});
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [formData, setFormData] = useState({ selectedDoctorId: "" });
 
   const fetchBookings = async () => {
     try {
       const res = await fetch("/api/booking/getBookings");
       const data = await res.json();
       if (res.ok) {
-        setBookings(data.bookings);
-        if (data.bookings.length < 9) {
-          setShowMore(false);
-        }
+        // Update bookings with doctor names
+        const updatedBookings = await Promise.all(
+          data.bookings.map(async (booking) => {
+            const doctorName = await fetchDoctorName(booking.doctorId);
+            return { ...booking, doctorName };
+          })
+        );
+        setBookings(updatedBookings);
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -53,7 +58,22 @@ export default function Booking() {
     ) {
       fetchBookings();
     }
-  }, [currentUser._id]);
+  
+    if (currentUser.isReceptionist) {
+      fetchDoctors()
+        .then(doctors => {
+          setDoctors(doctors);
+          if (doctors.length > 0) {
+            // Set the first doctor as default
+            setFormData(prev => ({ ...prev, selectedDoctorId: doctors[0]._id }));
+          }
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+  }, [currentUser._id, currentUser.isReceptionist]);
+  
 
   const handleShowMore = async () => {
     const startIndex = bookings.length;
@@ -164,23 +184,22 @@ export default function Booking() {
   const handleAddBooking = async (e) => {
     e.preventDefault();
     try {
-      const { type, date, roomNo } = formData;
-      const doctorId = currentUser._id;
-
-      if (!type || !date || selectedTimeSlots.length === 0) {
-        toast.error("Type, date, and at least one time slot are required");
+      const { type, date, roomNo, selectedDoctorId } = formData;
+  
+      if (!type || !date || selectedTimeSlots.length === 0 || !selectedDoctorId) {
+        toast.error("Type, date, doctor, and at least one time slot are required");
         return;
       }
-
+  
       for (const time of selectedTimeSlots) {
         const newBooking = {
           type,
-          doctorId,
+          doctorId: selectedDoctorId,
           date,
           time,
           roomNo,
         };
-
+  
         const res = await fetch("/api/booking/create", {
           method: "POST",
           headers: {
@@ -188,14 +207,14 @@ export default function Booking() {
           },
           body: JSON.stringify(newBooking),
         });
-
+  
         const data = await res.json();
-
+  
         if (!res.ok) {
           throw new Error(data.error || "Failed to add booking");
         }
       }
-
+  
       setFormData({});
       setSelectedTimeSlots([]);
       setShowAddModal(false);
@@ -206,7 +225,6 @@ export default function Booking() {
       console.error(error);
     }
   };
-
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -304,6 +322,38 @@ export default function Booking() {
       console.error(error);
     }
     };
+
+    const fetchDoctorName = async (doctorId) => {
+        try {
+          const res = await fetch(`/api/user/${doctorId}`);
+          const data = await res.json();
+          if (res.ok) {
+            return data.username; 
+          }
+          return "Unknown";
+        } catch (error) {
+          console.error(error);
+          return "Unknown";
+        }
+      };
+
+      const fetchDoctors = async () => {
+        try {
+          const response = await fetch("/api/user/getdoctors"); // Update the endpoint
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message);
+          }
+          // Transform the data into options expected by react-select
+          const options = data.map((doctor) => ({
+            value: doctor._id, // Assuming doctor._id is the unique identifier
+            label: doctor.username,
+          }));
+          setDoctorOptions(options);
+        } catch (error) {
+          console.error("Error fetching Doctors:", error);
+        }
+      };
     
     return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -316,7 +366,7 @@ export default function Booking() {
     outline
     onClick={() => setShowAddModal(true)}
     >
-    Add Booking
+    Schedule Appointments
     </Button>
     <form onSubmit={handleSearch}>
     <TextInput
@@ -395,7 +445,7 @@ export default function Booking() {
     </Table.Cell>
     <Table.Cell>{booking.time}</Table.Cell>
     <Table.Cell>{booking.type}</Table.Cell>
-    <Table.Cell>{booking.doctorId}</Table.Cell>
+    <Table.Cell>{booking.doctorName}</Table.Cell>
     <Table.Cell>{booking.patientId}</Table.Cell>
     <Table.Cell>{booking.roomNo}</Table.Cell>
     <Table.Cell>
@@ -490,7 +540,7 @@ export default function Booking() {
         <Modal.Body>
           <div className="text-center">
             <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Add Booking
+              Schedule Appointment
             </h3>
           </div>
           <form onSubmit={handleAddBooking}>
