@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.1",
+<<<<<<< HEAD
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+=======
+>>>>>>> d76580249f438f5a19ed80bf2c39b0d8bbcc3f01
     "date-fns": "^3.6.0",
     "firebase": "^10.8.1",
     "flowbite": "^2.3.0",
@@ -28,9 +31,13 @@
     "react-router-dom": "^6.21.3",
     "react-select": "^5.8.0",
     "react-toastify": "^10.0.5",
+<<<<<<< HEAD
     "redux-persist": "^6.0.0",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7"
+=======
+    "redux-persist": "^6.0.0"
+>>>>>>> d76580249f438f5a19ed80bf2c39b0d8bbcc3f01
   },
   "devDependencies": {
     "@types/react": "^18.2.56",

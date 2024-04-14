@@ -478,7 +478,8 @@ export const downloadDoctorDiagnosis = async (req, res) => {
   const patientID = req.body.patientId;
   const patient = await Patient.findById(patientID);
   const patientName = patient.name;
-  const DoctorID = req.body.selectedDoctor.value._id;
+  console.log(req.body)
+  const DoctorID = req.body.selectedDoctor.value;
   console.log(DoctorID);
   const diagnosis1 = await PatientDiagnosis.find({
     patientId: patientID,

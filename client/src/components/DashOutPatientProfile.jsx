@@ -247,7 +247,7 @@ export default function DashOutPatientProfile() {
       const uniqueDoctors = [
         ...new Set(
           data.diagnosis.map((diagnosis) => ({
-            doctorId: diagnosis.doctorId,
+            doctorId: diagnosis.doctorId._id,
             username: diagnosis.doctorId.username,
           }))
         ),
@@ -882,11 +882,13 @@ export default function DashOutPatientProfile() {
     setSelectedDiagnosisDoctor(selectedOption);
   };
 
+  console.log(selectedDiagnosisDate);
+  console.log(selectedDiagnosisDoctor);
   const handleDownloadDiagnosisReport = async () => {
     if (selectedDiagnosisDate !== null) {
       try {
         const res = await fetch(
-          `/api/diagnosis/DownloadPDFDateDiagnosis/${id}`,
+          `/api/diagnosis/DownloadPDFDateDiagnosisDate/${id}`,
           {
             method: "POST",
             headers: {
@@ -921,7 +923,10 @@ export default function DashOutPatientProfile() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ patientId: id, selectedDoctor:selectedDiagnosisDoctor }),
+            body: JSON.stringify({
+              patientId: id,
+              selectedDoctor: selectedDiagnosisDoctor,
+            }),
           }
         );
         if (!res.ok) {

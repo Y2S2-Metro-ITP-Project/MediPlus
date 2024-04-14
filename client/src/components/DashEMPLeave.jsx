@@ -114,6 +114,7 @@ export default function DashEMPLeave() {
         </Button>
       </div>
 
+
       {/* Leave Application Modal */}
       <Modal show={showModal} onClose={() => setShowModal(false)} size="md">
         <Modal.Header />
