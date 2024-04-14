@@ -4,6 +4,7 @@ import Inventory from "../models/inventory.model.js";
 import Patient from "../models/patient.model.js";
 import Payment from "../models/payment.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import PaymentOrder from "../models/paymentOrder.model.js";
 import { set } from "mongoose";
 export const getPrescriptionOrderData = async (req, res, next) => {
   try {
@@ -78,6 +79,52 @@ export const getPrescriptionPatientOrder = async (req, res) => {
   }
 };
 
+const createOrUpdatePaymentOrder = async (
+  patientId,
+  patientName,
+  patientEmail,
+  paymentId,
+  paymentStatus
+) => {
+  try {
+    // Find the payment order for the patient ID
+    let paymentOrder = await PaymentOrder.findOne({ PatientID: patientId });
+
+    if (paymentOrder) {
+      // If a payment order exists, check if it has a pending status
+      if (paymentOrder.status === "Pending") {
+        // If it's pending, push the payment into its Payment array
+        paymentOrder.Payment.push(paymentId);
+      } else {
+        // If it's not pending, create a new payment order
+        paymentOrder = new PaymentOrder({
+          PatientID: patientId,
+          PatientName: patientName,
+          PatientEmail: patientEmail,
+          Payment: [paymentId],
+          status: "Pending",
+        });
+      }
+    } else {
+      // If no payment order exists, create a new one
+      paymentOrder = new PaymentOrder({
+        PatientID: patientId,
+        PatientName: patientName,
+        PatientEmail: patientEmail,
+        Payment: [paymentId],
+        Status: paymentStatus === "Pending" ? "Pending" : "Completed", // Set status based on payment status
+      });
+    }
+
+    // Save the payment order
+    await paymentOrder.save();
+
+    return paymentOrder;
+  } catch (error) {
+    throw new Error("Failed to create or update payment order");
+  }
+};
+
 export const confirmPrescriptionOrderData = async (req, res) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -98,6 +145,18 @@ export const confirmPrescriptionOrderData = async (req, res) => {
       OrderType: "Pharmacy",
       totalPayment: req.body.totalPayment,
     });
+
+    try {
+      await createOrUpdatePaymentOrder(
+        patient.patientId._id,
+        patientName,
+        patientEmail,
+        payment._id
+      );
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+
     const updatedOrder = await PrescriptionOrder.findById(id);
     for (const prescriptionId of updatedOrder.prescriptions) {
       const prescription = await Prescription.findById(prescriptionId);
@@ -248,7 +307,7 @@ export const downloadPatientOrderData = async (req, res) => {
 
     let prevDate = null;
     for (const order of prescriptionOrders) {
-      const { date, prescriptions, payment, doctorId,patientId} = order;
+      const { date, prescriptions, payment, doctorId, patientId } = order;
       const formattedDate = new Date(date).toLocaleString();
 
       if (formattedDate !== prevDate) {

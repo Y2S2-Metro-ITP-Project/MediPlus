@@ -194,8 +194,16 @@ export default function DashDoctorsOrdersPrecriptions() {
               {order.status}
             </span>
           </Table.Cell>
-          <Table.Cell style={{ color: getStatusColor(order.payment?.status) }}>
-            {order.payment?.status}
+          <Table.Cell>
+            {order.payment?.status ? (
+              <span style={{ color: getStatusColor(order.payment.status) }}>
+                {order.payment.status}
+              </span>
+            ) : (
+              <span style={{ fontWeight: "bold", color: "yellow" }}>
+                Not Created
+              </span>
+            )}
           </Table.Cell>
 
           <Table.Cell>
@@ -371,7 +379,7 @@ export default function DashDoctorsOrdersPrecriptions() {
       console.log(error);
     }
   };
-  console.log(seleactedDoctor)
+  console.log(seleactedDoctor);
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
