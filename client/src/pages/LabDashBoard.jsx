@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import DashLabSideBar from "../components/DashLabSideBar"
 import DashCollectionCentre from "../components/DashCollectionCentre";
 import DashTestManager from "../components/DashTestManager";
+import DashLabTestOrder from "../components/DashLabTestOrder";
 
 export default function LabDashBoard() {
 
@@ -29,6 +30,8 @@ export default function LabDashBoard() {
       {tab === 'sampleCollection' && <DashCollectionCentre /> }
       {/*Lab tests manager*/}
       {tab=== "tests" && <DashTestManager/>}
+      {/*Lab test order*/}
+      {tab=== "testOrder" && <DashLabTestOrder/>}
     </div>
   )
 }

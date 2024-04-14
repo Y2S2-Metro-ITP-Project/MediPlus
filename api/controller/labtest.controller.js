@@ -10,10 +10,11 @@ import { errorHandler } from "../utils/error.js";
     );
   };
   try {
+ 
     
-    const labtests = await LabTest.find({});
+    const labtests = await LabTest.find();
    
-    res.status(200).json(labtests);
+    res.status(200).json({labtests});
   } catch (error) {
     next(error);
   }
@@ -31,6 +32,46 @@ export const getLabTest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+// PAGINATION GET TESTS API
+
+export const paginatedLabTests = async (req, res, next) => {
+
+  try {
+    const page = req.query.page || 0;
+    const limit = 9;
+
+
+    const startIndex = (parseInt(page) -1) * limit;
+    const endIndex = page * limit;
+
+   
+
+    // if(endIndex < await LabTest.countDocuments()){
+    //   labtests.next = {
+    //     page : page + 1,
+    //     limit : limit
+    //   }
+    // }
+
+    // if (startIndex > 0){
+    //   labtests.previous = {
+    //     page: page -1,
+    //     limit:  limit
+    //   }
+    // }
+
+   const labtests = await LabTest.find({}).limit(limit).skip(startIndex);
+    res.status(200).json(labtests);
+    
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
 
 //CREATE LAB TEST
 export const createLabTest = async (req, res) => {
@@ -116,3 +157,24 @@ export const deleteLabTest = async (req, res, next) => {
   }
 };
 
+
+// MULTI FIELD SEARCH API
+
+  // export const searchMulti = async (req,res,next) => {
+
+  //   let data = await LabTest.find(
+  //     {
+  //       "$or":[
+  //         {name:{$regex: req.params.key}},
+  //         {sampleType:{$regex: req.params.key}},
+  //         {price:{$regex: req.params.key}},
+  //       ]
+  //     }
+  //   )
+
+  //   try {
+      
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }

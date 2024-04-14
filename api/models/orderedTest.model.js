@@ -1,20 +1,29 @@
 import mongoose from "mongoose";
+import Test from "./labtest.model.js";
 
 const orderedTestSchema = new mongoose.Schema(
   {
     testId: [
       {
-        type: String,
-        required: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "LabTest"
       },
     ],
-
+ 
     patientId: {
-      type: String,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"Patient"
+   
+    },
+  
+
+    DoctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"User"
+    
     },
 
-    hightPriority: {
+    highPriority: {
       type: Boolean,
       default: false,
     },

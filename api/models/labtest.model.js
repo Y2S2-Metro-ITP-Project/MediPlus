@@ -23,6 +23,11 @@ const testSchema = new mongoose.Schema(
       type: String, //time should be set in seconds only and no other format
     },
 
+    advice: {
+      type: String,
+      default: "seek medical advice before requesting laboratory tests",
+    },
+
     price: {
       type: String,
       required: true,

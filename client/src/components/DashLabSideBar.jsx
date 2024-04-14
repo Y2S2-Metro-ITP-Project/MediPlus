@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ImLab } from "react-icons/im";
 import { useDispatch } from "react-redux";
+import { BsPrescription2 } from "react-icons/bs"
 
 export default function DashLabSideBar() {
   const dispatch = useDispatch();
@@ -51,8 +52,8 @@ export default function DashLabSideBar() {
             </Sidebar.Item>
           </Link>
 
-          <Link to=" ">
-            <Sidebar.Item active={tab === "testOrder"} icon={ImLab} as="div">
+          <Link to="/lab-dashboard?tab=testOrder">
+            <Sidebar.Item active={tab === "testOrder"} icon={BsPrescription2} as="div">
               Lab Test Order
             </Sidebar.Item>
           </Link>

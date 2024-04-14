@@ -7,6 +7,7 @@ import {
   TextInput,
   Label,
   Select,
+  TableCell,
 } from "flowbite-react";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaEdit } from "react-icons/fa";
@@ -14,6 +15,8 @@ import { Link } from "react-router-dom";
 import { Modal } from "flowbite-react";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import { ToastContainer, toast } from "react-toastify";
+import { AiOutlineSearch } from "react-icons/ai";
+import { BiShow } from "react-icons/bi";
 
 //import LabTest from "../../../api/models/labtest.model";
 
@@ -23,6 +26,8 @@ export default function DashTestManager() {
   // const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [testIdToDelete, setTestIdToDelete] = useState(" ");
+  const [page, setPage] = useState(1);
+  const [ pageCount , setPageCount] = useState(1);
   const [addTestModal, setAddTestModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [testIdToUpdate, setTestIdToUpdate] = useState("");
@@ -46,7 +51,7 @@ export default function DashTestManager() {
 
   const fetchTests = async () => {
     try {
-      const res = await fetch(`/api/labTest/getTests`);
+      const res = await fetch(`/api/labTest/paginateTests?page=${page}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -61,7 +66,7 @@ export default function DashTestManager() {
     // Fetch all tests
     const fetchTests = async () => {
       try {
-        const res = await fetch(`/api/labTest/getTests`);
+        const res = await fetch(`/api/labTest/paginateTests?page=${page}`);
         const data = await res.json();
 
         if (res.ok) {
@@ -75,6 +80,25 @@ export default function DashTestManager() {
       fetchTests();
     }
   }, [currentUser._id]);
+
+
+  // PAGINATION 
+    const handlePrevious = async()=> {
+      setPage((p)=> {
+        return p - 1;
+      });
+
+      fetchTests();
+    }
+
+    const handleNext = async()=> {
+
+      setPage((p)=> {
+        return p + 1;
+      });
+
+      fetchTests();
+    }    
 
   //Delete test handler
   const handleDeleteTest = async () => {
@@ -205,6 +229,13 @@ export default function DashTestManager() {
     });
   };
 
+
+  // SEARCH 
+
+  const handleSearch = async(e) =>{
+    console.log("searching");
+  }
+
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 ">
       <div className=" flex justify-between items-center mb-5 ">
@@ -217,9 +248,22 @@ export default function DashTestManager() {
           Add Test
         </Button>
 
-        <div>
-          <TextInput></TextInput>
-        </div>
+        
+          <form  onSubmit={handleSearch}>
+            <TextInput
+              type="text"
+              placeholder="Search..."
+              rightIcon={AiOutlineSearch}
+              className="hidden lg:inline"
+              id="search"
+              onChange={handleChange}
+              style={{ width: "300px" }}
+            />
+            <Button className="w-12 h-10 lg:hidden" color="gray">
+              <AiOutlineSearch />
+            </Button>
+          </form>
+        
       </div>
 
       {currentUser.isAdmin || (currentUser.isLabTech && labTests.length > 0) ? (
@@ -233,18 +277,19 @@ export default function DashTestManager() {
               <Table.HeadCell>Price</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
               <Table.HeadCell>Edit</Table.HeadCell>
+              <Table.HeadCell>Show More</Table.HeadCell>
             </Table.Head>
 
             {labTests.map((labtest) => (
               <Table.Body className=" divide-y text-center ">
                 <Table.Row>
-                  <div className=" text-left ">
-                    <Table.Cell>
+                 
+                    <Table.Cell className="text-left">
                       <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
                         {labtest.name}
                       </Link>
                     </Table.Cell>
-                  </div>
+                  
                   <Table.Cell>{labtest.sampleType.toLowerCase()}</Table.Cell>
                   <Table.Cell>{labtest.sampleVolume} ml</Table.Cell>
                   <Table.Cell>
@@ -277,6 +322,9 @@ export default function DashTestManager() {
                       <FaEdit />
                     </span>
                   </Table.Cell>
+                  <TableCell>
+                      <BiShow  className="  text-blue-600 hover:cursor-pointer"/>
+                  </TableCell>
                 </Table.Row>
               </Table.Body>
             ))}
@@ -285,6 +333,13 @@ export default function DashTestManager() {
       ) : (
         <p>There are no tests available</p>
       )}
+
+
+      {/* PAGINATION */}
+      <div className="flex flex-row ">
+        <Button disabled={page ===1} onClick={handlePrevious} pill className=" text-gray-900 dark:text-white" gradientDuoTone="purpleToPink" >Previous</Button>
+        <Button onClick={handleNext} pill className=" text-gray-900 dark:text-white" gradientDuoTone="purpleToPink">Next</Button>
+      </div>
 
       {/* DELETE TEST MODAL */}
       <Modal
@@ -404,7 +459,12 @@ export default function DashTestManager() {
         </Modal.Body>
       </Modal>
 
+
+
       {/* UPDATE TEST MODAL */}
+
+
+
       <Modal
         show={updateTestModal}
         onClose={() => setUpdateTestModal(false)}
