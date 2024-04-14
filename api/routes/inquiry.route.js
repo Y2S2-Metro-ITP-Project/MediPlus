@@ -20,5 +20,6 @@ router.put("/update/:inquiryId", verifyToken, updateInquiry);
 router.post("/searchInquiry", verifyToken, searchInquiry);
 router.post("/filterInquiry", verifyToken, filterInquiry);
 router.post("/filterUserInquiry/:userId", verifyToken, filterUserInquiry);
+router.get("/searchUserInquiries/:userId", verifyToken, searchInquiry);
 
 export default router;

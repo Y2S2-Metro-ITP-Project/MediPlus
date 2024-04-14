@@ -1,7 +1,14 @@
 import Inventory from "../models/inventory.model.js";
 import { errorHandler } from "../utils/error.js";
 export const getInventoryData = async (req, res) => {
-  if (!req.user.isAdmin && !req.user.isPharmacist) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isDoctor &&
+    !req.user.isNurse
+  ) {
     return next(
       errorHandler(
         403,
@@ -70,7 +77,7 @@ export const addInventoryData = async (req, res) => {
   }
 };
 
-export const deleteInventoryData = async (req, res) => {
+export const deleteInventoryData = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isPharmacist) {
     return next(
       errorHandler(
@@ -84,6 +91,37 @@ export const deleteInventoryData = async (req, res) => {
     res.status(200).json({ message: "Inventory data deleted successfully" });
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const medicineInstock = async (req, res, next) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isDoctor &&
+    !req.user.isNurse
+  ) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access this route. Only Admin and Pharmacist can access this route"
+      )
+    );
+  }
+  try {
+    const currentDate = new Date();
+    const items = await Inventory.find(
+      {
+        $expr: { $gt: ["$itemQuantity", "$itemMinValue"] },
+        $expr: { $gte: [{ $toDate: "$itemExpireDate" }, currentDate] },
+      },
+      "itemName"
+    );
+    res.status(200).json({ items });
+  } catch (error) {
+    next(error);
   }
 };
 
