@@ -5,7 +5,21 @@ import generatePdfFromHtml from "../utils/PatientPDF.js";
 
 export const getPaymentOrders = async (req, res) => {
   try {
-    const paymentOrders = await PaymentOrder.find().populate("PatientID");
+    const paymentOrders = await PaymentOrder.aggregate([
+        {
+          $lookup: {
+            from: "patients", // Assuming the name of the patient collection is "patients"
+            localField: "PatientID",
+            foreignField: "_id",
+            as: "patient"
+          }
+        },
+        {
+          $match: {
+            "patient.patientType": "Outpatient"
+          }
+        }
+      ])
     const completedPaymentOrder = paymentOrders.filter(
       (paymentOrder) => paymentOrder.status === "Completed"
     ).length;

@@ -99,7 +99,7 @@ export default function DashOutPatientBilling() {
             })}
           </Table.Cell>
           <Table.Cell>{order.PatientName}</Table.Cell>
-          <Table.Cell>{order.PatientID.contactPhone}</Table.Cell>
+          <Table.Cell>{order.patient[0].contactPhone}</Table.Cell>
           <Table.Cell>{order.PatientEmail}</Table.Cell>
           <Table.Cell>{order.Payment.length}</Table.Cell>
           <Table.Cell>
