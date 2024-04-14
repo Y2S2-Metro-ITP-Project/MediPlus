@@ -181,3 +181,16 @@ export const filterBookings = async (req, res, next) => {
     next(error);
   }
 };
+
+export const searchAppointments = async (req, res, next) => {
+  try {
+    const { doctorId, date } = req.query;
+
+    // Fetch appointments matching the provided doctor ID and date
+    const appointments = await Booking.find({ doctorId, date });
+
+    res.status(200).json(appointments);
+  } catch (error) {
+    next(error);
+  }
+};
