@@ -9,10 +9,12 @@ const employeeDetailsSchema = new mongoose.Schema({
   dateOfBirth: {
     type: Date,
     default: "No details available",
+    required: true,
   },
   salary: {
     type: Number,
     default: "No details available",
+    required: true,
   },
   gender: {
     type: String,
@@ -22,14 +24,22 @@ const employeeDetailsSchema = new mongoose.Schema({
   address: {
     type: String,
     default: "No details available",
+    required: true,
   },
   contactPhone: {
     type: String,
     default: "No details available",
+    required: true,
   },
   specialization: {
     type: String,
     default: "No details available",
+   
+  },
+  employeeimg: {
+    type: String,
+    default:
+      "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg",
   },
    Name: {
      type: String,
@@ -51,6 +61,7 @@ const employeeDetailsSchema = new mongoose.Schema({
     type: String,
     //required: true
   },
+
 }, { timestamps: true });
 
 const EmployeeDetails = mongoose.model("EmployeeDetails", employeeDetailsSchema);

@@ -33,12 +33,13 @@ export default function DashStaffManagement() {
     salary: "",
     address: "",
     contactPhone: "",
-    specialization: "",
     Name: '',
+    specialization: "",
     experience: '',
     qualifications: '',
     consultationFee: '',
     bio: '',
+    employeeimg: '',
   });
 
   const handleOpenUpdateModal = async (user) => {
@@ -75,6 +76,7 @@ export default function DashStaffManagement() {
           qualifications: data.employeeDetails.qualifications || "",
           consultationFee: data.employeeDetails.consultationFee || "",
           bio: data.employeeDetails.bio || "",
+          employeeimg: data.employeeDetails.employeeimg || "",
         });
       } else {
         console.error("Failed to fetch employee details:", data.message);
@@ -96,21 +98,28 @@ export default function DashStaffManagement() {
     const newRole = e.target.value;
     setUpdatedUserData({ ...updatedUserData, role: newRole });
   };
+  // Function to handle image change
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    setUpdatedEmployeeDetails(prevData => ({
+      ...prevData,
+      employeeimg: file, // Update the employeeimg field with the selected file
+    }));
+  };
 
 
 
-  
   const handleUpdateUser = async () => {
     try {
       // Check if user's _id exists
       if (!userToUpdate._id) {
         throw new Error("User ID not found.");
       }
-  
+
       // Fetch EmployeeDetails based on the user's _id
       const res = await fetch(`/api/employee/getEMPById/${userToUpdate._id}`);
       const data = await res.json();
-  
+
       if (!res.ok) {
         // If employee details are not found, create new details for the user
         console.error(`Failed to fetch employee details: ${data.message}`);
@@ -119,13 +128,13 @@ export default function DashStaffManagement() {
         // Employee details found, update them
         await updateEmployeeDetails();
       }
-  
+
       // Update the user details
       await updateUserData();
-  
+
       // Update the local state with the updated data
       updateUserState();
-  
+
       // Close the update modal and show success message
       closeUpdateModalAndShowSuccess();
     } catch (error) {
@@ -133,7 +142,7 @@ export default function DashStaffManagement() {
       toast.error("Failed to update user");
     }
   };
-  
+
   const createNewEmployeeDetails = async () => {
     try {
       const createRes = await fetch(`/api/employee/createEmployeeDetails`, {
@@ -155,7 +164,7 @@ export default function DashStaffManagement() {
       toast.error("Failed to create employee details");
     }
   };
-  
+
   const updateEmployeeDetails = async () => {
     try {
       const updateRes = await fetch(`/api/employee/updateEmp/${userToUpdate._id}`, {
@@ -178,7 +187,7 @@ export default function DashStaffManagement() {
       toast.error("Failed to update employee details");
     }
   };
-  
+
   const updateUserData = async () => {
     try {
       const updateUserRes = await fetch(`/api/employee/updateEmp/${userToUpdate._id}`, {
@@ -200,7 +209,7 @@ export default function DashStaffManagement() {
       toast.error("Failed to update user details");
     }
   };
-  
+
   const updateUserState = () => {
     setUserToUpdate(prevUser => ({
       ...prevUser,
@@ -208,12 +217,12 @@ export default function DashStaffManagement() {
       role: updatedUserData.role,
     }));
   };
-  
+
   const closeUpdateModalAndShowSuccess = () => {
     setShowUpdateModal(false);
     toast.success("User updated successfully");
   };
-  
+
   // useEffect(() => {
   //   console.log("Updated Employee Details:", updatedEmployeeDetails);
   // }, [updatedEmployeeDetails]);
@@ -630,8 +639,8 @@ export default function DashStaffManagement() {
               <p>Role: {getSelectedRole(selectedUserDetails)}</p>
               {selectedUserDetails.employeeDetails && (
                 <>
-                                  <p>
-                  Name:{" "}
+                  <p>
+                    Name:{" "}
                     {selectedUserDetails.employeeDetails.Name}
                   </p>
                   <p>Gender: {selectedUserDetails.employeeDetails.gender}</p>
@@ -645,32 +654,36 @@ export default function DashStaffManagement() {
                     Contact Phone:{" "}
                     {selectedUserDetails.employeeDetails.contactPhone}
                   </p>
-                  <p>
-                    Specialization:{" "}
-                    {selectedUserDetails.employeeDetails.specialization}
-                  </p>
-                  <p>
-                  Experience:{" "}
-                    {selectedUserDetails.employeeDetails.experience}
-                  </p>
-                  <p>
-                  Qualifications:{" "}
-                    {selectedUserDetails.employeeDetails.qualifications}
-                  </p>
-                  <p>
-                  ConsultationFee:{" "}
-                    {selectedUserDetails.employeeDetails.consultationFee}
-                  </p>
-                  <p>
-                  Bio:{" "}
-                    {selectedUserDetails.employeeDetails.bio}
-                  </p>
+                  {getSelectedRole(selectedUserDetails) === "Doctor" && (
+                    <>
+                      <p>
+                        Specialization:{" "}
+                        {selectedUserDetails.employeeDetails.specialization}
+                      </p>
+                      <p>
+                        Experience:{" "}
+                        {selectedUserDetails.employeeDetails.experience}
+                      </p>
+                      <p>
+                        Qualifications:{" "}
+                        {selectedUserDetails.employeeDetails.qualifications}
+                      </p>
+                      <p>
+                        ConsultationFee:{" "}
+                        {selectedUserDetails.employeeDetails.consultationFee}
+                      </p>
+                      <p>
+                        Bio:{" "}
+                        {selectedUserDetails.employeeDetails.bio}
+                      </p>
+                    </>
+                  )}
                 </>
               )}
             </div>
           )}
- 
         </Modal.Body>
+
         <Modal.Footer />
       </Modal>
 
@@ -684,27 +697,19 @@ export default function DashStaffManagement() {
         <Modal.Body>
           <h2 className="text-lg font-semibold">Update Employee</h2>
           <div className="mt-4">
-            <label className="block">Username</label>
+            <label className="block">Username/Employee Name</label>
             <TextInput
               type="text"
               value={updatedUserData.username}
-              onChange={(e) =>
-                setUpdatedUserData({ ...updatedUserData, username: e.target.value })
-              }
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setUpdatedUserData({ ...updatedUserData, username: newValue });
+                setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, Name: newValue });
+              }}
               className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
           </div>
-          <div className="mt-4">
-            <label className="block">Employee Name</label>
-            <TextInput
-              type="text"
-              value={updatedEmployeeDetails.Name}
-              onChange={(e) =>
-                setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, Name: e.target.value })
-              }
-              className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-          </div>
+
 
           <div className="mt-4">
             <label className="block">Email</label>
@@ -735,8 +740,8 @@ export default function DashStaffManagement() {
             </select>
           </div>
           {updatedUserData.role === "Doctor" && (
-             <>
-            <div className="mt-4">
+            <>
+              <div className="mt-4">
                 <label className="block">Specialization</label>
                 <TextInput
                   type="text"
@@ -746,9 +751,9 @@ export default function DashStaffManagement() {
                   }
                 // Add classNames and other attributes as needed
                 />
-            </div>
-            <div className="mt-4">
-                  <label className="block">Experience</label>
+              </div>
+              <div className="mt-4">
+                <label className="block">Experience</label>
                 <TextInput
                   type="number" // Change to lowercase "number"
                   id="experience"
@@ -757,9 +762,9 @@ export default function DashStaffManagement() {
                     setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, experience: e.target.value })
                   }
                 />
-            </div>
-            <div className="mt-4">
-                  <label className="block">Qualifications</label>
+              </div>
+              <div className="mt-4">
+                <label className="block">Qualifications</label>
                 <TextInput
                   type="text" // Change to lowercase "number"
                   id="qualifications"
@@ -768,9 +773,9 @@ export default function DashStaffManagement() {
                     setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, qualifications: e.target.value })
                   }
                 />
-            </div>
-            <div className="mt-4">
-                  <label className="block">ConsultationFee</label>
+              </div>
+              <div className="mt-4">
+                <label className="block">ConsultationFee</label>
                 <TextInput
                   type="number" // Change to lowercase "number"
                   id="consultationFee"
@@ -779,9 +784,9 @@ export default function DashStaffManagement() {
                     setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, consultationFee: e.target.value })
                   }
                 />
-            </div>
-            <div className="mt-4">
-                  <label className="block">Bio</label>
+              </div>
+              <div className="mt-4">
+                <label className="block">Bio</label>
                 <textarea
                   type="number" // Change to lowercase "number"
                   id="bio"
@@ -791,9 +796,8 @@ export default function DashStaffManagement() {
                     setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, bio: e.target.value })
                   }
                 />
-            </div>
-            
-            
+              </div>
+
             </>
           )}
           <div className="mt-4">
@@ -858,6 +862,16 @@ export default function DashStaffManagement() {
               placeholder={userToUpdate?.employeeDetails?.contactPhone || "Enter Contact Phone"}
             />
           </div>
+
+          <div className="mt-4">
+                <label className="block">Profile Image</label>
+                <input
+                    value={updatedEmployeeDetails.employeeimg ? updatedEmployeeDetails.employeeimg.name : ''}
+                  type="file"
+                  onChange={handleImageChange}
+                  className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+              </div>
 
           <div className="mt-4 flex justify-end gap-4">
             <Button onClick={handleUpdateUser}>Update</Button>

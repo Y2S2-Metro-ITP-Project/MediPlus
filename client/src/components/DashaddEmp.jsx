@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export const DashaddEmp = () => {
     const [formData, setFormData] = useState({
-        username: '',
+        username: '', // Used for both username and employee name
         email: '',
         password: '',
         role: '',
@@ -15,15 +15,15 @@ export const DashaddEmp = () => {
         address: '',
         contactPhone: '',
         specialization: '',
-
-        Name: '',
         experience: '',
         qualifications: '',
         consultationFee: '',
         bio: '',
+        employeeimg: "",
     });
 
     const [roleError, setRoleError] = useState(false);
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (!formData.role) {
@@ -71,11 +71,20 @@ export const DashaddEmp = () => {
         const { id, value } = event.target;
         setFormData(prevData => ({
             ...prevData,
-            [id]: value
+            [id]: value,
+            // Update the 'Name' field whenever the 'username' field changes
+            ...(id === 'username' && { Name: value })
         }));
         if (id === 'role') {
             setRoleError(false);
         }
+    };
+    const handleImageChange = (event) => {
+        const file = event.target.files[0];
+        setFormData(prevData => ({
+            ...prevData,
+            employeeimg: file,
+        }));
     };
 
     return (
@@ -87,13 +96,6 @@ export const DashaddEmp = () => {
                     type="text"
                     id="username"
                     value={formData.username}
-                    onChange={handleChange}
-                    placeholder="Username"
-                />
-                <TextInput
-                    type="text"
-                    id="Name"
-                    value={formData.Name}
                     onChange={handleChange}
                     placeholder="Employee Name"
                 />
@@ -143,27 +145,29 @@ export const DashaddEmp = () => {
                             placeholder="Experience (years)"
                         />
                         <TextInput
-                            type="text" 
+                            type="text"
                             id="qualifications"
                             value={formData.qualifications}
                             onChange={handleChange}
-                            placeholder="qualifications"
+                            placeholder="Qualifications"
                         />
-                          <TextInput
+                        <TextInput
                             type="number" // Change to lowercase "number"
                             id="consultationFee"
                             value={formData.consultationFee}
                             onChange={handleChange}
-                            placeholder="consultationFee"
+                            placeholder="Consultation Fee"
                         />
-                          <textarea
-                            type="text" 
+                        <textarea
+                            type="text"
                             id="bio"
                             style={{ width: "485px" }}
                             value={formData.bio}
                             onChange={handleChange}
-                            placeholder="bio"
+                            placeholder="Bio"
+                            className="bg-gray-50 border-gray-300 text-gray-900 text-sm h-20 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         />
+
                     </>
                 )}
 
@@ -199,7 +203,7 @@ export const DashaddEmp = () => {
                         onChange={handleChange}
                         className="input-field dark:bg-gray-800 dark:text-white"
                     >
-                        <option value="">Select gender</option>
+                        <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                     </select>
@@ -218,6 +222,16 @@ export const DashaddEmp = () => {
                     onChange={handleChange}
                     placeholder="Phone"
                 />
+                <div>
+                    <label htmlFor="image" className="block text-sm font-medium text-gray-700">Image</label>
+                    <input
+                        type="file"
+                        id="employeeimg"
+                        onChange={handleImageChange}
+                        accept="image/*" // Allow only image files
+                    />
+                </div>
+
                 <br />
                 <Button type="submit" gradientDuoTone="purpleToBlue" outline>
                     Add

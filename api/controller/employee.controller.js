@@ -5,11 +5,12 @@ import { sendEmail } from "../utils/email.js";
 import EmployeeDetails from "../models/empdata.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
 
+
 // Controller function to add a new employee
 export const addEMP = async (req, res, next) => {
     try {
       // Extract data from the request body
-      const { username,Name, email, password, role, dateOfBirth, salary, gender, address, contactPhone, specialization, experience ,qualifications ,consultationFee ,bio } = req.body;
+      const { username,Name, email, password, role, dateOfBirth, salary, gender, address, contactPhone, specialization, experience ,qualifications ,consultationFee ,bio,employeeimg } = req.body;
   
       // Hash the password using bcrypt.js
       const hashedPassword = await bcryptjs.hash(password, 10);
@@ -37,6 +38,7 @@ export const addEMP = async (req, res, next) => {
         qualifications,
         consultationFee,
         bio,
+        employeeimg,
       });
   
       // Send email to the new employee
@@ -321,7 +323,8 @@ export const updateEmp = async (req, res) => {
         experience ,
         qualifications,
         consultationFee,
-        bio, } = req.body;
+        bio, 
+        employeeimg,} = req.body;
   
       // Check if employee details already exist for the given userId
       const existingEmployeeDetails = await EmployeeDetails.findOne({ userId });
@@ -332,7 +335,8 @@ export const updateEmp = async (req, res) => {
           experience ,
           qualifications,
           consultationFee,
-          bio, });
+          bio,
+          employeeimg, });
         return res.status(200).json({ message: "Employee details updated successfully" });
       }
   
@@ -350,6 +354,7 @@ export const updateEmp = async (req, res) => {
         qualifications,
         consultationFee,
         bio,
+        employeeimg,
       });
   
       // Send a success response to the client
