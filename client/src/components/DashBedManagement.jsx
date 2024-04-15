@@ -26,6 +26,9 @@ const DashBedManagement = () => {
   const [bedPDFID, setBedPDFID] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [totalbeds, setTotalbeds] = useState(0);
+  const [newBedWard, setNewBedWard] = useState("");
+  const [totalavailablebeds, setTotalavailablebeds] = useState(0);
+  const [totalunavailablebeds, setTotalunavailablebeds] = useState(0);
 
   useEffect(() => {
     fetchBeds();
@@ -36,7 +39,9 @@ const DashBedManagement = () => {
       const response = await axios.get("/api/bed/getbed");
       console.log("Fetched beds :", response.data.beds);
       setBeds(response.data.beds);
-      setTotalbeds(response.data.totalbeds)
+      setTotalbeds(response.data.totalbeds);
+      setTotalavailablebeds(response.data.availableBeds);
+      setTotalunavailablebeds(response.data.unavailableBeds);
     } catch (error) {
       console.error("Error fetching beds:", error);
     }
@@ -87,14 +92,19 @@ const DashBedManagement = () => {
     try {
       const response = await axios.post("/api/bed/create", {
         number: newBedNumber,
+        ward: newBedWard,
       });
       setSuccessMessage(response.data.message);
       setNewBedNumber("");
+      setNewBedWard("");
       fetchBeds();
     } catch (error) {
       setErrorMessage(error.response.data.message);
     }
   };
+
+
+  
 
   const handleDeleteBed = async (bedNumber) => {
     console.log(bedNumber);
@@ -189,6 +199,28 @@ const DashBedManagement = () => {
     }
   };
 
+
+  const handleTransferPatient = async () => {
+    try {
+      const response = await axios.put('/api/bed/transfer', {
+        currentBedNumber: selectedBed.number,
+        newBedNumber: newBedNumber,
+        patientId: selectedBed.patient._id,
+      });
+  
+      if (response.data.success) {
+        setSuccessMessage(response.data.message);
+        setShowModal(false);
+        setNewBedNumber('');
+        fetchBeds();
+      } else {
+        setErrorMessage(response.data.message);
+      }
+    } catch (error) {
+      setErrorMessage(error.response.data.message);
+    }
+  };
+
   const handleAdmitPatient = async () => {
     try {
       const response = await axios.post('/api/bed/admitbed', {
@@ -212,10 +244,17 @@ const DashBedManagement = () => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredBeds = beds.filter((bed) =>
+  const filteredBeds = [...beds].sort((a, b) => {
+    if (!a.isAvailable && b.isAvailable) {
+      return -1; // Occupied beds first
+    } else if (a.isAvailable && !b.isAvailable) {
+      return 1; // Available beds second
+    } else {
+      return 0; // No change in order
+    }
+  }).filter((bed) =>
     bed.number.toString().includes(searchTerm.toLowerCase())
   );
-
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
@@ -228,6 +267,27 @@ const DashBedManagement = () => {
                 Total bed
               </h3>
               <p className="text-2xl">{totalbeds}</p>
+            </div>
+            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+
+          <div className="flex justify-between">
+        
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Total available beds
+              </h3>
+              <p className="text-2xl">{totalavailablebeds}</p>
+            </div>
+            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+          <div className="flex justify-between">
+        
+            <div className="">
+              <h3 className="text-gray-500 text-md uppercase">
+                Total unavailableBeds
+              </h3>
+              <p className="text-2xl">{totalunavailablebeds}</p>
             </div>
             <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
           </div>
@@ -257,11 +317,21 @@ const DashBedManagement = () => {
             onChange={(e) => setNewBedNumber(e.target.value)}
             className="mr-2"
           />
-          
+          <Select
+    id="ward"
+    value={newBedWard}
+    onChange={(e) => setNewBedWard(e.target.value)}
+    className="mr-2"
+  >
+    <option value="">Select Ward</option>
+    <option value="General">General Ward</option>
+    <option value="Emergency">Emergency Ward</option>
+  </Select>
           
         </div>
         <Button
             gradientDuoTone="purpleToPink"
+            outline
             className="ml-5"
             onClick={handleCreateBed}
           >
@@ -283,15 +353,16 @@ const DashBedManagement = () => {
           <Table hoverable className="shadow-md">
             <Table.Head>
               <Table.HeadCell>Bed Number</Table.HeadCell>
+              <Table.HeadCell>Ward</Table.HeadCell>
               <Table.HeadCell>Availability</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Actions</Table.HeadCell>
-              <Table.HeadCell>Download PDF</Table.HeadCell>
             </Table.Head>
             {filteredBeds.map((bed) => (
               <Table.Body className="divide-y" key={bed.number}>
                 <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
                   <Table.Cell>{bed.number}</Table.Cell>
+                  <Table.Cell>{bed.ward}</Table.Cell>
                   <Table.Cell
                     key={bed.number}
                     className={`cursor-pointer ${
@@ -324,22 +395,7 @@ const DashBedManagement = () => {
                       Delete
                     </span>
                   </Table.Cell>
-                  <Table.Cell>
-                    {!bed.isAvailable ? (
-                      <span
-                        onClick={() => {
-                          setBedNumberPDF(bed.number);
-                          setBedPDFID(bed._id);
-                          handleDownloadPdf(bed.number);
-                        }}
-                        className="font-medium text-green-700 hover:underline cursor-pointer"
-                      >
-                        DownloadPdf
-                      </span>
-                    ) : (
-                      <p>This bed is not occupied</p>
-                    )}
-                  </Table.Cell>
+                  
                 </Table.Row>
               </Table.Body>
             ))}

@@ -20,6 +20,10 @@ const bedSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Patient',
     },
+    ward: { type: String, 
+       enum: ['General', 'Emergency'] 
+      },
+  
   },
   { timestamps: true }
 );

@@ -36,6 +36,7 @@ app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use('/api/bed', bedRoutes);
 
+
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

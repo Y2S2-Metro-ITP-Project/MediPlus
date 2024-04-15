@@ -15,13 +15,19 @@ const DashInpatients = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState(null);
-
+  const [selectedWard, setSelectedWard] = useState("all");
+  const [currentBedNumber, setCurrentBedNumber] = useState("");
+  const [newBedNumber, setNewBedNumber] = useState("");
+  const [patientIdToTransfer, setPatientIdToTransfer] = useState("");
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   useEffect(() => {
     // Fetch the list of patients from the API
     const fetchPatients = async () => {
       try {
         const res = await fetch("/api/patient/get");
         const data = await res.json();
+
         setPatients(data.patients);
         console.log(data.patients);
       } catch (error) {
@@ -45,6 +51,44 @@ const DashInpatients = () => {
     } catch (error) {
       console.error("Error deleting patient:", error);
       toast.error("Error deleting patient");
+    }
+  };
+
+  const handleTransferPatient = async () => {
+    try {
+
+      console.log("Patient ID to transfer:", patientIdToTransfer)
+
+      const res = await fetch("/api/patient/transfer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentBedNumber: currentBedNumber,
+          newBedNumber: newBedNumber,
+          patientId: patientIdToTransfer,
+        }),
+      });
+
+      if (res.ok) {
+        // Update the patient list after successful transfer
+        const data = await fetch("/api/patient/get");
+        const { patients } = await data.json();
+        setPatients(patients);
+        toast.success("Patient transferred successfully");
+      } else {
+        toast.error("Error transferring patient");
+      }
+
+      // Reset state variables
+      setCurrentBedNumber("");
+      setNewBedNumber("");
+      setPatientIdToTransfer("");
+      setIsTransferModalOpen(false);
+    } catch (error) {
+      console.error("Error transferring patient:", error);
+      toast.error("Error transferring patient");
     }
   };
 
@@ -81,6 +125,9 @@ const DashInpatients = () => {
       toast.error("Error updating patient");
     }
   };
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+  };
 
   const handleDeleteConfirm = (patient) => {
     setPatientToDelete(patient);
@@ -95,13 +142,13 @@ const DashInpatients = () => {
     }
   };
 
-  const handleDownloadPDF = async (name) => {
+  const handleDownloadPDF = async (patientID) => {
     const res = await fetch(`/api/patient/downloadPDF`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ patientIDPDF }),
+      body: JSON.stringify({ patientIDPDF: patientID }),
     });
     if (!res.ok) {
       console.error("Error downloading PDF:", res.statusText);
@@ -114,7 +161,7 @@ const DashInpatients = () => {
     // Create temporary link element
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Patient-${name}.pdf`; // Set download attribute
+    a.download = `Patient-${patientID}.pdf`; // Set download attribute
     document.body.appendChild(a);
 
     // Click link to initiate download
@@ -127,10 +174,17 @@ const DashInpatients = () => {
   };
 
   // Filter patients based on search term
-  const filteredPatients = (patients || []).filter((patient) =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredPatients = (patients || [])
+    .filter((patient) =>
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(
+      (patient) =>
+        selectedWard === "all" ||
+        (selectedWard === "general" && patient.bed?.ward === "General") ||
+        (selectedWard === "emergency" && patient.bed?.ward === "Emergency") ||
+        (!patient.bed)
+    );
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -152,6 +206,25 @@ const DashInpatients = () => {
             </Button>
           </form>
         </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="ward-filter"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Filter by Ward
+          </label>
+          <select
+            id="ward-filter"
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            value={selectedWard}
+            onChange={(e) => setSelectedWard(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="general">General Ward</option>
+            <option value="emergency">Emergency Ward</option>
+          </select>
+        </div>
       </div>
       {(patients || []).length > 0 ? (
         <>
@@ -164,7 +237,7 @@ const DashInpatients = () => {
               <Table.HeadCell>Patient Details</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
-              <Table.HeadCell>Download PDF</Table.HeadCell>
+              <Table.HeadCell>Bed</Table.HeadCell>
             </Table.Head>
             {filteredPatients.map((patient) => (
               <Table.Body className="divide-y" key={patient._id}>
@@ -174,7 +247,8 @@ const DashInpatients = () => {
                   </Table.Cell>
                   <Table.Cell>{patient.name}</Table.Cell>
                   <Table.Cell>{patient.illness}</Table.Cell>
-                  <Table.Cell>{patient.roomPreferences}</Table.Cell>
+                  <Table.Cell>{patient.bed?.ward}</Table.Cell>
+
                   <Table.Cell>
                     <HiEye
                       className="text-blue-500 cursor-pointer"
@@ -212,15 +286,17 @@ const DashInpatients = () => {
                       Delete
                     </span>
                   </Table.Cell>
+                  
                   <Table.Cell>
                     <span
                       onClick={() => {
-                        handleDownloadPDF(patient.name);
-                        setPatientIDPDF(patient._id);
+                        setCurrentBedNumber(patient.bed?.number);
+                        setPatientIdToTransfer(patient._id);
+                        setIsTransferModalOpen(true);
                       }}
-                      className="font-medium text-green-700 hover:underline cursor-pointer"
+                      className="font-medium text-blue-500 hover:underline cursor-pointer"
                     >
-                      Download PDF
+                      {patient.bed?.number}
                     </span>
                   </Table.Cell>
                 </Table.Row>
@@ -231,6 +307,76 @@ const DashInpatients = () => {
       ) : (
         <p>You have no Inpatients</p>
       )}
+
+      {isTransferModalOpen && (
+        <Modal
+          show={isTransferModalOpen}
+          onClose={() => {
+            setIsTransferModalOpen(false);
+            setCurrentBedNumber("");
+            setNewBedNumber("");
+            setPatientIdToTransfer("");
+          }}
+          popup
+          size="md"
+        >
+          <Modal.Header>Transfer Patient</Modal.Header>
+          <Modal.Body>
+            <div>
+              <label
+                htmlFor="patientIdToTransfer"
+                className="mb-2 block"
+              ></label>
+              <TextInput
+                id="patientIdToTransfer"
+                type="text"
+                value={patientIdToTransfer}
+                disabled
+              />
+            </div>
+            <div>
+              <label htmlFor="currentBedNumber" className="mb-2 block">
+                Current Bed Number
+              </label>
+              <TextInput
+                id="currentBedNumber"
+                type="text"
+                value={currentBedNumber}
+                disabled
+              />
+            </div>
+            <div className="mt-4">
+              <label htmlFor="newBedNumber" className="mb-2 block">
+                New Bed Number
+              </label>
+
+              <TextInput
+                id="newBedNumber"
+                type="text"
+                value={newBedNumber}
+                onChange={(e) => setNewBedNumber(e.target.value)}
+              />
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              color="gray"
+              onClick={() => {
+                setIsTransferModalOpen(false);
+                setCurrentBedNumber("");
+                setNewBedNumber("");
+                setPatientIdToTransfer("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button color="blue" onClick={handleTransferPatient}>
+              Transfer Patient
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+
       {isModalOpen && (
         <Modal
           show={isModalOpen}
@@ -248,7 +394,8 @@ const DashInpatients = () => {
                 className="grid grid-cols-1 md:grid-cols-3 gap-6"
                 onSubmit={handleEditSubmit}
               >
-                <div><label>name</label>
+                <div>
+                  <label>name</label>
                   <TextInput
                     type="text"
                     placeholder="Patient Name"
@@ -262,7 +409,8 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div><label>admissionDate</label>
+                <div>
+                  <label>admissionDate</label>
                   <TextInput
                     type="date"
                     id="admissionDate"
@@ -275,7 +423,8 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div><label>illness</label>
+                <div>
+                  <label>illness</label>
                   <TextInput
                     type="text"
                     placeholder="Illness"
@@ -289,7 +438,8 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div><label>roomPreferences</label>
+                <div>
+                  <label>roomPreferences</label>
                   <TextInput
                     type="text"
                     placeholder="Ward"
@@ -303,7 +453,8 @@ const DashInpatients = () => {
                     }
                   />
                 </div>
-                <div><label>Patient type</label>
+                <div>
+                  <label>Patient type</label>
                   <TextInput
                     type="text"
                     placeholder="patienttype"
@@ -370,6 +521,52 @@ const DashInpatients = () => {
           </Modal.Body>
         </Modal>
       )}
+
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Generate Patient Report</h2>
+        <div className="mb-4">
+          <TextInput
+            type="text"
+            placeholder="Search by patient name..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+        </div>
+        {searchTerm.trim() === "" ? (
+          <div className="text-gray-500 text-center py-4">
+            Start typing to search for a patient
+          </div>
+        ) : (
+          <div className="mb-4">
+            {filteredPatients.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">
+                No patients found for "{searchTerm}"
+              </div>
+            ) : (
+              filteredPatients.map((patient) => (
+                <div
+                  key={patient._id}
+                  className={`p-4 mb-2 rounded-md cursor-pointer ${
+                    selectedPatient === patient ? "bg-blue-200" : "bg-gray-100"
+                  }`}
+                  onClick={() => handlePatientSelect(patient)}
+                >
+                  <p className="text-gray-800 font-medium">{patient.name}</p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+        <div>
+          <Button
+            color="blue"
+            onClick={() => handleDownloadPDF(selectedPatient?._id)}
+            disabled={!selectedPatient}
+          >
+            Generate Report
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

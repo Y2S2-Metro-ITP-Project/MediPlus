@@ -1,6 +1,6 @@
 import express from 'express';
-import { admitPatientToBed, getAllBeds, getBedByNumber, updateBedAvailability, deleteBedByNumber, createBed, generateReport,generatePatientReport } from '../controller/bed.controller.js';
-
+import { admitPatientToBed, getAllBeds, transferPatientToBed, getBedByNumber, updateBedAvailability, deleteBedByNumber, createBed, generateReport,generatePatientReport } from '../controller/bed.controller.js';
+import { getBedByPatientId } from '../controller/bed.controller.js';
 const router = express.Router();
 
 router.post('/create', createBed);
@@ -11,4 +11,6 @@ router.put('/:number', updateBedAvailability); // Update bed availability by num
 router.delete('/:number', deleteBedByNumber); // Delete a bed by number
 router.post('/report', generateReport); // Generate a report
 router.post('/downloadPatientReport/:id', generatePatientReport); 
+router.put('/transfer',transferPatientToBed);
+router.get('/:patientId', getBedByPatientId); // Get a single bed by ID
 export default router;

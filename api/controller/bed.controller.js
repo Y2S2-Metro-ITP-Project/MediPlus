@@ -3,6 +3,7 @@ import Patient from "../models/patient.model.js";
 import { errorHandler } from "../utils/error.js";
 import moment from "moment";
 import generatePdfFromHtml from "../utils/BedPDF.js";
+import { populate } from "dotenv";
 
 export const generateReport = async (req, res, next) => {
   try {
@@ -165,8 +166,15 @@ export const admitPatientToBed = async (req, res, next) => {
     bed.isAvailable = false;
     bed.patient = patientId;
 
+    patient.assignedBeds.push(bed.number);
+    patient.bed = bed._id;
+
     // Save the updated bed to the database
     await bed.save();
+    console.log('Bed saved:', bed);
+
+    await patient.save();
+    console.log('Patient saved:', patient);
 
     res
       .status(200)
@@ -174,22 +182,63 @@ export const admitPatientToBed = async (req, res, next) => {
         success: true,
         message: "Patient admitted to bed successfully",
         bed,
+        patient,
       });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
 };
 
+
+
+export const getBedByPatientId = async (req, res, next) => {
+  try {
+    const { patientId } = req.params;
+
+    // Find the patient by ID and populate the bed field
+    const patient = await Patient.findById(patientId).populate('bed');
+
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Check if the patient has a bed assigned
+    if (!patient.bed) {
+      return res.status(200).json({ message: "No bed assigned to this patient" });
+    }
+
+    // The bed field is now populated with the bed document
+    res.status(200).json({ bed: patient.bed, patient });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
 // Controller function to get all beds
 export const getAllBeds = async (req, res, next) => {
-    try {
-      const beds = await Bed.find().populate('patient');
-      const totalbeds = await Bed.countDocuments();
-      res.status(200).json({ success: true, beds ,totalbeds});
-    } catch (error) {
-      next(errorHandler(500, "Server Error"));
-    }
-  };
+  try {
+    const beds = await Bed.find().populate('patient');
+    const totalbeds = await Bed.countDocuments();
+
+    // Count available beds
+    const availableBeds = await Bed.countDocuments({ isAvailable: true });
+
+    // Count unavailable beds
+    const unavailableBeds = await Bed.countDocuments({ isAvailable: false });
+
+    res.status(200).json({
+      success: true,
+      beds,
+      totalbeds,
+      availableBeds,
+      unavailableBeds,
+    });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
   
 
 // Controller function to get bed by number
@@ -247,6 +296,7 @@ export const deleteBedByNumber = async (req, res, next) => {
 
 export const createBed = async (req, res, next) => {
   const { number } = req.body;
+  const { ward } = req.body;
 
   try {
     // Check if the bed number is provided
@@ -263,6 +313,7 @@ export const createBed = async (req, res, next) => {
     // Create a new bed instance
     const newBed = new Bed({
       number,
+      ward,
     });
 
     // Save the new bed to the database
@@ -278,6 +329,48 @@ export const createBed = async (req, res, next) => {
       });
   } catch (error) {
     // Handle errors
+    next(errorHandler(500, "Server Error"));
+  }
+};
+
+export const transferPatientToBed = async (req, res, next) => {
+  const { currentBedNumber, newBedNumber, patientId } = req.body;
+
+  try {
+    // Check if the current bed exists
+    const currentBed = await Bed.findOne({ number: currentBedNumber });
+    if (!currentBed) {
+      return next(errorHandler(404, "Current bed not found"));
+    }
+
+    // Check if the new bed exists
+    const newBed = await Bed.findOne({ number: newBedNumber });
+    if (!newBed) {
+      return next(errorHandler(404, "New bed not found"));
+    }
+
+    // Check if the new bed is available
+    if (!newBed.isAvailable) {
+      return next(errorHandler(400, "New bed is already occupied"));
+    }
+
+    // Update the current bed to make it available
+    currentBed.isAvailable = true;
+    currentBed.patient = null;
+    await currentBed.save();
+
+    // Update the new bed with the patient information
+    newBed.isAvailable = false;
+    newBed.patient = patientId;
+    await newBed.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Patient transferred successfully",
+      currentBed,
+      newBed,
+    });
+  } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
 };

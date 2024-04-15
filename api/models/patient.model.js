@@ -7,7 +7,7 @@ const patientSchema = new mongoose.Schema(
     },
     assignedBeds: [
       {
-        type: Number,
+        type: String,
       },
     ],
     admissionDate: {
