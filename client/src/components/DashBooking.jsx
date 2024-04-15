@@ -27,29 +27,30 @@ export default function Booking() {
   const [bookingData, setBookingData] = useState([]);
   const [patientOptions, setPatientOptions] = useState([]);
   const [reason, setReason] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState("");
 
   const handleReasonChange = (newValue) => {
     setReason(newValue);
   };
 
-  const fetchBookings = async () => {
-    try {
-      const res = await fetch("/api/booking/getBookings");
-      const data = await res.json();
-      if (res.ok) {
-        // Update bookings with doctor names
-        const updatedBookings = await Promise.all(
-          data.bookings.map(async (booking) => {
-            const doctorName = await fetchDoctorName(booking.doctorId);
-            return { ...booking, doctorName };
-          })
-        );
-        setBookings(updatedBookings);
-      }
-    } catch (error) {
-      console.error(error);
+const fetchBookings = async () => {
+  try {
+    const res = await fetch("/api/booking/getBookings");
+    const data = await res.json();
+    if (res.ok) {
+      const updatedBookings = await Promise.all(
+        data.bookings.map(async (booking) => {
+          const doctorName = await fetchDoctorName(booking.doctorId);
+          const patientName = await fetchPatientName(booking.patientId); 
+          return { ...booking, doctorName, patientName }; 
+        })
+      );
+      setBookings(updatedBookings);
     }
-  };
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   useEffect(() => {
     if (
@@ -63,7 +64,9 @@ export default function Booking() {
   }, [currentUser._id]);
 
   const handleBookModal = (booking) => {
-    setBookingData(booking); // Set the booking data for the modal
+    setBookingData(booking);
+    setSelectedBooking(booking);
+    console.log("Selected Booking:", booking);
     const formattedDate = new Date(booking.date).toISOString().split("T")[0];
     setFormData({
       type: booking.type,
@@ -85,6 +88,7 @@ export default function Booking() {
         value: patient._id,
         label: patient.username,
       }));
+      console.log("Patient Options:", options); // Log patient options
       setPatientOptions(options);
     } catch (error) {
       console.error("Error fetching Patients:", error);
@@ -129,7 +133,11 @@ export default function Booking() {
   };
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    setFormData({ ...formData, [id]: value });
+    if (id === "selectedPatientId") {
+      console.log("Selected Patient ID:", value);
+    }
   };
 
   const handleFilterChange = async (e) => {
@@ -294,42 +302,32 @@ export default function Booking() {
   const handleBookAppointment = async (e) => {
     e.preventDefault();
     try {
-      const { type, date, roomNo } = formData;
-
-      console.log("Form Data:", formData); // Log form data
-
-      if (!type || !date || !roomNo) {
-        toast.error("Type, date, and room number are required");
+      if (!selectedPatientId || !bookingData._id) {
+        toast.error("Patient ID and Booking ID are required");
         return;
       }
-
-      const Booking = {
-        _id: selectedBooking._id,
-        reason,
-        patientId: formData.selectedPatientId, // Assuming the doctor ID is stored in selectedDoctorId
+  
+      const booking = {
+        _id: bookingData._id,
+        patientId: selectedPatientId,
       };
 
-      console.log("Booking:", Booking); // Log new booking object
-
-      const res = await fetch(
-        `/api/booking/bookAppointment/${selectedBooking._id}`, // Use backticks for string interpolation
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(Booking),
-        }
-      );
-
+      console.log(booking)
+  
+      const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(booking),
+      });
+  
       const data = await res.json();
-
-      console.log("Response Data:", data); // Log response data
-
+  
       if (!res.ok) {
         throw new Error(data.error || "Failed to book appointment");
       }
-
+  
       setFormData({});
       setSelectedTimeSlots([]);
       setShowBookModal(false);
@@ -340,6 +338,7 @@ export default function Booking() {
       console.error(error);
     }
   };
+  
 
   const generateTimeSlots = () => {
     const timeSlots = [];
@@ -404,6 +403,21 @@ export default function Booking() {
       return "Unknown";
     }
   };
+
+  //function to fetch patient name
+const fetchPatientName = async (patientId) => {
+  try {
+    const res = await fetch(`/api/user/${patientId}`);
+    const data = await res.json();
+    if (res.ok) {
+      return data.username;
+    }
+    return "Unknown";
+  } catch (error) {
+    console.error(error);
+    return "Unknown";
+  }
+};
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -499,7 +513,7 @@ export default function Booking() {
                   <Table.Cell>{booking.time}</Table.Cell>
                   <Table.Cell>{booking.type}</Table.Cell>
                   <Table.Cell>{booking.doctorName}</Table.Cell>
-                  <Table.Cell>{booking.patientId}</Table.Cell>
+                  <Table.Cell>{booking.patientName}</Table.Cell>
                   <Table.Cell>
                     <Table.Cell>
                       {booking.status === "Not Booked" ? (
@@ -835,11 +849,11 @@ export default function Booking() {
                 />
               </div>
               <div>
-                <Label htmlFor="selectedPatientId">Select Patient</Label>
+                <Label>Select Patient</Label>
                 <Select
                   id="selectedPatientId"
                   className="mt-1"
-                  onChange={onChange}
+                  onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
                   required
                 >
                   <option value="">Select Patient</option>
@@ -850,17 +864,15 @@ export default function Booking() {
                   ))}
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="reason">Reason For Appointment</Label>
-                <TextArea
-                  id="reason"
-                  
-                  value={reason}
-                  onChange={handleReasonChange}
-                  rows={4}
-                  placeholder="Enter your reason here..."
+              <TextInput
+                  type="id"
+                  id="id"
+                  onChange={onChange}
+                  className="input-field"
+                  value={bookingData._id}
+                  isDisabled
+                  style={{ display: "none" }} // Inline style to hide the input
                 />
-              </div>
             </div>
             <div className="flex justify-center mt-3">
               <Button color="blue" type="submit" outline>

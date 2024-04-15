@@ -8,6 +8,7 @@ import {
   filterBookings,
   searchAppointments,
   updateBooking,
+  bookAppointment
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.post("/searchBookings", verifyToken, searchBookings);
 router.get("/appointments", verifyToken, searchAppointments);
 router.post("/filterBookings", verifyToken, filterBookings);
 router.put("/update/:bookingId", verifyToken, updateBooking);
+router.put("/bookAppointment/:bookingId", verifyToken, bookAppointment);
 
 
 export default router;

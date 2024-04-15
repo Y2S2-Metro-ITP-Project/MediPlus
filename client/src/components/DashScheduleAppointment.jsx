@@ -7,7 +7,7 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
-export default function Booking() {
+export default function ScheduleAppointment() {
   const { currentUser } = useSelector((state) => state.user);
   const [bookings, setBookings] = useState([]);
   const [showMore, setShowMore] = useState(true);
@@ -180,6 +180,7 @@ export default function Booking() {
 
   const handleUpdateBooking = (booking) => {
     setSelectedBooking(booking);
+    console.log("Selected Booking:", booking); // Log selected booking
     // Format the date to YYYY-MM-DD
     const formattedDate = new Date(booking.date).toISOString().split("T")[0];
     setFormData({

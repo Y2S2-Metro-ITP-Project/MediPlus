@@ -196,32 +196,55 @@ export const searchAppointments = async (req, res, next) => {
 };
 
 export const updateBooking = async (req, res) => {
-  // Check user permissions
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
       return res.status(403).json({ message: "You are not allowed to update bookings" });
   }
   
   try {
-      // Update the booking data
       const updatedBooking = await Booking.findByIdAndUpdate(
-          req.params.bookingId, // Extract the booking ID from the request parameters
+          req.params.bookingId,
           {
-              $set: req.body, // Update with the data from the request body
+              $set: req.body,
           },
-          { new: true } // Return the updated document
+          { new: true } 
       );
-      
-      // Check if the booking was found and updated successfully
       if (!updatedBooking) {
           return res.status(404).json({ message: "Booking not found" });
       }
-      
-      // If successful, return the updated booking
       res.status(200).json(updatedBooking);
   } catch (error) {
-      // Handle any errors
       res.status(500).json({ message: error.message });
   }
 };
+
+export const bookAppointment = async (req, res) => {
+  // Check if the user has the necessary permissions to book appointments
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
+    return res.status(403).json({ message: "You are not allowed to book appointments" });
+  }
+  
+  try {
+    // Find the booking by ID and update it with the patient ID from the request body
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      req.params.bookingId,
+      {
+        $set: { patientId: req.body.patientId, status: "Pending Payment" }, // Update the booking with the patient ID and set status to "Pending Payment"
+      },
+      { new: true } // Return the updated document
+    );
+    
+    // Check if the booking was found and updated successfully
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    
+    // If successful, return the updated booking
+    res.status(200).json(updatedBooking);
+  } catch (error) {
+    // Handle any errors
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 
