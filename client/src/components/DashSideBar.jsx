@@ -112,6 +112,19 @@ export default function DashSideBar() {
               Profile
             </Sidebar.Item>
           </Link>
+          {currentUser.isDoctor && (
+            <>
+              <Link to="/dashboard?tab=patients">
+                <Sidebar.Item
+                  active={tab === "patients"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  Outpatients
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
           {currentUser.isAdmin && (
             <>
               <Link to="/dashboard?tab=users">
@@ -189,14 +202,14 @@ export default function DashSideBar() {
           )}
           {currentUser.isCashier && (
             <Link to="/dashboard?tab=OutPatientBilling">
-            <Sidebar.Item
-              active={tab === "OutPatientBilling"}
-              icon={IoReceiptOutline}
-              as="div"
-            >
-              Out Patient Billing
-            </Sidebar.Item>
-          </Link>
+              <Sidebar.Item
+                active={tab === "OutPatientBilling"}
+                icon={IoReceiptOutline}
+                as="div"
+              >
+                Out Patient Billing
+              </Sidebar.Item>
+            </Link>
           )}
           {currentUser.isPharmacist && (
             <>
