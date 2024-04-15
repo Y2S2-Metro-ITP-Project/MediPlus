@@ -241,3 +241,16 @@ export const getdoctors = async (req, res, next) => {
   }
 }
 
+export const getPatients = async (req, res, next) => {
+  try {
+    const patients = await User.find({ isOutPatient: true });
+    if (!patients || patients.length === 0) {
+      return res.status(404).json({ message: "No patients found" });
+    }
+    res.status(200).json(patients);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
