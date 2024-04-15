@@ -4,31 +4,26 @@ import { errorHandler } from "../utils/error.js";
 
 // CREATE A LAB ORDER
 
-export const createTestOrder = async (req, res) => {
-  
-  
-  const DoctorId = req.params.id;
-  const {
-    testId,
-    patientId,
-    highPriority,
-  } = req.body;
-
-  if (
-    !testId ||
-    !patientId
-  ) {
-    return res.status(400).json({ message: " required fields not filled out" });
+export const createTestOrder = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isLabTech && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "user is not authorized to create lab orders")
+    );
   }
 
-  const newOrder = new TestOrder({
-    testId,
-    patientId,
-    DoctorId,
-    highPriority,
-  });
-
   try {
+    const DoctorId = req.params.id;
+    const testId = req.body.formData.testId;
+    const patientId = req.body.formData.patientId;
+    const highPriority = req.body.formData.highPriority;
+
+    const newOrder = new TestOrder({
+      testId,
+      patientId,
+      DoctorId,
+      highPriority,
+    });
+
     await newOrder.save();
     res.status(200).json(newOrder);
   } catch (error) {
@@ -36,66 +31,54 @@ export const createTestOrder = async (req, res) => {
   }
 };
 
-
-
 // GET TEST ORDERS
 
-  export const getAllTestOrders = async(req, res) => {
+export const getAllTestOrders = async (req, res) => {
+  try {
+    const testOrders = await TestOrder.find();
 
-    try{
-        const testOrders = await TestOrder.find();
-            
-          res.json(testOrders);
-        
-    }catch(error){
-        res.status(500).json({message: error.message});
-    };
-  };
+    res.json(testOrders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
+// PATCH API TO UPDATE PAYMENT STATUS
+export const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const testOrderId = req.params.id;
 
+    const testOrder = await TestOrder.findById(testOrderId);
 
-  // PATCH API TO UPDATE PAYMENT STATUS
-  export const updatePaymentStatus = async(req, res, next) => {
+    if (!testOrder) {
+      return res.status(404).json({ error: "Test Order Not Found" });
+    }
 
-    try {
-      const testOrderId = req.params.id;
+    testOrder.paymentComplete = true;
 
-      const testOrder = await TestOrder.findById(testOrderId)
+    await testOrder.save();
+    res.json(testOrder);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-      if(!testOrder){
-        return res.status(404).json({error: "Test Order Not Found"});
-      }
+// PATCH API TO UPDATE PRIORITY STATUS
+export const updatePriorityStatus = async (req, res, next) => {
+  try {
+    const testOrderId = req.params.id;
 
-      testOrder.paymentComplete=true;
+    const testOrder = await TestOrder.findById(testOrderId);
 
-      await testOrder.save();
-      res.json(testOrder);
-    } catch(error) {
-      res.status(500).json({ message: error.message });
-    };
-  };
-  
+    if (!testOrder) {
+      return res.status(404).json({ error: "Test Order Not Found" });
+    }
 
-  // PATCH API TO UPDATE PRIORITY STATUS
-  export const updatePriorityStatus = async(req, res, next) => {
+    testOrder.highPriority = true;
 
-    try {
-      const testOrderId = req.params.id;
-
-      const testOrder = await TestOrder.findById(testOrderId)
-
-      if(!testOrder){
-        return res.status(404).json({error: "Test Order Not Found"});
-      }
-
-      testOrder.highPriority=true;
-
-      await testOrder.save();
-      res.json(testOrder);
-    } catch(error) {
-      res.status(500).json({ message: error.message });
-    };
-  };
-
-
-
+    await testOrder.save();
+    res.json(testOrder);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -1,22 +1,26 @@
 import React from "react";
 import { Button, Checkbox, Label, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
+import {ToastContainer , toast} from "react-toastify";
 
 import Select from "react-select";
 
 import { useSelector } from "react-redux";
 
 const DashLabTestOrder = () => {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState([]);
   const { currentUser } = useSelector((state) => state.user);
 
-  const [selectedPatient, setSelectedPatient] = useState({});
+  const [priority, setPriority] = useState(false);
+
+  const [selectedPatient, setSelectedPatient] = useState("");
   const [patients, setPatients] = useState([]);
 
   const [selectedTests, setSelectedTests] = useState([]);
+  const [teststoSubmit, setTeststoSubmit] = useState([]);
   const [tests, setTests] = useState([]);
 
-  const [orderEmp, setOrderEmp] = useState();
+ 
 
   //FETCHING DATA FOR PATIENT SELECTION
 
@@ -61,17 +65,45 @@ const DashLabTestOrder = () => {
     }
   }, [currentUser._id]);
 
-  // handle select test change
+//   useEffect(()=>{
+//     console.log(teststoSubmit)
+//  }, [teststoSubmit]);
+//FOR TESTING PURPOUSES
+  
   const handleTestSelectChange = (selectedOptions) => {
-    console.log("handleChange", selectedOptions);
+   // console.log("handleChange", selectedOptions);
+    const tests = selectedOptions.map(test => test.value);
+    //console.log("value from tests:", tests);
+    setTeststoSubmit(tests);
     setSelectedTests(selectedOptions);
+    setFormData({
+      ...formData,
+      testId: tests,
+    });
   };
 
-  //handle select patient change
   const handlePatientSelectChange = (selectedOptions) => {
-    console.log("handleChange", selectedOptions);
-    setSelectedPatient(selectedOptions);
+   // console.log("handleChange", selectedOptions);
+    const{value} = selectedOptions;
+   // console.log("value from patient",value);
+    setSelectedPatient(value);
+    console.log("testing",selectedPatient);
+    setFormData({
+      ...formData,
+      patientId: selectedPatient,
+    });
   };
+
+
+  const handlePriorityChange = (e) => {
+    setPriority(e.target.checked);
+    setFormData({
+      ...formData,
+      highPriority: priority,
+    });
+  };
+
+
 
   const options = tests.map((test) => ({
     value: test._id,
@@ -83,6 +115,40 @@ const DashLabTestOrder = () => {
     label: patient.name,
   }));
 
+
+   const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`,{
+
+        method: "POST",
+        headers:{
+          "Content-Type":"application/json",
+        },
+        body: JSON.stringify({
+          formData,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if(!res.ok){
+        toast.error(data.message);
+      }else{
+        toast.success("Test order placed");
+      }
+      
+      setFormData([]);
+      
+    } catch (error) {
+      console.log(error);
+    }
+   }
+
+
+
+
   return (
     <div className=" p-3 max-w-3xl mx-auto min-h-screen">
       <h1 className="my-7 text-center font-semibold text-3xl">
@@ -90,7 +156,7 @@ const DashLabTestOrder = () => {
       </h1>
 
       <div>
-        <form className="flex flex-col gap-5" onSubmit={""}>
+        <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
           <div>
             <Label>Select Lab Tests:</Label>
             <Select
@@ -99,7 +165,7 @@ const DashLabTestOrder = () => {
               value={selectedTests}
               options={options}
               onChange={handleTestSelectChange}
-              placeholder="Select tests"
+             
             />
           </div>
 
@@ -110,7 +176,7 @@ const DashLabTestOrder = () => {
               value={selectedPatient}
               options={optionsPatient}
               onChange={handlePatientSelectChange}
-              placeholder="Select Patient"
+             
             />
           </div>
 
@@ -124,7 +190,7 @@ const DashLabTestOrder = () => {
 
           <div>
             <Label value="High priority?  " />
-            <Checkbox id="priority" onChange={""} />
+            <Checkbox id="priority" checked={priority} onChange={handlePriorityChange} />
           </div>
 
           <div>
