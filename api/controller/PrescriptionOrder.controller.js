@@ -87,16 +87,17 @@ const createOrUpdatePaymentOrder = async (
   paymentStatus
 ) => {
   try {
-    // Find the payment order for the patient ID
-    let paymentOrder = await PaymentOrder.findOne({ PatientID: patientId });
+    // Find all payment orders for the patient ID
+    const paymentOrders = await PaymentOrder.find({ PatientID: patientId });
 
-    if (paymentOrder) {
-      // If a payment order exists, check if it has a pending status
-      if (paymentOrder.status === "Pending") {
-        // If it's pending, push the payment into its Payment array
-        paymentOrder.Payment.push(paymentId);
-      } else {
-        // If it's not pending, create a new payment order
+    let paymentOrder;
+
+    if (paymentOrders.length > 0) {
+      // If payment orders exist for the patient ID
+      paymentOrder = paymentOrders.find((order) => order.status === "Pending");
+
+      if (!paymentOrder) {
+        // If there are no pending orders, create a new one
         paymentOrder = new PaymentOrder({
           PatientID: patientId,
           PatientName: patientName,
@@ -104,9 +105,12 @@ const createOrUpdatePaymentOrder = async (
           Payment: [paymentId],
           status: "Pending",
         });
+      } else {
+        // If there is a pending order, add the payment to it
+        paymentOrder.Payment.push(paymentId);
       }
     } else {
-      // If no payment order exists, create a new one
+      // If no payment orders exist, create a new one
       paymentOrder = new PaymentOrder({
         PatientID: patientId,
         PatientName: patientName,
