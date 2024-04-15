@@ -240,5 +240,26 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
+export const cancelSelectedBookings = async (req, res) => {
+  try {
+    // Extract the array of booking IDs from the request body
+    const { bookingIds } = req.body;
 
+    // Check if bookingIds array is provided and not empty
+    if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
+      return res.status(400).json({ error: 'Invalid or empty booking IDs array' });
+    }
 
+    // Update the status of selected bookings to "Cancelled"
+    await Booking.updateMany(
+      { _id: { $in: bookingIds } }, // Find bookings by their IDs
+      { $set: { status: 'Cancelled' } } // Set the status to "Cancelled"
+    );
+
+    // Respond with success message
+    res.json({ message: 'Selected bookings cancelled successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to cancel selected bookings' });
+  }
+};

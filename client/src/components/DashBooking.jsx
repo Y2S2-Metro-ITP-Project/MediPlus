@@ -37,14 +37,61 @@ export default function Booking() {
     try {
       const res = await fetch("/api/booking/getBookings");
       const data = await res.json();
+
       if (res.ok) {
+        // Filter bookings based on user role (doctor or patient)
+        const filteredBookings = data.bookings.filter((booking) => {
+          if (currentUser.isDoctor) {
+            return booking.doctorId === currentUser._id;
+          } else if (currentUser.isOutPatient) {
+            return booking.patientId === currentUser._id;
+          } else {
+            return true; // Allow all bookings for non-doctor and non-patient users
+          }
+        });
+
+        // Update filtered bookings with doctor and patient names
         const updatedBookings = await Promise.all(
-          data.bookings.map(async (booking) => {
+          filteredBookings.map(async (booking) => {
             const doctorName = await fetchDoctorName(booking.doctorId);
             const patientName = await fetchPatientName(booking.patientId);
             return { ...booking, doctorName, patientName };
           })
         );
+
+        // Sort the bookings in ascending order based on date and time
+        // Sort the bookings in ascending order based on date and time
+        // Sort the bookings in ascending order based on date and time
+        updatedBookings.sort((a, b) => {
+          // Parse the date strings into Date objects
+          const datePartsA = a.date.split("/");
+          const dateA = new Date(
+            datePartsA[2],
+            datePartsA[1] - 1,
+            datePartsA[0]
+          );
+
+          const datePartsB = b.date.split("/");
+          const dateB = new Date(
+            datePartsB[2],
+            datePartsB[1] - 1,
+            datePartsB[0]
+          );
+
+          // Compare the dates
+          if (dateA < dateB) return -1;
+          if (dateA > dateB) return 1;
+
+          // If the dates are equal, compare the times
+          const timePartsA = a.time.split(":");
+          const timeA = parseInt(timePartsA[0]) * 60 + parseInt(timePartsA[1]);
+
+          const timePartsB = b.time.split(":");
+          const timeB = parseInt(timePartsB[0]) * 60 + parseInt(timePartsB[1]);
+
+          return timeA - timeB;
+        });
+
         setBookings(updatedBookings);
       }
     } catch (error) {
@@ -159,25 +206,18 @@ export default function Booking() {
     }
   };
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch("/api/booking/searchBookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ search: formData.search }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setBookings(data);
-      } else {
-        setBookings([]);
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    const searchTerm = e.target.value.toLowerCase(); // Convert search term to lowercase for case-insensitive search
+    const filteredBookings = bookings.filter((booking) => {
+      // Check if the doctor or patient name contains the search term
+      const doctorName = booking.doctorName.toLowerCase();
+      const patientName = booking.patientName.toLowerCase();
+      return (
+        doctorName.includes(searchTerm) || patientName.includes(searchTerm)
+      );
+    });
+    setBookings(filteredBookings);
   };
 
   const handleReset = async () => {
@@ -411,16 +451,59 @@ export default function Booking() {
       if (res.ok) {
         return data.username;
       }
-      return "Unknown";
+      return "Not Assigned";
     } catch (error) {
       console.error(error);
-      return "Unknown";
+      return "Not Assgined";
+    }
+  };
+
+  const handleCancelSelected = async () => {
+    try {
+      const selectedIds = bookings
+        .filter((booking) => booking.isSelected)
+        .map((booking) => booking._id);
+
+      // Make an API call to cancel the selected bookings
+      const res = await fetch("/api/booking/cancelSelected", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingIds: selectedIds }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(data.message);
+
+        // Clear the isSelected property of each booking
+        const updatedBookings = bookings.map((booking) => ({
+          ...booking,
+          isSelected: false,
+        }));
+        setBookings(updatedBookings);
+        fetchBookings();
+      } else {
+        toast.error(data.error || "Failed to cancel selected bookings");
+      }
+    } catch (error) {
+      toast.error("Failed to cancel selected bookings");
+      console.error(error);
     }
   };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
+      <div className="flex mb-2">
+        <h1 className="text-3xl font-bold mb-4 ">
+          {" "}
+          {currentUser.isDoctor
+            ? "Doctors Appointments"
+            : "Patient Appointments"}
+        </h1>
+      </div>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <Button
@@ -449,7 +532,7 @@ export default function Booking() {
         <Button
           className="w-200 h-10 ml-6lg:ml-0 lg:w-32"
           color="gray"
-          onClick={() => handleReset()}
+          onClick={() => fetchBookings()}
         >
           Reset
         </Button>
@@ -519,6 +602,8 @@ export default function Booking() {
                         <span className="text-yellow-500">Not Booked</span>
                       ) : booking.status === "Pending Payment" ? (
                         <span className="text-orange-500">Pending Payment</span>
+                      ) : booking.status === "Cancelled" ? (
+                        <span className="text-red-500">Cancelled</span>
                       ) : (
                         <span className="text-green-500">Booked</span>
                       )}
@@ -526,7 +611,15 @@ export default function Booking() {
                   </Table.Cell>
                   <Table.Cell>
                     <Link className="text-teal-500 hover:underline">
-                      <span onClick={() => handleBookModal(booking)}>Book</span>
+                      {booking.status !== "Not Booked" ? (
+                        <span>
+                          <HiOutlineExclamationCircle className="inline-block w-5 h-5 mr-1 text-red-500" />
+                        </span>
+                      ) : (
+                        <span onClick={() => handleBookModal(booking)}>
+                          Book
+                        </span>
+                      )}
                     </Link>
                   </Table.Cell>
                   <Table.Cell>
@@ -556,8 +649,8 @@ export default function Booking() {
             ))}
           </Table>
           <div className="flex justify-end">
-            <Button color="red" onClick={handleDeleteSelected}>
-              Delete Selected
+            <Button color="red" onClick={handleCancelSelected}>
+              Cancel Selected
             </Button>
           </div>
           {showMore && (

@@ -26,22 +26,55 @@ export default function ScheduleAppointment() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch("/api/booking/getBookings");
-      const data = await res.json();
-      if (res.ok) {
-        // Update bookings with doctor names
-        const updatedBookings = await Promise.all(
-          data.bookings.map(async (booking) => {
-            const doctorName = await fetchDoctorName(booking.doctorId);
-            return { ...booking, doctorName };
-          })
-        );
-        setBookings(updatedBookings);
-      }
+        const res = await fetch("/api/booking/getBookings");
+        const data = await res.json();
+        
+        if (res.ok) {
+            // Filter bookings if the current user is a doctor
+            const filteredBookings = data.bookings.filter(booking => {
+                return currentUser.isDoctor ? booking.doctorId === currentUser._id : true;
+            });
+            
+            // Update filtered bookings with doctor names
+            const updatedBookings = await Promise.all(
+                filteredBookings.map(async (booking) => {
+                    const doctorName = await fetchDoctorName(booking.doctorId);
+                    return { ...booking, doctorName };
+                })
+            );
+
+            // Sort the bookings in ascending order based on date and time
+            updatedBookings.sort((a, b) => {
+                // Extract date parts
+                const [dayA, monthA, yearA] = a.date.split('/');
+                const [dayB, monthB, yearB] = b.date.split('/');
+
+                // Convert date strings to Date objects
+                const dateA = new Date(yearA, monthA - 1, dayA);
+                const dateB = new Date(yearB, monthB - 1, dayB);
+
+                // Compare dates
+                if (dateA < dateB) return -1;
+                if (dateA > dateB) return 1;
+
+                // If dates are equal, compare times
+                const [hourA, minuteA] = a.time.split(':');
+                const [hourB, minuteB] = b.time.split(':');
+
+                const timeA = parseInt(hourA) * 60 + parseInt(minuteA);
+                const timeB = parseInt(hourB) * 60 + parseInt(minuteB);
+
+                return timeA - timeB;
+            });
+
+            setBookings(updatedBookings);
+        }
     } catch (error) {
-      console.error(error);
+        console.error(error);
     }
-  };
+};
+
+
 
   useEffect(() => {
     if (
@@ -475,11 +508,13 @@ export default function ScheduleAppointment() {
                   <Table.Cell>{booking.type}</Table.Cell>
                   <Table.Cell>{booking.doctorName}</Table.Cell>
                   <Table.Cell>
-                    {booking.status === "Not Booked" ? (
-                      <span className="text-yellow-500">Not Booked</span>
-                    ) : (
-                      <span className="text-green-500">Booked</span>
-                    )}
+                  {booking.status === "Not Booked" ? (
+                        <span className="text-yellow-500">Not Booked</span>
+                      ) : booking.status === "Cancelled" ? (
+                        <span className="text-red-500">Cancelled</span>
+                      ) : (
+                        <span className="text-green-500">Booked</span>
+                      )}
                   </Table.Cell>
                   <Table.Cell>
                     <Link className="text-teal-500 hover:underline">
