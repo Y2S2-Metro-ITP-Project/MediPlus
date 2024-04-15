@@ -33,24 +33,24 @@ export default function Booking() {
     setReason(newValue);
   };
 
-const fetchBookings = async () => {
-  try {
-    const res = await fetch("/api/booking/getBookings");
-    const data = await res.json();
-    if (res.ok) {
-      const updatedBookings = await Promise.all(
-        data.bookings.map(async (booking) => {
-          const doctorName = await fetchDoctorName(booking.doctorId);
-          const patientName = await fetchPatientName(booking.patientId); 
-          return { ...booking, doctorName, patientName }; 
-        })
-      );
-      setBookings(updatedBookings);
+  const fetchBookings = async () => {
+    try {
+      const res = await fetch("/api/booking/getBookings");
+      const data = await res.json();
+      if (res.ok) {
+        const updatedBookings = await Promise.all(
+          data.bookings.map(async (booking) => {
+            const doctorName = await fetchDoctorName(booking.doctorId);
+            const patientName = await fetchPatientName(booking.patientId);
+            return { ...booking, doctorName, patientName };
+          })
+        );
+        setBookings(updatedBookings);
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
 
   useEffect(() => {
     if (
@@ -306,14 +306,14 @@ const fetchBookings = async () => {
         toast.error("Patient ID and Booking ID are required");
         return;
       }
-  
+
       const booking = {
         _id: bookingData._id,
         patientId: selectedPatientId,
       };
 
-      console.log(booking)
-  
+      console.log(booking);
+
       const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
         method: "PUT",
         headers: {
@@ -321,13 +321,13 @@ const fetchBookings = async () => {
         },
         body: JSON.stringify(booking),
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.error || "Failed to book appointment");
       }
-  
+
       setFormData({});
       setSelectedTimeSlots([]);
       setShowBookModal(false);
@@ -338,7 +338,6 @@ const fetchBookings = async () => {
       console.error(error);
     }
   };
-  
 
   const generateTimeSlots = () => {
     const timeSlots = [];
@@ -405,19 +404,19 @@ const fetchBookings = async () => {
   };
 
   //function to fetch patient name
-const fetchPatientName = async (patientId) => {
-  try {
-    const res = await fetch(`/api/user/${patientId}`);
-    const data = await res.json();
-    if (res.ok) {
-      return data.username;
+  const fetchPatientName = async (patientId) => {
+    try {
+      const res = await fetch(`/api/user/${patientId}`);
+      const data = await res.json();
+      if (res.ok) {
+        return data.username;
+      }
+      return "Unknown";
+    } catch (error) {
+      console.error(error);
+      return "Unknown";
     }
-    return "Unknown";
-  } catch (error) {
-    console.error(error);
-    return "Unknown";
-  }
-};
+  };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -518,6 +517,8 @@ const fetchPatientName = async (patientId) => {
                     <Table.Cell>
                       {booking.status === "Not Booked" ? (
                         <span className="text-yellow-500">Not Booked</span>
+                      ) : booking.status === "Pending Payment" ? (
+                        <span className="text-orange-500">Pending Payment</span>
                       ) : (
                         <span className="text-green-500">Booked</span>
                       )}
@@ -865,14 +866,14 @@ const fetchPatientName = async (patientId) => {
                 </Select>
               </div>
               <TextInput
-                  type="id"
-                  id="id"
-                  onChange={onChange}
-                  className="input-field"
-                  value={bookingData._id}
-                  isDisabled
-                  style={{ display: "none" }} // Inline style to hide the input
-                />
+                type="id"
+                id="id"
+                onChange={onChange}
+                className="input-field"
+                value={bookingData._id}
+                isDisabled
+                style={{ display: "none" }} // Inline style to hide the input
+              />
             </div>
             <div className="flex justify-center mt-3">
               <Button color="blue" type="submit" outline>
