@@ -31,13 +31,54 @@ export const createTestOrder = async (req, res, next) => {
   }
 };
 
-// GET TEST ORDERS
+// GET TEST ORDERS FOR COLLECTION
 
-export const getAllTestOrders = async (req, res) => {
+export const getAllTestOrdersForCollection = async (req, res) => {
+
+  if (
+    !req.user.isAdmin &&
+    !req.user.isDoctor &&
+    !req.user.isNurse &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isLabTech
+
+  ) {
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to access these resources" });
+  }
   try {
-    const testOrders = await TestOrder.find();
 
-    res.json(testOrders);
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+
+    const testOrders = await TestOrder.find({
+      orderStages: "sampleCollection",
+      paymentComplete: true,
+    }).populate({
+      path: "DoctorId",
+      select: "username",
+    }
+  ).populate({
+    path: "testId",
+    select: "name sampleType",
+  }
+).populate({
+  path: "patientId",
+  select: "name",
+}
+)
+//.populate({
+//   path: "patientId",
+//   select: "name",
+// }
+// )
+.sort({createdAt:sortDirection}).skip(startIndex).limit(limit);
+
+    res.status(200).json(testOrders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

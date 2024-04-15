@@ -1,4 +1,5 @@
 import Sample from "../models/sample.model.js";
+import { errorHandler } from "../utils/error.js";
 
 //GET A SAMPLES
 
@@ -56,6 +57,22 @@ export const registerSample = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+// LOG SAMPLE/S 
+  
+  export const logSample = (req, res, next) => {
+
+    try {
+
+      
+      
+    } catch (error) {
+      res.status(500).json({message: error.message});
+    }
+
+  }
+
 
 //UPDATE EXISTING SAMPLE
 

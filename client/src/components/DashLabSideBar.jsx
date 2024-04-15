@@ -6,6 +6,8 @@ import { Link, useLocation } from "react-router-dom";
 import { ImLab } from "react-icons/im";
 import { useDispatch } from "react-redux";
 import { BsPrescription2 } from "react-icons/bs"
+import { FaLaptopMedical } from "react-icons/fa";
+import { FaMicroscope } from "react-icons/fa";
 
 export default function DashLabSideBar() {
   const dispatch = useDispatch();
@@ -47,7 +49,7 @@ export default function DashLabSideBar() {
           </Link>
 
           <Link to="/lab-dashboard?tab=tests">
-            <Sidebar.Item active={tab === "tests"} icon={ImLab} as="div">
+            <Sidebar.Item active={tab === "tests"} icon={FaMicroscope} as="div">
               Tests Manager
             </Sidebar.Item>
           </Link>
@@ -58,10 +60,10 @@ export default function DashLabSideBar() {
             </Sidebar.Item>
           </Link>
 
-          <Link to=" ">
+          <Link to="/lab-dashboard?tab=testOrderManager">
             <Sidebar.Item
-              active={tab === "orderedTestManager"}
-              icon={ImLab}
+              active={tab === "testOrderManager"}
+              icon={FaLaptopMedical}
               as="div"
             >
               Test Order Manager

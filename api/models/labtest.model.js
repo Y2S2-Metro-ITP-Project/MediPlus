@@ -28,6 +28,22 @@ const testSchema = new mongoose.Schema(
       default: "seek medical advice before requesting laboratory tests",
     },
 
+    refRange:{
+      min:{
+        type:Number,
+        default:0,
+      },
+      max:{
+        type:Number,
+        default:0,
+      },
+    },
+
+    description:{
+      type: String,
+      default: "No description entered",
+    },
+
     price: {
       type: String,
       required: true,

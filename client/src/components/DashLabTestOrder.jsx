@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Checkbox, Label, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
-import {ToastContainer , toast} from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 
 import Select from "react-select";
 
@@ -11,7 +11,7 @@ const DashLabTestOrder = () => {
   const [formData, setFormData] = useState([]);
   const { currentUser } = useSelector((state) => state.user);
 
-  const [priority, setPriority] = useState(false);
+  const [priority, setPriority] = useState(true);
 
   const [selectedPatient, setSelectedPatient] = useState("");
   const [patients, setPatients] = useState([]);
@@ -19,8 +19,6 @@ const DashLabTestOrder = () => {
   const [selectedTests, setSelectedTests] = useState([]);
   const [teststoSubmit, setTeststoSubmit] = useState([]);
   const [tests, setTests] = useState([]);
-
- 
 
   //FETCHING DATA FOR PATIENT SELECTION
 
@@ -65,14 +63,14 @@ const DashLabTestOrder = () => {
     }
   }, [currentUser._id]);
 
-//   useEffect(()=>{
-//     console.log(teststoSubmit)
-//  }, [teststoSubmit]);
-//FOR TESTING PURPOUSES
-  
+  //   useEffect(()=>{
+  //     console.log(teststoSubmit)
+  //  }, [teststoSubmit]);
+  //FOR TESTING PURPOUSES
+
   const handleTestSelectChange = (selectedOptions) => {
-   // console.log("handleChange", selectedOptions);
-    const tests = selectedOptions.map(test => test.value);
+    // console.log("handleChange", selectedOptions);
+    const tests = selectedOptions.map((test) => test.value);
     //console.log("value from tests:", tests);
     setTeststoSubmit(tests);
     setSelectedTests(selectedOptions);
@@ -83,17 +81,16 @@ const DashLabTestOrder = () => {
   };
 
   const handlePatientSelectChange = (selectedOptions) => {
-   // console.log("handleChange", selectedOptions);
-    const{value} = selectedOptions;
-   // console.log("value from patient",value);
+    // console.log("handleChange", selectedOptions);
+    const { value } = selectedOptions;
+    // console.log("value from patient",value);
     setSelectedPatient(value);
-   
+
     setFormData({
       ...formData,
       patientId: value,
     });
   };
-
 
   const handlePriorityChange = (e) => {
     setPriority(e.target.checked);
@@ -102,8 +99,6 @@ const DashLabTestOrder = () => {
       highPriority: priority,
     });
   };
-
-
 
   const options = tests.map((test) => ({
     value: test._id,
@@ -115,39 +110,33 @@ const DashLabTestOrder = () => {
     label: patient.name,
   }));
 
-
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`,{
-
+      const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`, {
         method: "POST",
-        headers:{
-          "Content-Type":"application/json",
+        headers: {
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           formData,
         }),
       });
-  
+
       const data = await res.json();
-  
-      if(!res.ok){
+
+      if (!res.ok) {
         toast.error(data.message);
-      }else{
+      } else {
         toast.success("Test order placed");
       }
-      
+
       setFormData([]);
-      
     } catch (error) {
       console.log(error);
     }
-   }
-
-
-
+  };
 
   return (
     <div className=" p-3 max-w-3xl mx-auto min-h-screen">
@@ -165,7 +154,6 @@ const DashLabTestOrder = () => {
               value={selectedTests}
               options={options}
               onChange={handleTestSelectChange}
-             
             />
           </div>
 
@@ -176,7 +164,6 @@ const DashLabTestOrder = () => {
               value={selectedPatient}
               options={optionsPatient}
               onChange={handlePatientSelectChange}
-             
             />
           </div>
 
@@ -190,12 +177,20 @@ const DashLabTestOrder = () => {
 
           <div>
             <Label value="High priority?  " />
-            <Checkbox id="priority" checked={priority} onChange={handlePriorityChange} />
+            <Checkbox
+              id="priority"
+              checked={priority}
+              onChange={handlePriorityChange}
+            />
           </div>
 
           <div>
-            <p className=" p-1 mb-4 border-solid border-2 border-sky-700 rounded-lg ">order completion time:</p>
-            <p className="p-1 border-solid border-2 border-sky-700 rounded-lg">order total price:</p>
+            <p className=" p-1 mb-4 border-solid border-2 border-sky-700 rounded-lg ">
+              order completion time:
+            </p>
+            <p className="p-1 border-solid border-2 border-sky-700 rounded-lg">
+              order total price:
+            </p>
           </div>
 
           <Button gradientDuoTone="purpleToPink" outline type="submit">

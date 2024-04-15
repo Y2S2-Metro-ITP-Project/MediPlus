@@ -9,23 +9,26 @@ const sampleSchema = new mongoose.Schema(
       default:"MUCUS"
     },
 
-    testsOrderedOnSample: [
+    testOrderId:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"TestOrder"
+    },
+
+    testId: [
       {
-        type: String, 
-        required: true,
-        default: "No tests ordered",
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "LabTest" 
       },
     ],
 
     patientId: {
-      type: String, 
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"Patient"
     },
 
     collectionEmployeeId: {
-      type: String,
-      required: true,
-      default: "Medical worker not assigned",
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"User"
     },
 
     sampleStatus: {

@@ -4,6 +4,7 @@ import DashLabSideBar from "../components/DashLabSideBar"
 import DashCollectionCentre from "../components/DashCollectionCentre";
 import DashTestManager from "../components/DashTestManager";
 import DashLabTestOrder from "../components/DashLabTestOrder";
+import DashTestOrderManager from "../components/DashTestOrderManager";
 
 export default function LabDashBoard() {
 
@@ -32,6 +33,8 @@ export default function LabDashBoard() {
       {tab=== "tests" && <DashTestManager/>}
       {/*Lab test order*/}
       {tab=== "testOrder" && <DashLabTestOrder/>}
+      {/*Lab test order Manager*/}
+      {tab=== "testOrderManager" && <DashTestOrderManager/>}
     </div>
   )
 }
