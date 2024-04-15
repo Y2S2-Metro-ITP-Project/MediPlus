@@ -55,6 +55,7 @@ export const updatePaymentStatus = async (req, res, next) => {
     }
 
     testOrder.paymentComplete = true;
+    testOrder.orderStages="sampleCollection";
 
     await testOrder.save();
     res.json(testOrder);
@@ -75,6 +76,7 @@ export const updatePriorityStatus = async (req, res, next) => {
     }
 
     testOrder.highPriority = true;
+    
 
     await testOrder.save();
     res.json(testOrder);

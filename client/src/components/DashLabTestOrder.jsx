@@ -87,10 +87,10 @@ const DashLabTestOrder = () => {
     const{value} = selectedOptions;
    // console.log("value from patient",value);
     setSelectedPatient(value);
-    console.log("testing",selectedPatient);
+   
     setFormData({
       ...formData,
-      patientId: selectedPatient,
+      patientId: value,
     });
   };
 
