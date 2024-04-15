@@ -218,30 +218,24 @@ export const updateBooking = async (req, res) => {
 };
 
 export const bookAppointment = async (req, res) => {
-  // Check if the user has the necessary permissions to book appointments
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
     return res.status(403).json({ message: "You are not allowed to book appointments" });
   }
   
   try {
-    // Find the booking by ID and update it with the patient ID from the request body
-    const updatedBooking = await Booking.findByIdAndUpdate(
+    const booking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
-        $set: { patientId: req.body.patientId, status: "Pending Payment" }, // Update the booking with the patient ID and set status to "Pending Payment"
-      },
-      { new: true } // Return the updated document
+        $set: { patientId: req.body.patientId, status: "Pending Payment" }, 
+       },
+      { new: true }
     );
     
-    // Check if the booking was found and updated successfully
-    if (!updatedBooking) {
+    if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
-    
-    // If successful, return the updated booking
-    res.status(200).json(updatedBooking);
+    res.status(200).json(booking);
   } catch (error) {
-    // Handle any errors
     res.status(500).json({ message: error.message });
   }
 };
