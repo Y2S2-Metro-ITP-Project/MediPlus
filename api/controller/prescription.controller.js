@@ -934,7 +934,7 @@ export const getFilterDatePrescriptionData = async (req, res) => {
         const Precriptions = await Prescription.find({
           patientId: patientID,
           date: { $gte: todayStart, $lte: todayEnd },
-        }).exec();
+        }).populate("doctorId","username").exec();
         res.status(200).json({ Precriptions });
       }
       if (selectedOption === "yesterday") {
@@ -947,7 +947,7 @@ export const getFilterDatePrescriptionData = async (req, res) => {
         const Precriptions = await Prescription.find({
           patientId: patientID,
           date: { $gte: yesterdayStart, $lte: yesterdayEnd },
-        }).exec();
+        }).populate("doctorId","username").exec();
         res.status(200).json({ Precriptions });
       }
       if (selectedOption === "lastWeek") {
@@ -959,7 +959,7 @@ export const getFilterDatePrescriptionData = async (req, res) => {
         const Precriptions = await Prescription.find({
           patientId: patientID,
           date: { $gte: lastWeekStart, $lte: lastWeekEnd },
-        }).exec();
+        }).populate("doctorId","username").exec();
         res.status(200).json({ Precriptions });
       }
       if (selectedOption === "current") {
@@ -969,7 +969,7 @@ export const getFilterDatePrescriptionData = async (req, res) => {
         // Find prescriptions for the patient
         const prescriptions = await Prescription.find({
           patientId: patientID,
-        }).exec();
+        }).populate("doctorId","username").exec();
 
         // Filter prescriptions based on their duration
         const currentMedicationPrescriptions = prescriptions.filter(
