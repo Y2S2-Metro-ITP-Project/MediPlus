@@ -26,7 +26,6 @@ import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecri
 import DashMedicineDispence from "../components/DashMedicineDispence";
 import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
-import DashSpecialization from "../components/DashSpecialization";
 import DoctorsList from "../components/DoctorList";
 import DoctorProfile from "../components/DoctorProfile";
 
@@ -60,8 +59,6 @@ export default function Dashboard() {
       {tab === "doctorList" && <DoctorsList />}
       {/** <DoctorProfile /> */}
       {tab === "doctorProfile" && <DoctorProfile />}
-      {/** <DashSpecialization /> */}
-      {tab === "specialization" && <DashSpecialization />}
       {/** <DashScheduleBooking /> */}
       {tab === "schedule" && <DashScheduleBooking />}
       {/** <DashInquiries /> */}

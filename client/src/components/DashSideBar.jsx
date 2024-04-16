@@ -154,15 +154,6 @@ export default function DashSideBar() {
                   BookingOrders
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=specialization">
-                <Sidebar.Item
-                  active={tab === "specialization"}
-                  icon={HiOutlineUserGroup}
-                  as="div"
-                >
-                  Specialization
-                </Sidebar.Item>
-              </Link>
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}

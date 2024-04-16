@@ -85,7 +85,7 @@ export default function ScheduleAppointment() {
       fetchBookings();
     }
 
-    if (currentUser.isReceptionist) {
+    if (currentUser.isReceptionist || currentUser.isAdmin) {
       fetchDoctors()
         .then((doctors) => {
           const options = doctors.map((doctor) => ({
@@ -619,7 +619,7 @@ export default function ScheduleAppointment() {
                 {currentUser.isDoctor ? (
                   <TextInput
                     type="text"
-                    id="doctorId"
+                    id="selectedDoctorId"
                     value={currentUser._id}
                     readOnly
                     className="mt-1 bg-gray-100"
