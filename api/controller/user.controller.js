@@ -253,4 +253,16 @@ export const getPatients = async (req, res, next) => {
   }
 };
 
+export const getAllDoctors = async (req, res, next) => {
+  try {
+    const doctors = await User.find({ isDoctor: true });
+    if (!doctors || doctors.length === 0) {
+      return next(errorHandler(404, "No doctors found"));
+    }
+    res.status(200).json(doctors);
+  } catch (error) {
+    next(error);
+  }
+};
+
 

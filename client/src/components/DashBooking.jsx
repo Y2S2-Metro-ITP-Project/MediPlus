@@ -346,14 +346,14 @@ export default function Booking() {
         toast.error("Patient ID and Booking ID are required");
         return;
       }
-
+  
       const booking = {
         _id: bookingData._id,
         patientId: selectedPatientId,
       };
-
-      console.log(booking);
-
+  
+      console.log("Booking data:", booking);
+  
       const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
         method: "PUT",
         headers: {
@@ -361,13 +361,13 @@ export default function Booking() {
         },
         body: JSON.stringify(booking),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
-        throw new Error(data.error || "Failed to book appointment");
+        throw new Error(data.message || "Failed to book appointment");
       }
-
+  
       setFormData({});
       setSelectedTimeSlots([]);
       setShowBookModal(false);
