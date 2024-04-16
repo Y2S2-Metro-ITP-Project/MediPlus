@@ -296,7 +296,7 @@ export default function DashInquiries() {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = `InventoryReport.pdf`;
+      a.download = `InquiryReport.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
