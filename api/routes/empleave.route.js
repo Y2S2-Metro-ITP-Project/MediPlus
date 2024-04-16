@@ -1,5 +1,5 @@
 import express from "express";
-import { createLeave, getAllLeaves, deleteLeave, approveRejectLeave, getUserLeaves, getTotalPendingLeave, getTodaysTotalLeave } from '../controller/empleave.controller.js';
+import { createLeave, getAllLeaves, deleteLeave, approveRejectLeave, getUserLeaves, getTotalPendingLeave, getTodaysTotalLeave,getEmployeesSummary } from '../controller/empleave.controller.js';
 import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
@@ -12,5 +12,5 @@ router.delete("/:id", deleteLeave);
 router.put("/:id/approve-reject", approveRejectLeave);
 router.get("/getTotalPendingLeave", getTotalPendingLeave);
 router.get("/getTodaysTotalLeave", getTodaysTotalLeave);
-
+router.get("/getEmployeesSummary", getEmployeesSummary);
 export default router;

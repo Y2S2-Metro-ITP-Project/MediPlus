@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Modal } from "flowbite-react";
+import { Table, Button, Modal, TextInput } from "flowbite-react";
 import { FaEye, FaTimes, FaCheck } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
+import { AiOutlineSearch } from "react-icons/ai";
 
-import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
+import { HiOutlineSun, HiOutlineCalendar } from "react-icons/hi";
 
 
 export default function DashLeave() {
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal1, setShowModal1] = useState(false);
   const [showModal2, setShowModal2] = useState(false);
   const [showModal3, setShowModal3] = useState(false);
   const [selectedLeaveId, setSelectedLeaveId] = useState(null);
   const [selectedLeaveReason, setSelectedLeaveReason] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [leaveStatus, setLeaveStatus] = useState("");
   const [leaves, setLeaves] = useState([]);
   const [deletingLeaveId, setDeletingLeaveId] = useState(null);
@@ -52,7 +55,6 @@ export default function DashLeave() {
   
     fetchData();
   }, []);
-  
 
   const handleViewReason = (reason) => {
     setSelectedLeaveReason(reason);
@@ -113,23 +115,12 @@ export default function DashLeave() {
     }
   };
 
-  // Function to determine user role based on role fields
   const getUserRole = (user) => {
-    if (!user) return "Unknown"; // Handle null or undefined user
+    if (!user) return "Unknown"; 
     
-    // Check if patient or user is true
     if (user.isPatient || user.isUser) {
-      // Check for other true roles
       if (user.isAdmin) return "Admin";
-      // Add more conditions for other roles...
-      // if (user.isDoctor) return "Doctor";
-      // if (user.isNurse) return "Nurse";
-      // if (user.isPharmacist) return "Pharmacist";
-      // if (user.isReceptionist) return "Receptionist";
-      // if (user.isHeadNurse) return "Head Nurse";
-      // if (user.isHRM) return "HRM";
     } else {
-      // Check individual roles
       if (user.isDoctor) return "Doctor";
       if (user.isNurse) return "Nurse";
       if (user.isPharmacist) return "Pharmacist";
@@ -138,46 +129,77 @@ export default function DashLeave() {
       if (user.isHRM) return "HRM";
       if (user.isAdmin) return "Admin";
     }
-    
-    // If none of the specific roles, return "Employee" by default
     return "Employee";
   };
 
+  const filteredLeaves = leaves.filter(leave => {
+    if (filterStatus === "") {
+      return true; 
+    } else {
+      return leave.status === filterStatus; 
+    }
+  });
+
+  const searchedAndFilteredLeaves = filteredLeaves.filter(leave => {
+    const nameMatch = leave.user && leave.user.username.toLowerCase().includes(searchTerm.toLowerCase());
+    return nameMatch;
+  });
+
   return (
-   
-   <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
-           <div className="flex justify-between">
-        {/* <div>
-          <h3 className="text-lg text-gray-500">Total Pending Leaves: {totalPendingLeaves}</h3>
-        </div>
-        <div>
-          <h3 className="text-lg text-gray-500">Today's Total Leaves: {todaysTotalLeave}</h3>
-        </div> */}
+    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+      <ToastContainer />
+      <div className="flex justify-between">
+      <div className="mr-4">
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        >
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
-      <div className="flex-wrap flex gap-4 justify-center">
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <h3 className="text-gray-500 text-md uppercase">
-                Total Pending Leaves
-              </h3>
-              <p className="text-2xl">{totalPendingLeaves}</p>
-            </div>
-            <HiAnnotation className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+      <div>
+        <TextInput
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by name"
+          rightIcon={AiOutlineSearch}
+          className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        />
+      </div>
+    </div>
+    <br />
+    <div className="flex-wrap flex gap-4 justify-center">
+      <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+        <div className="flex justify-between">
+          <div>
+            <h3 className="text-gray-500 text-md uppercase">
+              Total Pending Leaves
+            </h3>
+            <p className="text-2xl">{totalPendingLeaves}</p>
           </div>
+          <HiOutlineCalendar className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
         </div>
-        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <h3 className="text-gray-500 text-md uppercase">
-                Today's Leaves
-              </h3>
-              <p className="text-2xl">{todaysTotalLeave}</p>
-            </div>
-            <HiAnnotation className="bg-yellow-500 text-white rounded-full text-5xl p-3 shadow-lg" />
+      </div>
+      <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+        <div className="flex justify-between">
+          <div>
+            <h3 className="text-gray-500 text-md uppercase">
+              Today's Leaves
+            </h3>
+            <p className="text-2xl">{todaysTotalLeave}</p>
           </div>
+          <HiOutlineSun className="bg-yellow-500 text-white rounded-full text-5xl p-3 shadow-lg" />
         </div>
-      </div> <br />
+      </div>
+    </div> 
+    <br />
+    <br />
+      <br />
       <Table hoverable className="shadow-md">
         <Table.Head>
           <Table.HeadCell>Employee</Table.HeadCell>
@@ -188,13 +210,12 @@ export default function DashLeave() {
           <Table.HeadCell>Status</Table.HeadCell>
           <Table.HeadCell>Update</Table.HeadCell>
           <Table.HeadCell>Delete</Table.HeadCell>
-       
         </Table.Head>
-        {leaves.map((leave) => (
+        {searchedAndFilteredLeaves.map((leave) => (
           <Table.Body key={leave._id}>
             <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
               <Table.Cell>{leave.user ? leave.user.username : 'Unknown User'}</Table.Cell>
-                <Table.Cell>{getUserRole(leave.user)}</Table.Cell>
+              <Table.Cell>{getUserRole(leave.user)}</Table.Cell>
               <Table.Cell>{new Date(leave.startDate).toLocaleDateString()}</Table.Cell>
               <Table.Cell>{new Date(leave.endDate).toLocaleDateString()}</Table.Cell>
               <Table.Cell>
@@ -231,12 +252,10 @@ export default function DashLeave() {
                   Delete
                 </span>
               </Table.Cell>
-            
             </Table.Row>
           </Table.Body>
         ))}
       </Table>
-      {/* Modal for viewing reason */}
       <Modal
         show={showModal1}
         onClose={() => setShowModal1(false)}
@@ -254,7 +273,6 @@ export default function DashLeave() {
         </Modal.Body>
       </Modal>
 
-      {/* Modal for updating leave status */}
       <Modal
         show={showModal3}
         onClose={() => setShowModal3(false)}
@@ -291,7 +309,6 @@ export default function DashLeave() {
         </Modal.Body>
       </Modal>
 
-      {/* Modal for confirming deletion */}
       <Modal
         show={showModal2}
         onClose={() => setShowModal2(false)}

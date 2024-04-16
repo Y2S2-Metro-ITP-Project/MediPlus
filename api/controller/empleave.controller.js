@@ -1,5 +1,6 @@
 // empleave.controller.js
 import Leave from "../models/empleave.model.js";
+import User from "../models/user.model.js";
 import mongoose from 'mongoose';
 import { errorHandler } from "../utils/error.js";
 
@@ -165,5 +166,47 @@ export const getTotalPendingLeave = async (req, res) => {
     res.status(200).json({ totalPendingLeave });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const getEmployeesSummary = async (req, res, next) => {
+  try {
+    // Construct query to filter users with employee roles
+    const query = {
+      $or: [
+        { isAdmin: true },
+        { isHRM: true },
+        { isHeadNurse: true },
+        { isNurse: true },
+        { isPharmacist: true },
+        { isReceptionist: true },
+        { isDoctor: true },
+        { isLabTech: true },
+        { isCashier: true }
+      ]
+    };
+
+    // Find users based on the query
+    const users = await User.find(query);
+
+    // Count total employees for each role
+    const employeesSummary = {
+      totalEmployees: users.length,
+      totalAdmins: users.filter(user => user.isAdmin).length,
+      totalHRMs: users.filter(user => user.isHRM).length,
+      totalHeadNurses: users.filter(user => user.isHeadNurse).length,
+      totalNurses: users.filter(user => user.isNurse).length,
+      totalPharmacists: users.filter(user => user.isPharmacist).length,
+      totalReceptionists: users.filter(user => user.isReceptionist).length,
+      totalDoctors: users.filter(user => user.isDoctor).length,
+      totalLabTechs: users.filter(user => user.isLabTech).length,
+      totalCashiers: users.filter(user => user.isCashier).length
+    };
+
+    // Send response with employees summary
+    res.status(200).json(employeesSummary);
+  } catch (error) {
+    next(error);
   }
 };

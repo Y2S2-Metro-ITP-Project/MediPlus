@@ -86,22 +86,22 @@ export default function DashSideBar() {
                 currentUser.isAdmin
                   ? "Admin"
                   : currentUser.isDoctor
-                  ? "Doctor"
-                  : currentUser.isNurse
-                  ? "Nurse"
-                  : currentUser.isPharmacist
-                  ? "Pharmacist"
-                  : currentUser.isReceptionist
-                  ? "Receptionist"
-                  : currentUser.isHeadNurse
-                  ? "Head Nurse"
-                  : currentUser.isHRM
-                  ? "HRM"
-                  : currentUser.isOutPatient
-                  ? "OutPatient"
-                  : currentUser.isInPatient
-                  ? "InPatient"
-                  : "User"
+                    ? "Doctor"
+                    : currentUser.isNurse
+                      ? "Nurse"
+                      : currentUser.isPharmacist
+                        ? "Pharmacist"
+                        : currentUser.isReceptionist
+                          ? "Receptionist"
+                          : currentUser.isHeadNurse
+                            ? "Head Nurse"
+                            : currentUser.isHRM
+                              ? "HRM"
+                              : currentUser.isOutPatient
+                                ? "OutPatient"
+                                : currentUser.isInPatient
+                                  ? "InPatient"
+                                  : "User"
               }
               labelColor="dark"
               as="div"
@@ -242,16 +242,16 @@ export default function DashSideBar() {
           {(currentUser.isUser ||
             currentUser.isOutPatient ||
             currentUser.isHeadNurse) && (
-            <Link to="/dashboard?tab=userInquiries">
-              <Sidebar.Item
-                active={tab === "userInquiries"}
-                icon={HiAnnotation}
-                as="div"
-              >
-                Inquiries
-              </Sidebar.Item>
-            </Link>
-          )}
+              <Link to="/dashboard?tab=userInquiries">
+                <Sidebar.Item
+                  active={tab === "userInquiries"}
+                  icon={HiAnnotation}
+                  as="div"
+                >
+                  Inquiries
+                </Sidebar.Item>
+              </Link>
+            )}
           {(currentUser.isOutPatient || currentUser.isInPatient) && (
             <>
               <Link to="/dashboard?tab=PatientPrescriptions">
@@ -285,6 +285,12 @@ export default function DashSideBar() {
           )}
           {currentUser.isHRM && (
             <>
+              <Link to="/dashboard?tab=staff_dashbord">
+                <Sidebar.Item active={tab==="staff_dashbord"} icon={HiChartPie} as="div">
+                  Dashboard
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=staff">
                 <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
                   Staff
