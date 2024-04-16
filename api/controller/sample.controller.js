@@ -60,11 +60,62 @@ export const registerSample = async (req, res) => {
 
 
 // LOG SAMPLE/S 
+//========================================================================================================================
   
-  export const logSample = (req, res, next) => {
+  export const logSample = async(req, res, next) => {
+
+    if (
+      !req.user.isAdmin &&
+      !req.user.isDoctor &&
+      !req.user.isNurse &&
+      !req.user.isReceptionist &&
+      !req.user.isHeadNurse &&
+      !req.user.isLabTech
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to access these resources" });
+    }
+
+    const collectionEmployeeId = req.params.id;
+    const types = req.body.formData.types; 
+    const testOrderId = req.body.formData.testOrderId;
+    const testId = req.body.formData.testId;
+    const patientId = req.body.formData.patientId;
+    const sampleStatus = req.body.formData.sampleStatus;
+    const AssignedStorage = req.body.formData.AssignedStorage;
+
+    
+    if(
+      !collectionEmployeeId ||
+      !types ||
+      !testOrderId ||
+      !testId ||
+      !patientId 
+    ){
+        return res.status(400).json({message: "Please fill out all fields"});
+      }
+
+      const uniqueSampleTypesSet = new Set(types);
+      const uniqueSampleTypesArray = [...uniqueSampleTypesSet];
 
     try {
 
+    const newSamples = uniqueSampleTypesArray.map((sampleType) =>{
+
+       return  new Sample({
+          sampleType, 
+          testOrderId,
+          testId,
+          patientId,
+          collectionEmployeeId,
+          sampleStatus,
+          AssignedStorage, 
+        });
+    });
+
+    await Sample.insertMany(newSamples);
+    res.status(201).json({message: ` ${sampleObjects.length} sample object(s) created succesfully`});
       
       
     } catch (error) {

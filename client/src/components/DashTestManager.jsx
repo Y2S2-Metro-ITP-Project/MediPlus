@@ -8,6 +8,9 @@ import {
   Label,
   Select,
   TableCell,
+  Textarea,
+  ModalHeader,
+  ModalBody,
 } from "flowbite-react";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaEdit } from "react-icons/fa";
@@ -27,19 +30,22 @@ export default function DashTestManager() {
   const [showModal, setShowModal] = useState(false);
   const [testIdToDelete, setTestIdToDelete] = useState(" ");
   const [page, setPage] = useState(1);
-  const [ pageCount , setPageCount] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
   const [addTestModal, setAddTestModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [testIdToUpdate, setTestIdToUpdate] = useState("");
   const [updateTestModal, setUpdateTestModal] = useState(false);
-  const[showTestData, setShowTestData] = useState(false);
-  const[testData, setTestData] = useState({
+  const [showTestData, setShowTestData] = useState(false);
+  const [testData, setTestData] = useState({
     name: false,
     sampleType: false,
     sampleVolume: false,
     completionTime: false,
+    advice: false,
+    description: false,
     price: false,
   });
+  const [showTestModal, setShowTestModal] = useState(false);
 
   // format seconds to dd-hh-ss format
   const formatSeconds = (s) =>
@@ -81,24 +87,22 @@ export default function DashTestManager() {
     }
   }, [currentUser._id]);
 
+  // PAGINATION
+  const handlePrevious = async () => {
+    setPage((p) => {
+      return p - 1;
+    });
 
-  // PAGINATION 
-    const handlePrevious = async()=> {
-      setPage((p)=> {
-        return p - 1;
-      });
+    fetchTests();
+  };
 
-      fetchTests();
-    }
+  const handleNext = async () => {
+    setPage((p) => {
+      return p + 1;
+    });
 
-    const handleNext = async()=> {
-
-      setPage((p)=> {
-        return p + 1;
-      });
-
-      fetchTests();
-    }    
+    fetchTests();
+  };
 
   //Delete test handler
   const handleDeleteTest = async () => {
@@ -127,16 +131,18 @@ export default function DashTestManager() {
 
   const handleTestSubmit = async (e) => {
     e.preventDefault();
+
     const name = formData.name ? formData.name.trim() : "";
     const sampleType = formData.sampleType;
     const sampleVolume = formData.sampleVolume
       ? formData.sampleVolume.trim()
       : "";
     const completionTime = formData.completionTime
-      ? formData.sampleVolume.trim()
+      ? formData.completionTime.trim()
       : "";
     const price = formData.price ? formData.price.trim() : "";
-
+    const advice = formData.advice ? formData.advice.trim() : "";
+    const description = formData.description ? formData.description.trim() : "";
     if (!name || !sampleType || !sampleVolume || !completionTime || !price) {
       toast.error("All fields are required");
       return;
@@ -212,12 +218,13 @@ export default function DashTestManager() {
     }
   };
 
-
-    const handleSetTestDetails =(
-      name,
+  const handleSetTestDetails = (
+    name,
     sampleType,
     sampleVolume,
     completionTime,
+    advice,
+    description,
     price
   ) => {
     setTestData({
@@ -225,16 +232,17 @@ export default function DashTestManager() {
       sampleType,
       sampleVolume,
       completionTime,
+      advice,
+      description,
       price,
     });
   };
 
+  // SEARCH
 
-  // SEARCH 
-
-  const handleSearch = async(e) =>{
+  const handleSearch = async (e) => {
     console.log("searching");
-  }
+  };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 ">
@@ -248,22 +256,20 @@ export default function DashTestManager() {
           Add Test
         </Button>
 
-        
-          <form  onSubmit={handleSearch}>
-            <TextInput
-              type="text"
-              placeholder="Search..."
-              rightIcon={AiOutlineSearch}
-              className="hidden lg:inline"
-              id="search"
-              onChange={handleChange}
-              style={{ width: "300px" }}
-            />
-            <Button className="w-12 h-10 lg:hidden" color="gray">
-              <AiOutlineSearch />
-            </Button>
-          </form>
-        
+        <form onSubmit={handleSearch}>
+          <TextInput
+            type="text"
+            placeholder="Search..."
+            rightIcon={AiOutlineSearch}
+            className="hidden lg:inline"
+            id="search"
+            onChange={handleChange}
+            style={{ width: "300px" }}
+          />
+          <Button className="w-12 h-10 lg:hidden" color="gray">
+            <AiOutlineSearch />
+          </Button>
+        </form>
       </div>
 
       {currentUser.isAdmin || (currentUser.isLabTech && labTests.length > 0) ? (
@@ -283,13 +289,12 @@ export default function DashTestManager() {
             {labTests.map((labtest) => (
               <Table.Body className=" divide-y text-center ">
                 <Table.Row>
-                 
-                    <Table.Cell className="text-left">
-                      <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
-                        {labtest.name}
-                      </Link>
-                    </Table.Cell>
-                  
+                  <Table.Cell className="text-left">
+                    <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
+                      {labtest.name}
+                    </Link>
+                  </Table.Cell>
+
                   <Table.Cell>{labtest.sampleType.toLowerCase()}</Table.Cell>
                   <Table.Cell>{labtest.sampleVolume} ml</Table.Cell>
                   <Table.Cell>
@@ -308,22 +313,44 @@ export default function DashTestManager() {
                     </span>
                   </Table.Cell>
                   <Table.Cell>
-                    <span className="text-green-500 hover: cursor-pointer "
-                    onClick={() => {
-                      setTestIdToUpdate(labtest._id);
-                      handleSetTestDetails(
-                        labtest.name,
-                        labtest.sampleType,
-                        labtest.sampleVolume,
-                        labtest.completionTime,
-                        labtest.price
-                      );setUpdateTestModal(true);
-                    }}>
+                    <span
+                      className="text-green-500 hover: cursor-pointer "
+                      onClick={() => {
+                        setTestIdToUpdate(labtest._id);
+                        handleSetTestDetails(
+                          labtest.name,
+                          labtest.sampleType,
+                          labtest.sampleVolume,
+                          labtest.completionTime,
+                          labtest.advice,
+                          labtest.description,
+                          labtest.price
+                        );
+                        setUpdateTestModal(true);
+                      }}
+                    >
                       <FaEdit />
                     </span>
                   </Table.Cell>
                   <TableCell>
-                      <BiShow  className="  text-blue-600 hover:cursor-pointer"/>
+                    {" "}
+                    <span
+                      className=" text-blue-600 hover:cursor-pointer "
+                      onClick={() => {
+                        handleSetTestDetails(
+                          labtest.name,
+                          labtest.sampleType,
+                          labtest.sampleVolume,
+                          labtest.completionTime,
+                          labtest.advice,
+                          labtest.description,
+                          labtest.price
+                        );
+                        setShowTestModal(true);
+                      }}
+                    >
+                      <BiShow className=" " />
+                    </span>
                   </TableCell>
                 </Table.Row>
               </Table.Body>
@@ -334,11 +361,25 @@ export default function DashTestManager() {
         <p>There are no tests available</p>
       )}
 
-
       {/* PAGINATION */}
       <div className="flex flex-row ">
-        <Button disabled={page ===1} onClick={handlePrevious} pill className=" text-gray-900 dark:text-white" gradientDuoTone="purpleToPink" >Previous</Button>
-        <Button onClick={handleNext} pill className=" text-gray-900 dark:text-white" gradientDuoTone="purpleToPink">Next</Button>
+        <Button
+          disabled={page === 1}
+          onClick={handlePrevious}
+          pill
+          className=" text-gray-900 dark:text-white"
+          gradientDuoTone="purpleToPink"
+        >
+          Previous
+        </Button>
+        <Button
+          onClick={handleNext}
+          pill
+          className=" text-gray-900 dark:text-white"
+          gradientDuoTone="purpleToPink"
+        >
+          Next
+        </Button>
       </div>
 
       {/* DELETE TEST MODAL */}
@@ -429,6 +470,35 @@ export default function DashTestManager() {
                   className="input-field"
                 />
               </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="advice">Advice</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="advice"
+                  onChange={handleChange}
+                  placeholder="Enter advice if necessary or leave blank"
+                  rows={4}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="description">Test description</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="description"
+                  onChange={handleChange}
+                  placeholder="Pathology test description..."
+                  rows={7}
+                  className="input-field"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="price">Price</Label>
                 <TextInput
@@ -459,11 +529,7 @@ export default function DashTestManager() {
         </Modal.Body>
       </Modal>
 
-
-
       {/* UPDATE TEST MODAL */}
-
-
 
       <Modal
         show={updateTestModal}
@@ -521,11 +587,40 @@ export default function DashTestManager() {
                 <TextInput
                   type="text"
                   placeholder={testData.completionTime}
-                  id= "completionTime"
+                  id="completionTime"
                   onChange={handleChange}
                   className="input-field"
                 />
               </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="advice">Advice</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="advice"
+                  onChange={handleChange}
+                  placeholder={testData.advice}
+                  rows={4}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="description">Test description</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="description"
+                  onChange={handleChange}
+                  placeholder={testData.description}
+                  rows={7}
+                  className="input-field"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="price">Price</Label>
                 <TextInput
@@ -551,6 +646,103 @@ export default function DashTestManager() {
               >
                 Cancel
               </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+
+      {/* MODAL FOR VIEW MORE INFO BUTTON */}
+      <Modal
+        show={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+              {testData.name + " Test"}
+            </h3>
+          </div>
+          <form>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="name">Test Name</Label>
+                <TextInput
+                  type="text"
+                  value={testData.name}
+                  id="name"
+                  readOnly={true}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="sampleType">Sample Type</Label>
+                <Select id="sampleType" readOnly={true} className="input-field">
+                  <option value="">{testData.sampleType}</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="sampleVolume">Sample Volume</Label>
+                <TextInput
+                  type="text"
+                  value={testData.sampleVolume}
+                  id="sampleVolume"
+                  readOnly={true}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="completionTime">Time for completion</Label>
+                <TextInput
+                  type="text"
+                  value={testData.completionTime}
+                  id="completionTime"
+                  readOnly={true}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="advice">Advice</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="advice"
+                  readOnly={true}
+                  value={testData.advice}
+                  rows={4}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="">
+                <div className="mb-2 block">
+                  <Label htmlFor="description">Test description</Label>
+                </div>
+                <Textarea
+                  type="text"
+                  id="description"
+                  readOnly={true}
+                  value={testData.description}
+                  rows={7}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="price">Price</Label>
+                <TextInput
+                  type="text"
+                  value={testData.price}
+                  id="price"
+                  readOnly={true}
+                  className="input-field"
+                />
+              </div>
             </div>
           </form>
         </Modal.Body>

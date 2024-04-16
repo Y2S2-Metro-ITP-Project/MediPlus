@@ -7,6 +7,7 @@ import {
   registerSample,
   updateSample,
   deleteSample,
+  logSample,
 } from "../controller/sample.controller.js";
 
 const router = express.Router();
@@ -16,5 +17,7 @@ router.get("/getSample/:id",verifyToken, getSample);
 router.post("/registerSample",verifyToken, registerSample);
 router.put("/updateSample/:id",verifyToken, updateSample);
 router.delete("/deleteSample",verifyToken, deleteSample);
+
+router.post("/logSample/:id",verifyToken, logSample);
 
 export default router;

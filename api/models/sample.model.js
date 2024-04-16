@@ -35,12 +35,10 @@ const sampleSchema = new mongoose.Schema(
       type: String,
       enums: ["inStorage","processing","complete"],
       default: 'inStorage',
-      required: true,
     },
 
     AssignedStorage: {
       type: String,
-      required: true,
       default: "No Storage Assigned",
     },
   },

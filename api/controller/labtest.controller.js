@@ -2,25 +2,20 @@ import LabTest from "../models/labtest.model.js";
 import { errorHandler } from "../utils/error.js";
 
 //GET ALL LAB TEST TYPES
- export const getLabTests = async (req, res, next) => {
-
-  if(!req.user.isAdmin && !req.user.isLabTech){
+export const getLabTests = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isLabTech) {
     return next(
       errorHandler(403, "you are not allowed to access all lab tests")
     );
-  };
+  }
   try {
- 
-    
     const labtests = await LabTest.find();
-   
-    res.status(200).json({labtests});
+
+    res.status(200).json({ labtests });
   } catch (error) {
     next(error);
   }
 };
-
-
 
 //GET UNIQUE LAB TEST
 export const getLabTest = async (req, res) => {
@@ -33,20 +28,15 @@ export const getLabTest = async (req, res) => {
   }
 };
 
-
 // PAGINATION GET TESTS API
 
 export const paginatedLabTests = async (req, res, next) => {
-
   try {
     const page = req.query.page || 0;
     const limit = 9;
 
-
-    const startIndex = (parseInt(page) -1) * limit;
+    const startIndex = (parseInt(page) - 1) * limit;
     const endIndex = page * limit;
-
-   
 
     // if(endIndex < await LabTest.countDocuments()){
     //   labtests.next = {
@@ -62,32 +52,32 @@ export const paginatedLabTests = async (req, res, next) => {
     //   }
     // }
 
-   const labtests = await LabTest.find({}).limit(limit).skip(startIndex);
+    const labtests = await LabTest.find({}).limit(limit).skip(startIndex);
     res.status(200).json(labtests);
-    
   } catch (error) {
     next(error);
   }
 };
 
-
-
-
 //CREATE LAB TEST
 export const createLabTest = async (req, res) => {
-  const { name, sampleType, sampleVolume, completionTime, price } = req.body;
+  const {
+    name,
+    sampleType,
+    sampleVolume,
+    completionTime,
+    advice,
+    description,
+    price,
+  } = req.body;
 
   if (
     !name ||
     !sampleType ||
     !sampleVolume ||
     !completionTime ||
-    !price ||
-    name === "" ||
-    sampleType === "" ||
-    completionTime === "" ||
-    price === "" ||
-    sampleVolume === ""
+    !price 
+    
   ) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -97,12 +87,13 @@ export const createLabTest = async (req, res) => {
     sampleType,
     sampleVolume,
     completionTime,
+    advice,
+    description,
     price,
   });
   try {
     await newlabtest.save();
-    res.json({ message: "registered new test succefully" , newlabtest});
-   
+    res.json({ message: "registered new test succefully", newlabtest });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -135,11 +126,8 @@ export const updateLabTest = async (req, res, next) => {
 //DELETE EXISTING LAB TEST
 
 export const deleteLabTest = async (req, res, next) => {
-
-  if(!req.user.isAdmin && !req.user.isLabTech){
-    return next(
-      errorHandler(403, "you are not allowed to delete this entry")
-    );
+  if (!req.user.isAdmin && !req.user.isLabTech) {
+    return next(errorHandler(403, "you are not allowed to delete this entry"));
   }
 
   try {
@@ -157,24 +145,23 @@ export const deleteLabTest = async (req, res, next) => {
   }
 };
 
-
 // MULTI FIELD SEARCH API
 
-  // export const searchMulti = async (req,res,next) => {
+// export const searchMulti = async (req,res,next) => {
 
-  //   let data = await LabTest.find(
-  //     {
-  //       "$or":[
-  //         {name:{$regex: req.params.key}},
-  //         {sampleType:{$regex: req.params.key}},
-  //         {price:{$regex: req.params.key}},
-  //       ]
-  //     }
-  //   )
+//   let data = await LabTest.find(
+//     {
+//       "$or":[
+//         {name:{$regex: req.params.key}},
+//         {sampleType:{$regex: req.params.key}},
+//         {price:{$regex: req.params.key}},
+//       ]
+//     }
+//   )
 
-  //   try {
-      
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // }
+//   try {
+
+//   } catch (error) {
+//     next(error);
+//   }
+// }
