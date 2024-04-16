@@ -123,6 +123,15 @@ export default function DashSideBar() {
                   Outpatients
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item
+                  active={tab === "EMPleave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Leave
+                </Sidebar.Item>
+              </Link>
             </>
           )}
           {currentUser.isAdmin && (
@@ -201,15 +210,27 @@ export default function DashSideBar() {
             </>
           )}
           {currentUser.isCashier && (
-            <Link to="/dashboard?tab=OutPatientBilling">
-              <Sidebar.Item
-                active={tab === "OutPatientBilling"}
-                icon={IoReceiptOutline}
-                as="div"
-              >
-                Out Patient Billing
-              </Sidebar.Item>
-            </Link>
+            <>
+              <Link to="/dashboard?tab=OutPatientBilling">
+                <Sidebar.Item
+                  active={tab === "OutPatientBilling"}
+                  icon={IoReceiptOutline}
+                  as="div"
+                >
+                  Out Patient Billing
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item
+                  active={tab === "EMPleave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Leave
+                </Sidebar.Item>
+              </Link>
+            </>
           )}
           {currentUser.isPharmacist && (
             <>
@@ -229,6 +250,16 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Inventory
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=EMPleave">
+                <Sidebar.Item
+                  active={tab === "EMPleave"}
+                  icon={FaRegCalendarTimes}
+                  as="div"
+                >
+                  Leave
                 </Sidebar.Item>
               </Link>
             </>

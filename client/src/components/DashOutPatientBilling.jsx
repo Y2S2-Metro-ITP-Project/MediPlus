@@ -25,6 +25,7 @@ export default function DashOutPatientBilling() {
   const [pageNumber, setPageNumber] = useState(0);
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [orderIdToDelete, setOrderIdToDelete] = useState(null);
   const paymentOrdersPerPage = 5;
   const [totalPaymentOrdersLastMonth, setTotalPaymentOrdersLastMonth] =
     useState(0);
@@ -49,6 +50,40 @@ export default function DashOutPatientBilling() {
         return "red";
       default:
         return "black";
+    }
+  };
+  const fetchPaymentOrders = async () => {
+    try {
+      const res = await fetch(`/api/paymentOrder/getPaymentOrder`);
+      const data = await res.json();
+      if (res.ok) {
+        const filteredOrders = data.paymentOrders.filter((order) =>
+          order.PatientName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        const uniqueDates = [
+          ...new Set(
+            data.paymentOrders.map((orders) =>
+              format(new Date(orders.date), "MMMM dd, yyyy")
+            )
+          ),
+        ];
+        setDates(uniqueDates);
+        setPaymentOrders(filteredOrders);
+        setTotalPaymentOrders(data.totalPaymentOrders);
+        setTotalPaymentOrdersLastMonth(data.totalPaymentOrdersLastMonth);
+        setTotalPaymentOrderRejectionLastMonth(
+          data.totalPaymentOrderRejectionLastMonth
+        );
+        setTotalPaymentOrdersCompletedLastMonth(
+          data.totalPaymentOrdersCompletedLastMonth
+        );
+        setCompletedPaymentOrder(data.completedPaymentOrder);
+        setRejectedPaymentOrder(data.rejectedPaymentOrder);
+        setPendingPaymentOrder(data.pendingPaymentOrder);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch payment orders");
     }
   };
   useEffect(() => {
@@ -171,6 +206,27 @@ export default function DashOutPatientBilling() {
       toast.error("Failed to download report");
     }
   };
+  const handlePaymentOrderDelete = async () => {
+    try {
+      const res = await fetch(
+        `/api/paymentOrder/deletePaymentOrder/${orderIdToDelete}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to delete order");
+      }
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Order deleted successfully");
+        setShowModal(false);
+        fetchPaymentOrders();
+      }
+    } catch (error) {
+      toast.error("Failed to delete order");
+    }
+  }
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -310,6 +366,7 @@ export default function DashOutPatientBilling() {
             gradientDuoTone="greenToBlue"
             className=" ml-4"
             onClick={handleDownloadReport}
+            disabled={(!selectedDate)}
           >
             Download Payment Order Report
           </Button>
@@ -368,7 +425,7 @@ export default function DashOutPatientBilling() {
             </h3>
           </div>
           <div className="flex justify-center gap-4">
-            <Button color="failure">Yes,I am sure</Button>
+            <Button color="failure" onClick={()=>handlePaymentOrderDelete()}>Yes,I am sure</Button>
             <Button color="gray" onClick={() => setShowModal(false)}>
               No,cancel
             </Button>

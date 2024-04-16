@@ -1,6 +1,7 @@
 import Inquiry from "../models/inquiry.model.js";
 import { errorHandler } from "../utils/error.js";
 import { sendEmail } from "../utils/email.js";
+import generatePdfFromHtml from "../utils/PatientPDF.js";
 export const submit = async (req, res, next) => {
   const { name, email, phone, message, userid } = req.body;
   if (
@@ -62,12 +63,10 @@ export const getInquiries = async (req, res, next) => {
   }
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
     const inquiries = await Inquiry.find()
       .sort({ createdAt: sortDirection })
-      .skip(startIndex)
-      .limit(limit);
+      .skip(startIndex);
     const totalInquiries = await Inquiry.countDocuments();
     const now = new Date();
     const oneMonthAgo = new Date(
@@ -359,6 +358,167 @@ const searchUserInquiries = async (req, res, next) => {
       return next(errorHandler(404, "Inquiry not found"));
     }
     res.status(200).json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const generateReport = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isHeadNurse && !req.user.isReceptionist) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    console.log(req.body);
+    const value = req.body.status;
+    if (value === "unaswered") {
+      const unansweredInquiries = await Inquiry.find({ isAnswer: false });
+
+      // Generate HTML report
+      let htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <title>Unanswered Inquiries Report</title>
+          <style>
+              body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+              }
+              .section {
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                padding: 15px;
+                border-radius: 10px;
+              }
+              .section h2 {
+                color: #555;
+                margin-bottom: 10px;
+              }
+              .section p {
+                color: #666;
+                margin-bottom: 5px;
+              }
+              .section p strong {
+                color: #333;
+              }
+          </style>
+      </head>
+      <body>
+        <h1>Unanswered Inquiries Report</h1>
+        <div class="summary">
+          <h2>Total Unanswered Inquiries: ${unansweredInquiries.length}</h2>
+        </div>
+    `;
+
+      // Iterate through each unanswered inquiry
+      unansweredInquiries.forEach((inquiry) => {
+        const { name, email, phone, message } = inquiry;
+        htmlContent += `
+        <div class="section">
+          <h2>Inquiry Details</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Message:</strong> ${message}</p>
+        </div>
+      `;
+      });
+
+      htmlContent += `
+      </body>
+      </html>
+    `;
+      // Generate the PDF from HTML content
+      const pdfBuffer = await generatePdfFromHtml(htmlContent);
+
+      // Set response headers and send the PDF as a download
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Length": pdfBuffer.length,
+        "Content-Disposition": 'attachment; filename="inventory-report.pdf"',
+      });
+      res.send(pdfBuffer);
+    }
+    if (value === "answered") {
+      try {
+        // Retrieve all answered inquiries
+        const answeredInquiries = await Inquiry.find({ isAnswer: true });
+
+        // Generate HTML report
+        let htmlContent = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <title>Answered Inquiries Report</title>
+              <style>
+                  body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                  }
+                  .section {
+                    margin-bottom: 20px;
+                    border: 1px solid #ccc;
+                    padding: 15px;
+                    border-radius: 10px;
+                  }
+                  .section h2 {
+                    color: #555;
+                    margin-bottom: 10px;
+                  }
+                  .section p {
+                    color: #666;
+                    margin-bottom: 5px;
+                  }
+                  .section p strong {
+                    color: #333;
+                  }
+              </style>
+          </head>
+          <body>
+            <h1>Answered Inquiries Report</h1>
+            <div class="summary">
+              <h2>Total Answered Inquiries: ${answeredInquiries.length}</h2>
+            </div>
+        `;
+
+        // Iterate through each answered inquiry
+        answeredInquiries.forEach((inquiry) => {
+          const { name, email, phone, message, reply } = inquiry;
+          htmlContent += `
+            <div class="section">
+              <h2>Inquiry Details</h2>
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone}</p>
+              <p><strong>Message:</strong> ${message}</p>
+              <p><strong>Reply:</strong> ${reply}</p>
+            </div>
+          `;
+        });
+
+        htmlContent += `
+          </body>
+          </html>
+        `;
+
+        // Generate the PDF from HTML content
+        const pdfBuffer = await generatePdfFromHtml(htmlContent);
+
+        // Set response headers and send the PDF as a download
+        res.set({
+          "Content-Type": "application/pdf",
+          "Content-Length": pdfBuffer.length,
+          "Content-Disposition": 'attachment; filename="inventory-report.pdf"',
+        });
+        res.send(pdfBuffer);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
   } catch (error) {
     next(error);
   }

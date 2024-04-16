@@ -10,7 +10,9 @@ import {
   fullOrderRejection,
   downloadPatientOrderData,
   downloadPatientOrderDateData,
-  downloadDoctorOrderReport
+  downloadDoctorOrderReport,
+  getFilteredOrderData,
+  getFilteredOrderByPaymentStatusData
 } from "../controller/PrescriptionOrder.controller.js";
 const router = express.Router();
 
@@ -39,4 +41,6 @@ router.get("/fullOrderRejection/:id", verifyToken, fullOrderRejection);
 router.post("/downloadPatientOrder/:id", verifyToken, downloadPatientOrderData);
 router.post("/downloadPatientOrderDate/:id",verifyToken,downloadPatientOrderDateData)
 router.post("/downloadDoctorOrderReport/:id",verifyToken,downloadDoctorOrderReport)
+router.post("/getprescriptionOrderByDispense/:id",verifyToken,getFilteredOrderData)
+router.post("/getprescriptionOrderByPayment/:id",verifyToken,getFilteredOrderByPaymentStatusData)
 export default router;
