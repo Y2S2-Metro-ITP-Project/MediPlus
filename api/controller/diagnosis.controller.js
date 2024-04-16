@@ -16,6 +16,7 @@ export const addDiagnosisData = async (req, res) => {
       .json({ message: "You are not allowed to access these resources" });
   }
   try {
+    console.log(req.body);
     const patientId = req.body.patientId;
     const doctorId = req.body.doctorId;
     const diagnosis = req.body.formData.disease;
@@ -478,7 +479,7 @@ export const downloadDoctorDiagnosis = async (req, res) => {
   const patientID = req.body.patientId;
   const patient = await Patient.findById(patientID);
   const patientName = patient.name;
-  console.log(req.body)
+  console.log(req.body);
   const DoctorID = req.body.selectedDoctor.value;
   console.log(DoctorID);
   const diagnosis1 = await PatientDiagnosis.find({
@@ -731,3 +732,130 @@ export const downloadDateDiagnosis = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getFilterDiagnosisData = async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const selectedOption = req.body.selectedOption;
+
+    // Perform filtering based on selected option
+    let filteredDiagnosis;
+
+    // Add logic to filter diagnosis data based on the selected option
+    switch (selectedOption) {
+      case "today":
+        // Filter diagnosis data for today
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          date: { $gte: todayStart, $lte: todayEnd },
+        }).exec();
+        break;
+      case "lastweek":
+        // Filter diagnosis data for the last week
+        const lastWeekStart = new Date();
+        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+        const lastWeekEnd = new Date();
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          date: { $gte: lastWeekStart, $lte: lastWeekEnd },
+        }).exec();
+        break;
+      case "lastmonth":
+        // Filter diagnosis data for the last month
+        const lastMonthStart = new Date();
+        lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+        const lastMonthEnd = new Date();
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+        }).exec();
+        break;
+      case "lastyear":
+        // Filter diagnosis data for the last year
+        const lastYearStart = new Date();
+        lastYearStart.setFullYear(lastYearStart.getFullYear() - 1);
+        const lastYearEnd = new Date();
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          date: { $gte: lastYearStart, $lte: lastYearEnd },
+        }).exec();
+        break;
+      case "latest":
+        // Get the latest diagnosis record for the patient
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+        })
+          .sort({ date: -1 })
+          .limit(1)
+          .exec();
+        break;
+      case "oldest":
+        // Get the oldest diagnosis record for the patient
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+        })
+          .sort({ date: 1 })
+          .limit(1)
+          .exec();
+        break;
+      default:
+        // Handle default case or invalid options
+        return res.status(400).json({ message: "Invalid filter option" });
+    }
+
+    // Return the filtered diagnosis data
+    console.log(filteredDiagnosis)
+    res.status(200).json({ diagnosis: filteredDiagnosis });
+  } catch (error) {
+    console.error("Error filtering diagnosis data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getFilterStatusDiagnosisData = async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const selectedOption = req.body.selectedOption;
+
+    // Perform filtering based on selected option
+    let filteredDiagnosis;
+
+    // Add logic to filter diagnosis data based on the selected option
+    switch (selectedOption) {
+      case "Mild":
+        // Filter diagnosis data for pending status
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          level: "Mild",
+        }).exec();
+        break;
+      case "Moderate":
+        // Filter diagnosis data for completed status
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          level: "Moderate",
+        }).exec();
+        break;
+      case "Severe":
+        // Filter diagnosis data for failed status
+        filteredDiagnosis = await PatientDiagnosis.find({
+          patientId: patientId,
+          level: "Severe",
+        }).exec();
+        break;
+      default:
+        // Handle default case or invalid options
+        return res.status(400).json({ message: "Invalid filter option" });
+    }
+
+    // Return the filtered diagnosis data
+    res.status(200).json({ diagnosis: filteredDiagnosis });
+  } catch (error) {
+    console.error("Error filtering diagnosis data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
