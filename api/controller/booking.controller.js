@@ -1,5 +1,8 @@
 import Booking from "../models/booking.model.js";
 import { errorHandler } from "../utils/error.js";
+import BookingOrder from "../models/bookingOrder.model.js";
+import Payment from "../models/payment.model.js";
+import PaymentOrder from "../models/paymentOrder.model.js";
 
 export const createBooking = async (req, res, next) => {
   const {
@@ -211,14 +214,18 @@ export const updateBooking = async (req, res) => {
       if (!updatedBooking) {
           return res.status(404).json({ message: "Booking not found" });
       }
-      res.status(200).json(updatedBooking);
+
+      res.status(200).json({message: "Booked successfully"});
   } catch (error) {
       res.status(500).json({ message: error.message });
   }
 };
 
 export const bookAppointment = async (req, res) => {
+  console.log("Request received:", req.body);
+
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
+    console.log("User not authorized to book appointments:", req.user);
     return res.status(403).json({ message: "You are not allowed to book appointments" });
   }
   
@@ -227,18 +234,77 @@ export const bookAppointment = async (req, res) => {
       req.params.bookingId,
       {
         $set: { patientId: req.body.patientId, status: "Pending Payment" }, 
-       },
+      },
       { new: true }
     );
+    console.log("Booking updated:", booking);
     
     if (!booking) {
+      console.log("Booking not found for ID:", req.params.bookingId);
       return res.status(404).json({ message: "Booking not found" });
     }
+
+    console.log("Checking for existing orders...");
+
+    const patientFind = await Booking.findById(booking.patientId._id);
+    const patientName = patientFind.name;
+    const patientEmail = patientFind.contactEmail;
+    const payment = await Payment.create({
+      patientId: booking.patientId._id,
+      patientName: patientName,
+      patientEmail: patientEmail,
+      OrderType: "Consultation Fee",
+      totalPayment: 50000,
+    });
+
+    try {
+      await createOrUpdatePaymentOrder(
+        booking.patientId._id,
+        patientName,
+        patientEmail,
+        payment._id
+      );
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+
+    //const orders = await BookingOrder.find({ patientId: req.body.patientId, doctorId: booking.doctorId });
+    //console.log("Orders found:", orders);
+
+    //let order;
+
+    //for (const existingOrder of orders) {
+    //  if (existingOrder.status === "Pending") {
+    //    order = existingOrder;
+    //    break;
+    //  }
+    //}
+
+    //if (!order) {
+    //  console.log("Booking ID to be added to order:", booking._id);
+    //  order = new BookingOrder({
+    //    patientId: req.body.patientId,
+    //    doctorId: booking.doctorId,
+    //    bookings: [booking._id], // Set the bookingId field here
+    //  });
+    //} else {
+    //  console.log("Booking ID to be pushed to order:", booking._id);
+    //  order.bookings.push(booking._id); // Set the bookingId field here
+    //}
+    
+
+    //console.log("Order created/updated:", order);
+
+    //await order.save(); // Save the order to trigger validation
+
+
     res.status(200).json(booking);
   } catch (error) {
+    console.error("Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 export const cancelSelectedBookings = async (req, res) => {
   try {
@@ -261,5 +327,51 @@ export const cancelSelectedBookings = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to cancel selected bookings' });
+  }
+};
+
+const createOrUpdatePaymentOrder = async (
+  patientId,
+  patientName,
+  patientEmail,
+  paymentId,
+  paymentStatus
+) => {
+  try {
+    // Find the payment order for the patient ID
+    let paymentOrder = await PaymentOrder.findOne({ PatientID: patientId });
+
+    if (paymentOrder) {
+      // If a payment order exists, check if it has a pending status
+      if (paymentOrder.status === "Pending") {
+        // If it's pending, push the payment into its Payment array
+        paymentOrder.Payment.push(paymentId);
+      } else {
+        // If it's not pending, create a new payment order
+        paymentOrder = new PaymentOrder({
+          PatientID: patientId,
+          PatientName: patientName,
+          PatientEmail: patientEmail,
+          Payment: [paymentId],
+          status: "Pending",
+        });
+      }
+    } else {
+      // If no payment order exists, create a new one
+      paymentOrder = new PaymentOrder({
+        PatientID: patientId,
+        PatientName: patientName,
+        PatientEmail: patientEmail,
+        Payment: [paymentId],
+        Status: paymentStatus === "Pending" ? "Pending" : "Completed", // Set status based on payment status
+      });
+    }
+
+    // Save the payment order
+    await paymentOrder.save();
+
+    return paymentOrder;
+  } catch (error) {
+    throw new Error("Failed to create or update payment order");
   }
 };

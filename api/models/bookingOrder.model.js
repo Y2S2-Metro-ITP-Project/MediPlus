@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-const prescriptionOrderSchema = new mongoose.Schema({
+import Booking from "./booking.model.js";
+const bookingOrderSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Patient",
@@ -7,22 +8,22 @@ const prescriptionOrderSchema = new mongoose.Schema({
   },
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Doctor",
     required: true,
   },
-  prescriptions: [
+  bookings: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: Prescription,
+      ref: Booking,
     },
   ],
   date: {
     type: Date,
     default: Date.now,
   },
-  payment:{
+  payment: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "payment",
+    ref: "Payment",
   },
   status: {
     type: String,
@@ -31,10 +32,6 @@ const prescriptionOrderSchema = new mongoose.Schema({
   },
 });
 
-const PrescriptionOrder = mongoose.model(
-  "PrescriptionOrder",
-  prescriptionOrderSchema
-);
-export default PrescriptionOrder;
+const BookingOrder = mongoose.model("BookingOrder", bookingOrderSchema);
 
-import Prescription from "./prescription.model.js";
+export default BookingOrder;

@@ -129,7 +129,25 @@ export default function DashSideBar() {
                   icon={HiOutlineUserGroup}
                   as="div"
                 >
-                  Appointment
+                  Book Appointment
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=bookingOrders">
+                <Sidebar.Item
+                  active={tab === "bookingOrders"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  BookingOrders
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=specialization">
+                <Sidebar.Item
+                  active={tab === "specialization"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Specialization
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=schedule">
@@ -138,7 +156,7 @@ export default function DashSideBar() {
                   icon={HiOutlineUserGroup}
                   as="div"
                 >
-                  Schedule Appointments
+                  Schedule Appointment
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inquiries">
@@ -282,6 +300,15 @@ export default function DashSideBar() {
                   Appointment
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=bookingOrders">
+                <Sidebar.Item
+                  active={tab === "bookingOrders"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  BookingOrders
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
@@ -324,6 +351,7 @@ export default function DashSideBar() {
                 Inquiries
               </Sidebar.Item>
             </Link>
+            
           )}
           {(currentUser.isOutPatient || currentUser.isInPatient) && (
             <>
@@ -352,6 +380,18 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Vitals
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}{(currentUser.isOutPatient) && (
+            <>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={HiOutlineUserGroup}
+                  as="div"
+                >
+                  Appointment
                 </Sidebar.Item>
               </Link>
             </>

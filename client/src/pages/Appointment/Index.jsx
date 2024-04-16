@@ -1,7 +1,10 @@
+// Index.js
+
 import React, { useState, useEffect } from "react";
 import { Button, TextInput } from "flowbite-react";
 import Select from "react-select";
 import DoctorsList from "../../components/DoctorList";
+import DoctorProfile from "../../components/DoctorProfile";
 
 const Index = () => {
   const [doctorOptions, setDoctorOptions] = useState([]);
@@ -11,6 +14,8 @@ const Index = () => {
   const [date, setDate] = useState("");
   const [doctorDetails, setDoctorDetails] = useState(null);
   const [appointmentDetails, setAppointmentDetails] = useState(null);
+  const [showDoctorList, setShowDoctorList] = useState(true);
+  const [selectedDoctorProfile, setSelectedDoctorProfile] = useState(null); // State to store the selected doctor's details
 
   // Load doctors and specializations when the component mounts
   useEffect(() => {
@@ -81,16 +86,14 @@ const Index = () => {
       console.error("Error fetching doctor details:", error);
     }
   };
-  
-  
-  
-  
-  
-  
 
-  const fetchAppointmentDetails = async () => {
-    // Fetch appointment details based on selectedDoctor, selectedSpecialization, and date
-    // You need to implement this function to fetch details from your API
+  const handleViewProfile = (doctor) => {
+    setSelectedDoctorProfile(doctor); // Set the selected doctor's details
+    setShowDoctorList(false); // Hide the DoctorsList component
+  };
+
+  const handleBackToList = () => {
+    setShowDoctorList(true); // Show the DoctorsList component
   };
 
   const handleSearch = async () => {
@@ -146,45 +149,51 @@ const Index = () => {
           Channel Your Doctor
         </h2>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ marginBottom: "10px" }}>
-            <label htmlFor="doctor">Doctor</label>
-            <Select
-              id="doctor"
-              value={selectedDoctor}
-              onChange={setSelectedDoctor}
-              options={doctorOptions}
-              placeholder="Select a doctor"
-              styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
-            />
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <label htmlFor="specialization">Specialization</label>
-            <Select
-              id="specialization"
-              value={selectedSpecialization}
-              onChange={setSelectedSpecialization}
-              options={specializationOptions}
-              placeholder="Select a specialization"
-              styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
-            />
-          </div>
-          <div>
-            <label htmlFor="date">Date</label>
-            <TextInput
-              type="date"
-              id="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-            />
-          </div>
+          {showDoctorList ? (
+            <>
+              <div style={{ marginBottom: "10px" }}>
+                <label htmlFor="doctor">Doctor</label>
+                <Select
+                  id="doctor"
+                  value={selectedDoctor}
+                  onChange={setSelectedDoctor}
+                  options={doctorOptions}
+                  placeholder="Select a doctor"
+                  styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
+                />
+              </div>
+              <div style={{ marginBottom: "10px" }}>
+                <label htmlFor="specialization">Specialization</label>
+                <Select
+                  id="specialization"
+                  value={selectedSpecialization}
+                  onChange={setSelectedSpecialization}
+                  options={specializationOptions}
+                  placeholder="Select a specialization"
+                  styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
+                />
+              </div>
+              <div>
+                <label htmlFor="date">Date</label>
+                <TextInput
+                  type="date"
+                  id="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div style={{ display: "flex", marginTop: "20px" }}>
+                <Button className="btn-lg" onClick={handleSearch}>Search</Button>
+                <Button className="btn-lg btn-outline-danger" onClick={handleClear}>Clear</Button>
+              </div>
+              {/* Render doctor details and appointment details here */}
+              <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} /> {/* Pass handleViewProfile function */}
+            </>
+          ) : (
+            <DoctorProfile doctor={selectedDoctorProfile} onBack={handleBackToList} />
+          )}
         </div>
-        <div style={{ display: "flex", marginTop: "20px" }}>
-          <Button className="btn-lg" onClick={handleSearch}>Search</Button>
-          <Button className="btn-lg btn-outline-danger" onClick={handleClear}>Clear</Button>
-        </div>
-        {/* Render doctor details and appointment details here */}
-        <DoctorsList doctorDetails={doctorDetails} />
       </div>
     </div>
   );

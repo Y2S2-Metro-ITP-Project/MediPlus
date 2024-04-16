@@ -346,14 +346,14 @@ export default function Booking() {
         toast.error("Patient ID and Booking ID are required");
         return;
       }
-  
+
       const booking = {
         _id: bookingData._id,
         patientId: selectedPatientId,
       };
-  
+
       console.log("Booking data:", booking);
-  
+
       const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
         method: "PUT",
         headers: {
@@ -361,13 +361,13 @@ export default function Booking() {
         },
         body: JSON.stringify(booking),
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || "Failed to book appointment");
       }
-  
+
       setFormData({});
       setSelectedTimeSlots([]);
       setShowBookModal(false);
@@ -506,14 +506,21 @@ export default function Booking() {
       </div>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <Button
-            className="mr-4"
-            gradientDuoTone="purpleToPink"
-            outline
-            onClick={() => setShowAddModal(true)}
-          >
-            Add Booking
-          </Button>
+          {!(
+            currentUser.isOutPatient ||
+            currentUser.isUser ||
+            currentUser.isInPatient
+          ) && (
+            <Button
+              className="mr-4"
+              gradientDuoTone="purpleToPink"
+              outline
+              onClick={() => setShowAddModal(true)}
+            >
+              Add Booking
+            </Button>
+          )}
+
           <form onSubmit={handleSearch}>
             <TextInput
               type="text"

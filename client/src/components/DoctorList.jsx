@@ -1,7 +1,13 @@
+// DoctorsList.js
+
 import React from 'react';
 
-const DoctorsList = ({ doctorDetails }) => {
+const DoctorsList = ({ doctorDetails, onViewProfile }) => {
   console.log('DoctorsList props:', doctorDetails); // Log props
+
+  const handleViewProfile = (doctor) => {
+    onViewProfile(doctor); // Pass the selected doctor's details to the parent component
+  };
 
   return (
     <div style={styles.container}>
@@ -17,7 +23,7 @@ const DoctorsList = ({ doctorDetails }) => {
               <h3 style={styles.name}>{doctor.doctorDetails.Name}</h3>
               <p style={styles.specialization}>{doctor.doctorDetails.specialization}</p>
             </div>
-            <button style={styles.button}>Channel Now</button>
+            <button style={styles.button} onClick={() => handleViewProfile(doctor)}>View Profile</button> {/* Pass the selected doctor to handleViewProfile */}
           </div>
         ))
       ) : (
