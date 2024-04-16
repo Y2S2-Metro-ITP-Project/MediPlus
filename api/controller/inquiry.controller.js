@@ -142,7 +142,30 @@ export const updateInquiry = async (req, res, next) => {
       },
       { new: true }
     );
+    const { name, email, message, reply } = updatedInquiry;
     res.status(200).json(updatedInquiry);
+    try {
+      await sendEmail({
+        to: email,
+        subject: "Inquiry Response From Ismails Pvt Hospital!",
+        html: ` 
+        <p>Dear ${name},</p>
+        <p>Your inquiry has been successfully Responded. Here is a summary of your message:</p>
+        <blockquote style="background-color: #f2f2f2; border-left: 5px solid #3498db; padding: 10px 20px; margin: 0; font-family: Arial, sans-serif; font-size: 16px;">
+        <p style="margin: 0;">${message}</p>
+      </blockquote>
+      <p> Here is the response to your message:</p>
+      <blockquote style="background-color: #f2f2f2; border-left: 5px solid #3498db; padding: 10px 20px; margin: 0; font-family: Arial, sans-serif; font-size: 16px;">
+      <p style="margin: 0;">${reply}</p>
+    </blockquote>
+        <p>Best regards,<br>MediPlus Team</p>
+        <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
+        <P>This is an auto-generated email. Please do not reply to this email.</p>
+      `,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   } catch (error) {
     next(error);
   }
@@ -339,4 +362,4 @@ const searchUserInquiries = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+};

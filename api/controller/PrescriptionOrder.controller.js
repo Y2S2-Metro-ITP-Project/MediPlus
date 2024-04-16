@@ -71,7 +71,13 @@ export const getPrescriptionPatientOrder = async (req, res) => {
   }
   const { id } = req.params;
   try {
-    const prescriptionOrders = await PrescriptionOrder.findById(id);
+    const prescriptionOrders = await PrescriptionOrder.findById(id)
+      .populate("patientId")
+      .populate("doctorId")
+      .populate({
+        path: "prescriptions",
+        populate: { path: "itemId" },
+      });
     res.status(200).json({ prescriptionOrders });
   } catch (error) {
     res.status(500).json({ message: error.message });

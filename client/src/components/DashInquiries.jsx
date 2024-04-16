@@ -14,6 +14,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
+import ReactPaginate from "react-paginate";
 export default function DashInquiries() {
   const { currentUser } = useSelector((state) => state.user);
   const [inquiries, setInquirires] = useState([]);
@@ -49,9 +50,6 @@ export default function DashInquiries() {
         setTotalUnAnsweredInquiries(data.totalNotAnswered);
         setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
         setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
-        if (data.inquiries.length < 9) {
-          setShowMore(false);
-        }
       }
     } catch (error) {
       console.log(error);
@@ -70,9 +68,6 @@ export default function DashInquiries() {
           setTotalUnAnsweredInquiries(data.totalNotAnswered);
           setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
           setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
-          if (data.inquiries.length < 9) {
-            setShowMore(false);
-          }
         }
       } catch (error) {
         console.log(error);
@@ -108,12 +103,9 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if (res.ok) {
-        setInquirires((prev) =>
-          prev.filter((inquiry) => inquiry._id !== inquiryIdToDelete)
-        );
+        fetchInquires();
         setShowModal(false);
         toast.success(data.message);
-        fetchInquires();
       } else {
         console.log(data.message);
       }
@@ -146,7 +138,6 @@ export default function DashInquiries() {
       const data = await res.json();
       if (res.ok) {
         setInquirires(data);
-        setShowMore(data.length >= 9);
       } else {
         setInquirires([]);
       }
@@ -167,9 +158,6 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if (res.ok) {
-        setInquirires((prev) =>
-          prev.filter((inquiry) => inquiry._id !== inquiryIdToReply)
-        );
         fetchInquires();
         setShowReplyModal(false);
         toast.success("Reply Submitted Successfully");
@@ -210,9 +198,81 @@ export default function DashInquiries() {
     const data = await res.json();
     if (res.ok) {
       setInquirires(data.inquiries);
-      setShowMore(data.inquiries.length >= 9);
     }
   };
+
+  {
+    /** Pagination implementation */
+  }
+  const [pageNumber, setPageNumber] = useState(0);
+  const InquiriesPerPage = 5;
+
+  const pageCount = Math.ceil(inquiries.length / InquiriesPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+
+  const displayInquires = inquiries
+    .slice(pageNumber * InquiriesPerPage, (pageNumber + 1) * InquiriesPerPage)
+    .map((inquiry) => (
+      <Table.Body className="divide-y" key={inquiry._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>
+            {new Date(inquiry.createdAt).toLocaleDateString()}
+          </Table.Cell>
+          <Table.Cell>{inquiry.name}</Table.Cell>
+          <Table.Cell>{inquiry.email}</Table.Cell>
+          <Table.Cell>{inquiry.phone}</Table.Cell>
+          <Table.Cell>
+            <HiEye
+              className="text-blue-500 cursor-pointer"
+              onClick={() => handleViewMessage(inquiry.message)}
+            />
+          </Table.Cell>
+          <Table.Cell>
+            {inquiry.isAnswer ? (
+              <FaCheck className="text-green-500" />
+            ) : (
+              <FaTimes className="text-red-500" />
+            )}
+          </Table.Cell>
+          <Table.Cell>
+            {inquiry.isAnswer ? (
+              <HiEye
+                className="text-blue-500 cursor-pointer"
+                onClick={() => handleViewReplyMessage(inquiry.reply)}
+              />
+            ) : (
+              <p className="text-red-500">{inquiry.reply}</p>
+            )}
+          </Table.Cell>
+          <Table.Cell>
+            <Link className="text-teal-500 hover:underline">
+              <span
+                onClick={() => {
+                  setShowReplyModal(true);
+                  setInquiryIdToReply(inquiry._id);
+                }}
+              >
+                Reply
+              </span>
+            </Link>
+          </Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                setShowModal(true);
+                setInquiryIdToDelete(inquiry._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -326,73 +386,25 @@ export default function DashInquiries() {
               <Table.HeadCell>Submit</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
-            {inquiries.map((inquiry) => (
-              <Table.Body className="divide-y" key={inquiry._id}>
-                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                  <Table.Cell>
-                    {new Date(inquiry.createdAt).toLocaleDateString()}
-                  </Table.Cell>
-                  <Table.Cell>{inquiry.name}</Table.Cell>
-                  <Table.Cell>{inquiry.email}</Table.Cell>
-                  <Table.Cell>{inquiry.phone}</Table.Cell>
-                  <Table.Cell>
-                    <HiEye
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() => handleViewMessage(inquiry.message)}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    {inquiry.isAnswer ? (
-                      <FaCheck className="text-green-500" />
-                    ) : (
-                      <FaTimes className="text-red-500" />
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {inquiry.isAnswer ? (
-                      <HiEye
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleViewReplyMessage(inquiry.reply)}
-                      />
-                    ) : (
-                      <p className="text-red-500">{inquiry.reply}</p>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      <span
-                        onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
-                        }}
-                      >
-                        Reply
-                      </span>
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        setShowModal(true);
-                        setInquiryIdToDelete(inquiry._id);
-                      }}
-                      className="font-medium text-red-500 hover:underline cursor-pointer"
-                    >
-                      Delete
-                    </span>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            ))}
+            {displayInquires}
           </Table>
-          {showMore && (
-            <button
-              onClick={handleShowMore}
-              className="w-full text-teal-500 self-center text-sm py-7"
-            >
-              Show More
-            </button>
-          )}
+          <div className="mt-9 center">
+            <ReactPaginate
+              previousLabel={"Previous"}
+              nextLabel={"Next"}
+              pageCount={pageCount}
+              onPageChange={handlePageChange}
+              containerClassName={"pagination flex justify-center"}
+              previousLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              nextLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              disabledClassName={"opacity-50 cursor-not-allowed"}
+              activeClassName={"bg-indigo-500 text-white"}
+            />
+          </div>
         </>
       ) : (
         <p>You have no Inquiries</p>
