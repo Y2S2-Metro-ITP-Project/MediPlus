@@ -4,6 +4,7 @@ import Inventory from "../models/inventory.model.js";
 import Patient from "../models/patient.model.js";
 import Payment from "../models/payment.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import PaymentOrder from "../models/paymentOrder.model.js";
 import { set } from "mongoose";
 export const getPrescriptionOrderData = async (req, res, next) => {
   try {
@@ -70,11 +71,67 @@ export const getPrescriptionPatientOrder = async (req, res) => {
   }
   const { id } = req.params;
   try {
-    const prescriptionOrders = await PrescriptionOrder.findById(id);
+    const prescriptionOrders = await PrescriptionOrder.findById(id)
+      .populate("patientId")
+      .populate("doctorId")
+      .populate({
+        path: "prescriptions",
+        populate: { path: "itemId" },
+      });
     res.status(200).json({ prescriptionOrders });
   } catch (error) {
     res.status(500).json({ message: error.message });
     console.log(error);
+  }
+};
+
+const createOrUpdatePaymentOrder = async (
+  patientId,
+  patientName,
+  patientEmail,
+  paymentId,
+  paymentStatus
+) => {
+  try {
+    // Find all payment orders for the patient ID
+    const paymentOrders = await PaymentOrder.find({ PatientID: patientId });
+
+    let paymentOrder;
+
+    if (paymentOrders.length > 0) {
+      // If payment orders exist for the patient ID
+      paymentOrder = paymentOrders.find((order) => order.status === "Pending");
+
+      if (!paymentOrder) {
+        // If there are no pending orders, create a new one
+        paymentOrder = new PaymentOrder({
+          PatientID: patientId,
+          PatientName: patientName,
+          PatientEmail: patientEmail,
+          Payment: [paymentId],
+          status: "Pending",
+        });
+      } else {
+        // If there is a pending order, add the payment to it
+        paymentOrder.Payment.push(paymentId);
+      }
+    } else {
+      // If no payment orders exist, create a new one
+      paymentOrder = new PaymentOrder({
+        PatientID: patientId,
+        PatientName: patientName,
+        PatientEmail: patientEmail,
+        Payment: [paymentId],
+        Status: paymentStatus === "Pending" ? "Pending" : "Completed", // Set status based on payment status
+      });
+    }
+
+    // Save the payment order
+    await paymentOrder.save();
+
+    return paymentOrder;
+  } catch (error) {
+    throw new Error("Failed to create or update payment order");
   }
 };
 
@@ -98,6 +155,18 @@ export const confirmPrescriptionOrderData = async (req, res) => {
       OrderType: "Pharmacy",
       totalPayment: req.body.totalPayment,
     });
+
+    try {
+      await createOrUpdatePaymentOrder(
+        patient.patientId._id,
+        patientName,
+        patientEmail,
+        payment._id
+      );
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+
     const updatedOrder = await PrescriptionOrder.findById(id);
     for (const prescriptionId of updatedOrder.prescriptions) {
       const prescription = await Prescription.findById(prescriptionId);
@@ -248,7 +317,7 @@ export const downloadPatientOrderData = async (req, res) => {
 
     let prevDate = null;
     for (const order of prescriptionOrders) {
-      const { date, prescriptions, payment, doctorId,patientId} = order;
+      const { date, prescriptions, payment, doctorId, patientId } = order;
       const formattedDate = new Date(date).toLocaleString();
 
       if (formattedDate !== prevDate) {
@@ -652,6 +721,109 @@ export const downloadDoctorOrderReport = async (req, res) => {
     });
 
     res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getFilteredOrderData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    console.log(req.body);
+    if (filterOption === "Pending") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Pending",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Completed") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Completed",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Rejected") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Rejected",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getFilteredOrderByPaymentStatusData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    console.log(req.body);
+    if (filterOption === "Pending" || filterOption === "Completed" || filterOption === "Rejected") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.aggregate([
+          {
+            $lookup: {
+              from: "payments",
+              localField: "payment",
+              foreignField: "_id",
+              as: "payment"
+            }
+          },
+          {
+            $match: { "payment.status": filterOption }
+          },
+          {
+            $unwind: "$payment"
+          },
+          {
+            $lookup: {
+              from: "doctors",
+              localField: "doctorId",
+              foreignField: "_id",
+              as: "doctor"
+            }
+          },
+          {
+            $lookup: {
+              from: "patients",
+              localField: "patientId",
+              foreignField: "_id",
+              as: "patient"
+            }
+          }
+        ]);
+    
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

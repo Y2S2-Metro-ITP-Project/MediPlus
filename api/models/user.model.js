@@ -68,7 +68,7 @@ const userSchema = new mongoose.Schema(
     isCashier: {
       type: Boolean,
       default: false,
-  },
+    },
   },
   { timestamps: true }
 );
