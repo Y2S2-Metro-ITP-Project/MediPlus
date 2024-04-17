@@ -79,7 +79,7 @@ export default function DashOutPatients() {
         console.log(error);
       }
     };
-    if (currentUser.isAdmin || currentUser.isReceptionist) {
+    if (currentUser.isAdmin || currentUser.isReceptionist || currentUser.isPharmacist) {
       fetchInventory();
     }
   }, [currentUser._id]);
@@ -352,6 +352,31 @@ export default function DashOutPatients() {
       console.log(error);
     }
   };
+  const renderCell = (item) => {
+    const expirationDate = new Date(item.itemExpireDate);
+    const oneMonthBefore = new Date();
+    oneMonthBefore.setMonth(oneMonthBefore.getMonth() + 1);
+
+    let className = "";
+    if (expirationDate < new Date()) {
+      className = "expired";
+    } else if (expirationDate < oneMonthBefore) {
+      className = "one-month-away";
+    }
+
+    return (
+      <Table.Cell
+        style={{
+          backgroundColor:
+          className === "expired" ? "red" : className === "one-month-away" ? "yellow" : "green",
+          color: 'black' 
+        }}
+        
+      >
+        {item.itemExpireDate}
+      </Table.Cell>
+    );
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -399,8 +424,8 @@ export default function DashOutPatients() {
           <option value="outpatients">Outpatients</option>
         </select>
       </div>
-      {currentUser.isAdmin ||
-      (currentUser.isReceptionist && patients.length > 0) ? (
+      {currentUser.isAdmin || currentUser.isPharmacist || 
+      (currentUser.isReceptionist && inventory.length > 0) ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
@@ -408,6 +433,7 @@ export default function DashOutPatients() {
               <Table.HeadCell>Item Name</Table.HeadCell>
               <Table.HeadCell>Item Description</Table.HeadCell>
               <Table.HeadCell>Status</Table.HeadCell>
+              <Table.HeadCell>Expiration</Table.HeadCell>
               <Table.HeadCell>Actions</Table.HeadCell>
             </Table.Head>
             {inventory.map((item) => (
@@ -452,6 +478,7 @@ export default function DashOutPatients() {
                       </span>
                     )}
                   </Table.Cell>
+                  {renderCell(item)}
                   <Table.Cell>
                     <Link className="text-teal-500 hover:underline">
                       <span
@@ -497,7 +524,7 @@ export default function DashOutPatients() {
           )}
         </>
       ) : (
-        <p>You have no Patients</p>
+        <p>You have no Inventory Items</p>
       )}
       <Modal
         show={showModal}
@@ -527,7 +554,7 @@ export default function DashOutPatients() {
         show={AddInventoryItemModal}
         onClose={() => setAddInventoryItemModal(false)}
         popup
-        size="md"
+        size="lg"
       >
         <Modal.Header />
         <Modal.Body>
@@ -662,7 +689,7 @@ export default function DashOutPatients() {
         show={showItemDetailsModal}
         onClose={() => setShowItemDetailsModal(false)}
         popup
-        size="md"
+        size="lg"
       >
         <Modal.Header />
         <Modal.Body>

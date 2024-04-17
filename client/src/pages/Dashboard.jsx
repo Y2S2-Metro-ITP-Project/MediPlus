@@ -15,6 +15,12 @@ import { DashaddEmp } from "../components/DashaddEmp";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
 import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
+import DashOutPatientProfile from "../components/DashOutPatientProfile";
+import PatientPrescriptions from "../components/PatientPrescriptions";
+import PatientDiagnosis from "../components/PatientDiagnosis";
+import PatientVitals from "../components/PatientVitals";
+import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
+import DashMedicineDispence from "../components/DashMedicineDispence";
 
 
 
@@ -53,7 +59,7 @@ export default function Dashboard() {
       {/**<Leave/> */}
       {tab==="leave" && <DashLeave/>}
        {/**<EMPleave/> */}
-       {tab==="EMPleave" && <DashLeave/>}
+       {tab==="EMPleave" && <DashEMPLeave/>}
       {/**<AddEmployee/> */}
       {tab==="Add_staff" && <DashaddEmp/>}
       {/** <DashBedManagement/> */}
@@ -62,6 +68,20 @@ export default function Dashboard() {
       {tab === "wards" && <DashWards />}
       {/** <ReceptionistDashBoard/> */}
       {tab==="receptionist" && <ReceptionistDashBoard/>}
+      {/**<DashPatientProfile */}
+      {tab==="PatientProfile" && <DashOutPatientProfile/>}
+      {/**<DashAddDiesease */}
+      {tab==="AddDisease" && <DashAddDisease/>}
+      {/** <DashPatientPrescriptions/> */}
+      {tab==="PatientPrescriptions" && <PatientPrescriptions/>}
+      {/** <DashDiagnosis/> */}
+      {tab==="PatientDiagnosis" && <PatientDiagnosis/>}
+      {/**<DashPatientVitals/> */}
+      {tab==="PatientVitals" && <PatientVitals/>}
+      {/** <DashPrecritionOrder/> */}
+      {tab==="orderPrescritions" && <DashDoctorsOrdersPrecriptions/>}
+      {/** <DashMedicineDispence/> */}
+      {tab==="Dispence" && <DashMedicineDispence/>}
     </div>
   );
 }

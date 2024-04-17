@@ -1,7 +1,14 @@
 import Inventory from "../models/inventory.model.js";
 import { errorHandler } from "../utils/error.js";
 export const getInventoryData = async (req, res) => {
-  if (!req.user.isAdmin && !req.user.isPharmacist) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isDoctor &&
+    !req.user.isNurse
+  ) {
     return next(
       errorHandler(
         403,
@@ -70,7 +77,7 @@ export const addInventoryData = async (req, res) => {
   }
 };
 
-export const deleteInventoryData = async (req, res) => {
+export const deleteInventoryData = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isPharmacist) {
     return next(
       errorHandler(
@@ -87,10 +94,15 @@ export const deleteInventoryData = async (req, res) => {
   }
 };
 
-
-// im create uptade function 
-export const updateInventoryData = async (req, res) => {
-  if (!req.user.isAdmin && !req.user.isPharmacist) {
+export const medicineInstock = async (req, res, next) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isDoctor &&
+    !req.user.isNurse
+  ) {
     return next(
       errorHandler(
         403,
@@ -98,46 +110,19 @@ export const updateInventoryData = async (req, res) => {
       )
     );
   }
-
   try {
-    // Extract inventory data to update from request body
-    const {
-      itemName,
-      itemCategory,
-      itemDescription,
-      itemPrice,
-      itemQuantity,
-      itemMinValue,
-      itemExpireDate,
-    } = req.body;
-
-    // Find the inventory item to update by ID and update its properties
-    const updatedInventory = await Inventory.findByIdAndUpdate(
-      req.params.itemId,
+    const currentDate = new Date();
+    const items = await Inventory.find(
       {
-        $set: {
-          itemName,
-          itemCategory,
-          itemDescription,
-          itemPrice,
-          itemQuantity,
-          itemMinValue,
-          itemExpireDate,
-        },
+        $expr: { $gt: ["$itemQuantity", "$itemMinValue"] },
+        $expr: { $gte: [{ $toDate: "$itemExpireDate" }, currentDate] },
       },
-      { new: true }
+      "itemName"
     );
-
-    // Check if the item exists
-    if (!updatedInventory) {
-      return res.status(404).json({ message: "Inventory item not found" });
-    }
-
-    // Send response with updated inventory item
-    res.status(200).json({ inventory: updatedInventory });
+    res.status(200).json({ items });
   } catch (error) {
-    // Handle errors
-    res.status(400).json({ message: error.message });
+    next(error);
   }
-
 };
+
+export const updateInventoryData = async (req, res) => {};

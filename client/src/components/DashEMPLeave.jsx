@@ -35,7 +35,7 @@ export default function DashEMPLeave() {
       console.error("Error fetching leaves:", error);
     }
   };
-
+  console.log(userLeaves);
   // useEffect hook to fetch leaves on component mount or when currentUser changes
   useEffect(() => {
     fetchLeaves();
@@ -113,6 +113,7 @@ export default function DashEMPLeave() {
           Apply Leave
         </Button>
       </div>
+
 
       {/* Leave Application Modal */}
       <Modal show={showModal} onClose={() => setShowModal(false)} size="md">

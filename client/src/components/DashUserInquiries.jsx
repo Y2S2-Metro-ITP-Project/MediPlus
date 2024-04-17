@@ -79,7 +79,13 @@ export default function DashUserInquiries() {
         console.log(error);
       }
     };
-    if (currentUser.isUser) {
+    if (
+      currentUser.isUser ||
+      currentUser.isHeadNurse ||
+      currentUser.isReceptionist ||
+      currentUser.isOutPatient ||
+      currentUser.isInPatient
+    ) {
       fetchUserInquires();
     }
   }, [currentUser._id]);
@@ -137,23 +143,26 @@ export default function DashUserInquiries() {
     e.preventDefault();
     const selectedOption = e.target.value;
     try {
-      const res = await fetch(`/api/inquiry/filterUserInquiry/${currentUser._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ filterOption: selectedOption }),
-      });
+      const res = await fetch(
+        `/api/inquiry/filterUserInquiry/${currentUser._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ filterOption: selectedOption }),
+        }
+      );
       const data = await res.json();
-      if(res.ok){
+      if (res.ok) {
         setInquirires(data);
         setShowMore(data.length >= 9);
-      }else{
+      } else {
         setInquirires([]);
       }
     } catch (error) {
       console.log(error.message);
-      toast.error(error.message)
+      toast.error(error.message);
     }
   };
   const handleReplySubmit = async (e) => {
@@ -180,7 +189,28 @@ export default function DashUserInquiries() {
       console.log(error.message);
     }
   };
-  const handleSearch = async (e) => {};
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/inquiry/searchUserInquiries/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ searchTerm }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setInquirires(data);
+        setShowMore(data.length >= 9);
+      } else {
+        setInquirires([]);
+      }
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message);
+    }
+  };
 
   const handleReset = async () => {
     setSearchTerm("");
@@ -254,7 +284,7 @@ export default function DashUserInquiries() {
       <ToastContainer />
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <form onSubmit={handleSearch}>
+          <form>
             <TextInput
               type="text"
               placeholder="Search...."
@@ -290,7 +320,8 @@ export default function DashUserInquiries() {
       </div>
       {(currentUser.isUser ||
         currentUser.isReceptionist ||
-        currentUser.isUser) &&
+        currentUser.isOutPatient ||
+        currentUser.isInPatient) &&
       inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
