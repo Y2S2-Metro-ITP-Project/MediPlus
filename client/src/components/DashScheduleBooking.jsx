@@ -652,8 +652,7 @@ export default function ScheduleAppointment() {
                     <option value="">Select Room Type</option>
                     <option value="1">Consultation Room</option>
                     <option value="2">OPD</option>
-                    <option value="3">Emergency Room</option>{" "}
-                    {/* Example of another room type */}
+                    <option value="3">Emergency Room</option>
                   </Select>
                 </div>
               )}

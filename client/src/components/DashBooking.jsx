@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Button, Label, Modal, Select, Table, TextInput } from "flowbite-react";
-import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { HiArrowNarrowUp, HiOutlineExclamationCircle } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import { AiOutlineSearch } from "react-icons/ai";
-import { FaTimes, FaCheck } from "react-icons/fa";
+import { FaCalendar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import TextArea from "./TextArea";
 
 export default function Booking() {
   const { currentUser } = useSelector((state) => state.user);
   const [bookings, setBookings] = useState([]);
-  const [showMore, setShowMore] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingIdToDelete, setBookingIdToDelete] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -28,10 +27,37 @@ export default function Booking() {
   const [patientOptions, setPatientOptions] = useState([]);
   const [reason, setReason] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [pendingBookings, setPendingBookings] = useState(0);
+  const [completedBookings, setCompletedBookings] = useState(0);
+  const [cancelledBookings, setCancelledBookings] = useState(0);
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [showBookingDetailsModal, setShowBookingDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showViewBookingModal,setShowViewBookingModal] = useState(false);
 
-  const handleReasonChange = (newValue) => {
-    setReason(newValue);
-  };
+  //Pagination
+  const bookingsPerPage = 5;
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const indexOfLastBooking = currentPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = filteredBookings.slice(
+    indexOfFirstBooking,
+    indexOfLastBooking
+  );
+
+  useEffect(() => {
+    const timeSlots = generateTimeSlots();
+    setTimeSlots(timeSlots);
+    if (
+      currentUser.isAdmin ||
+      currentUser.isDoctor ||
+      currentUser.isReceptionist
+    ) {
+      fetchBookings();
+      fetchPatient();
+    }
+  }, [currentUser._id]);
 
   const fetchBookings = async () => {
     try {
@@ -55,12 +81,40 @@ export default function Booking() {
           filteredBookings.map(async (booking) => {
             const doctorName = await fetchDoctorName(booking.doctorId);
             const patientName = await fetchPatientName(booking.patientId);
-            return { ...booking, doctorName, patientName };
+
+            // Format date with time
+            const date = new Date(booking.date);
+            const formattedDate = `${date.toLocaleDateString()} ${
+              booking.time
+            }`;
+
+            return { ...booking, doctorName, patientName, formattedDate };
           })
         );
 
-        // Sort the bookings in ascending order based on date and time
-        // Sort the bookings in ascending order based on date and time
+        const currentDate = new Date().toLocaleDateString();
+
+        const bookingsForToday = filteredBookings.filter((booking) => {
+          const bookingDate = new Date(booking.date).toLocaleDateString();
+          return bookingDate === currentDate;
+        });
+
+        const total = bookingsForToday.length;
+        const pending = bookingsForToday.filter(
+          (booking) => booking.status === "Pending Payment"
+        ).length;
+        const completed = bookingsForToday.filter(
+          (booking) => booking.status === "Completed"
+        ).length;
+        const cancelled = bookingsForToday.filter(
+          (booking) => booking.status === "Cancelled"
+        ).length;
+
+        setTotalBookings(total);
+        setPendingBookings(pending);
+        setCompletedBookings(completed);
+        setCancelledBookings(cancelled);
+
         // Sort the bookings in ascending order based on date and time
         updatedBookings.sort((a, b) => {
           // Parse the date strings into Date objects
@@ -93,47 +147,23 @@ export default function Booking() {
         });
 
         setBookings(updatedBookings);
+        setFilteredBookings(updatedBookings);
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  useEffect(() => {
-    if (
-      currentUser.isAdmin ||
-      currentUser.isDoctor ||
-      currentUser.isReceptionist
-    ) {
-      fetchBookings();
-      fetchPatient();
-    }
-  }, [currentUser._id]);
-
-  const handleBookModal = (booking) => {
-    setBookingData(booking);
-    setSelectedBooking(booking);
-    console.log("Selected Booking:", booking);
-    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
-    setFormData({
-      type: booking.type,
-      roomNo: booking.roomNo,
-      date: formattedDate,
-      time: booking.time, // Assuming booking object has a 'time' property
-    });
-    setShowBookModal(true); // Show the book modal
-  };
-
   const fetchPatient = async () => {
     try {
-      const response = await fetch("/api/user/getPatients");
+      const response = await fetch("/api/patient/getPatientsforBooking");
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message);
+        throw newError(data.message);
       }
       const options = data.map((patient) => ({
         value: patient._id,
-        label: patient.username,
+        label: patient.name,
       }));
       console.log("Patient Options:", options); // Log patient options
       setPatientOptions(options);
@@ -142,23 +172,189 @@ export default function Booking() {
     }
   };
 
-  const handleShowMore = async () => {
-    const startIndex = bookings.length;
+  const fetchDoctorName = async (doctorId) => {
     try {
-      const res = await fetch(
-        `/api/booking/getBookings?&startIndex=${startIndex}`
-      );
+      const res = await fetch(`/api/user/${doctorId}`);
       const data = await res.json();
       if (res.ok) {
-        setBookings((prev) => [...prev, ...data.bookings]);
-        if (data.bookings.length < 9) {
-          setShowMore(false);
-        }
+        return data.username;
       }
+      return "Unknown";
     } catch (error) {
-      console.log(error.message);
+      console.error(error);
+      return "Unknown";
     }
   };
+
+  const fetchPatientName = async (patientId) => {
+    try {
+      const res = await fetch(`/api/patient/getPatient/${patientId}`);
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Patient Name:", data.name);
+        return data.name;
+      }
+      return "Not Assigned";
+    } catch (error) {
+      console.error(error);
+      return "Not Assgined";
+    }
+  };
+
+  const handleBookModal = (booking) => {
+    setBookingData(booking);
+    setSelectedBooking(booking);
+    console.log("Selected Booking:", booking);
+    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
+
+    let roomName; // Declare roomName variable without assignment
+
+    if (booking.roomNo == "1") {
+      roomName = "Consultation";
+    } else if (booking.roomNo == "2") {
+      roomName = "OPD";
+    } else if (booking.roomNo == "3") {
+      roomName = "Emergency Room";
+    }
+
+    setFormData({
+      type: booking.type,
+      roomNo: roomName,
+      date: formattedDate,
+      time: booking.time,
+      doctorName: booking.doctorName,
+    });
+
+    console.log("Booking Data:", roomName);
+
+    setShowBookModal(true); // Show the book modal
+  };
+
+  const handleBookAppointment = async (e) => {
+    e.preventDefault();
+    try {
+      if (!selectedPatientId || !bookingData._id) {
+        toast.error("Patient ID and Booking ID are required");
+        return;
+      }
+
+      const booking = {
+        _id: bookingData._id,
+        patientId: selectedPatientId,
+      };
+
+      console.log("Booking data:", booking);
+
+      const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(booking),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to book appointment");
+      }
+
+      setFormData({});
+      setSelectedTimeSlots([]);
+      setShowBookModal(false);
+      toast.success("Appointment Booked Successfully");
+      fetchBookings(); // Assuming fetchBookings fetches the updated list of bookings
+    } catch (error) {
+      toast.error(error.message || "Failed to book appointment");
+      console.error(error);
+    }
+  };
+
+  const handleUpdateBooking = (booking) => {
+    setSelectedBooking(booking);
+    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
+    setFormData({
+      type: booking.type,
+      roomNo: booking.roomNo,
+      date: formattedDate,
+      patient: booking.patientId,
+      time: booking.time,
+      status: booking.status,
+      selectedPatientId: booking.patientId, // Set the selected patient ID here
+    });
+    setSelectedPatientId(booking.patientId); // Set the selected patient ID here
+    setShowUpdateModal(true);
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { type, date, roomNo, status, time } = formData; // Remove 'patient' from here
+
+      // Add patient to formData with selectedPatientId
+      const updatedBooking = {
+        _id: selectedBooking._id,
+        type,
+        date,
+        time,
+        roomNo,
+        status,
+        patientId: selectedPatientId, // Use selectedPatientId here
+      };
+
+      if (!type || !date || !time || !selectedPatientId || !status) {
+        // Change 'patient' to 'selectedPatientId'
+        toast.error("Type, date, time, patient, and status are required"); // Change 'patient' to 'selectedPatientId'
+        return;
+      }
+
+      console.log("Updated Booking:", updatedBooking);
+
+      const res = await fetch(`/api/booking/update/${selectedBooking._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedBooking),
+      });
+
+      const data = await res.json();
+
+      console.log("Response:", data);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update booking");
+      }
+
+      setFormData({});
+      setSelectedTimeSlots([]);
+      setShowUpdateModal(false);
+      setSelectedBooking(null);
+      toast.success("Booking Updated Successfully");
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.message || "Failed to update booking");
+      console.error(error);
+    }
+  };
+
+  const handleViewBookingDetails = (booking) => {
+    setSelectedBooking(booking);
+    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
+    setFormData({
+        type: booking.type,
+        roomNo: booking.roomNo || '',
+        date: formattedDate || '',
+        doctorName: booking.doctorName || '', // Set doctorName
+        patientName: booking.patientName || '', // Set patientName
+        time: booking.time || '',
+        status: booking.status || '',
+        selectedPatientId: booking.patientId || '',
+    });
+    setShowViewBookingModal(true);
+};
+
+
 
   const handleBookingDelete = async (bookingId) => {
     try {
@@ -187,6 +383,22 @@ export default function Booking() {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const searchQuery = e.target.value.toLowerCase();
+    const filteredBookings = bookings.filter((booking) => {
+      // Customize this condition based on your search requirements
+      return (
+        booking.doctorName.toLowerCase().includes(searchQuery) ||
+        booking.patientName.toLowerCase().includes(searchQuery) ||
+        booking.type.toLowerCase().includes(searchQuery) ||
+        new Date(booking.date).toLocaleDateString().includes(searchQuery) ||
+        booking.time.includes(searchQuery)
+      );
+    });
+    setFilteredBookings(filteredBookings);
+  };
+
   const handleFilterChange = async (e) => {
     e.preventDefault();
     const selectedOption = e.target.value;
@@ -206,43 +418,117 @@ export default function Booking() {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleStatusFilterChange = async (e) => {
     e.preventDefault();
-    const searchTerm = e.target.value.toLowerCase(); // Convert search term to lowercase for case-insensitive search
-    const filteredBookings = bookings.filter((booking) => {
-      // Check if the doctor or patient name contains the search term
-      const doctorName = booking.doctorName.toLowerCase();
-      const patientName = booking.patientName.toLowerCase();
-      return (
-        doctorName.includes(searchTerm) || patientName.includes(searchTerm)
-      );
-    });
-    setBookings(filteredBookings);
+    const selectedStatus = e.target.value;
+    const filteredBookings = bookings.filter(
+      (booking) => booking.status === selectedStatus
+    );
+    setFilteredBookings(filteredBookings);
   };
 
-  const handleReset = async () => {
+  const toggleSelectAll = () => {
+    setSelectAll(!selectAll);
+    const updatedBookings = bookings.map((booking) => {
+      return { ...booking, isSelected: !selectAll };
+    });
+    setBookings(updatedBookings);
+  };
+
+  const handleSelectBooking = (index) => {
+    const updatedBookings = [...bookings];
+    updatedBookings[index].isSelected = !updatedBookings[index].isSelected;
+    setBookings(updatedBookings);
+  };
+
+  const handleCancelSelected = async () => {
     try {
-      const res = await fetch("/api/booking/getBookings");
+      const selectedIds = bookings
+        .filter((booking) => booking.isSelected)
+        .map((booking) => booking._id);
+
+      // Make an API call to cancel the selected bookings
+      const res = await fetch("/api/booking/cancelSelected", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingIds: selectedIds }),
+      });
       const data = await res.json();
+
       if (res.ok) {
-        setBookings(data.bookings);
-        if (data.bookings.length < 9) {
-          setShowMore(false);
-        }
+        toast.success(data.message);
+
+        // Clear the isSelected property of each booking
+        const updatedBookings = bookings.map((booking) => ({
+          ...booking,
+          isSelected: false,
+        }));
+        setBookings(updatedBookings);
+        fetchBookings();
+      } else {
+        toast.error(data.error || "Failed to cancel selected bookings");
       }
     } catch (error) {
-      console.log(error.message);
+      toast.error("Failed to cancel selected bookings");
+      console.error(error);
     }
   };
 
-  const handleUpdateBooking = (booking) => {
-    setSelectedBooking(booking);
-    setFormData({
-      type: booking.type,
-      roomNo: booking.roomNo,
-      date: booking.date,
+  const generateTimeSlots = () => {
+    const timeSlots = [];
+    const startTime = 9; // Start time in 24-hour format (9 AM)
+    const endTime = 24; // End time in 24-hour format (12 AM)
+
+    for (let hour = startTime; hour <= endTime; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const formattedHour = hour < 10 ? `0${hour}` : hour;
+        const formattedMinute = minute === 0 ? "00" : minute;
+        const timeSlot = `${formattedHour}:${formattedMinute}`;
+        timeSlots.push(timeSlot);
+      }
+    }
+
+    return timeSlots;
+  };
+
+  const generateReport = () => {
+    let report = "";
+
+    report += `Total Bookings: ${totalBookings}\n`;
+    report += `Pending Bookings: ${pendingBookings}\n`;
+    report += `Completed Bookings: ${completedBookings}\n`;
+    report += `Cancelled Bookings: ${cancelledBookings}\n\n`;
+
+    report += "Booking Details:\n";
+    bookings.forEach((booking) => {
+      report += `\nDate: ${booking.formattedDate}\n`;
+      report += `Type: ${booking.type}\n`;
+      report += `Doctor: ${booking.doctorName}\n`;
+      report += `Patient: ${booking.patientName}\n`;
+      report += `Status: ${booking.status}\n`;
     });
-    setShowUpdateModal(true);
+
+    console.log(report);
+  };
+
+  const handleReasonChange = (newValue) => {
+    setReason(newValue);
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      const selectedIds = bookings
+        .filter((booking) => booking.isSelected)
+        .map((booking) => booking._id);
+      const promises = selectedIds.map((id) => handleBookingDelete(id));
+      await Promise.all(promises);
+      toast.success("Selected bookings deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete selected bookings");
+      console.error(error);
+    }
   };
 
   const handleAddBooking = async (e) => {
@@ -291,211 +577,91 @@ export default function Booking() {
     }
   };
 
-  const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
+  const handleReset = async () => {
     try {
-      const { type, date, roomNo } = formData;
-      const doctorId = currentUser._id;
-
-      if (!type || !date || selectedTimeSlots.length === 0) {
-        toast.error("Type, date, and at least one time slot are required");
-        return;
-      }
-
-      for (const time of selectedTimeSlots) {
-        const updatedBooking = {
-          _id: selectedBooking._id,
-          type,
-          doctorId,
-          date,
-          time,
-          roomNo,
-        };
-
-        const res = await fetch("/api/booking/update", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedBooking),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to update booking");
-        }
-      }
-
-      setFormData({});
-      setSelectedTimeSlots([]);
-      setShowUpdateModal(false);
-      setSelectedBooking(null);
-      toast.success("Booking Updated Successfully");
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.message || "Failed to update booking");
-      console.error(error);
-    }
-  };
-
-  const handleBookAppointment = async (e) => {
-    e.preventDefault();
-    try {
-      if (!selectedPatientId || !bookingData._id) {
-        toast.error("Patient ID and Booking ID are required");
-        return;
-      }
-
-      const booking = {
-        _id: bookingData._id,
-        patientId: selectedPatientId,
-      };
-
-      console.log("Booking data:", booking);
-
-      const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(booking),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to book appointment");
-      }
-
-      setFormData({});
-      setSelectedTimeSlots([]);
-      setShowBookModal(false);
-      toast.success("Appointment Booked Successfully");
-      fetchBookings(); // Assuming fetchBookings fetches the updated list of bookings
-    } catch (error) {
-      toast.error(error.message || "Failed to book appointment");
-      console.error(error);
-    }
-  };
-
-  const generateTimeSlots = () => {
-    const timeSlots = [];
-    const startTime = 9; // Start time in 24-hour format (9 AM)
-    const endTime = 24; // End time in 24-hour format (12 AM)
-
-    for (let hour = startTime; hour <= endTime; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const formattedHour = hour < 10 ? `0${hour}` : hour;
-        const formattedMinute = minute === 0 ? "00" : minute;
-        const timeSlot = `${formattedHour}:${formattedMinute}`;
-        timeSlots.push(timeSlot);
-      }
-    }
-
-    return timeSlots;
-  };
-
-  useEffect(() => {
-    const timeSlots = generateTimeSlots();
-    setTimeSlots(timeSlots);
-  }, []);
-
-  const toggleSelectAll = () => {
-    setSelectAll(!selectAll);
-    const updatedBookings = bookings.map((booking) => {
-      return { ...booking, isSelected: !selectAll };
-    });
-    setBookings(updatedBookings);
-  };
-
-  const handleSelectBooking = (index) => {
-    const updatedBookings = [...bookings];
-    updatedBookings[index].isSelected = !updatedBookings[index].isSelected;
-    setBookings(updatedBookings);
-  };
-
-  const handleDeleteSelected = async () => {
-    try {
-      const selectedIds = bookings
-        .filter((booking) => booking.isSelected)
-        .map((booking) => booking._id);
-      const promises = selectedIds.map((id) => handleBookingDelete(id));
-      await Promise.all(promises);
-      toast.success("Selected bookings deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete selected bookings");
-      console.error(error);
-    }
-  };
-
-  const fetchDoctorName = async (doctorId) => {
-    try {
-      const res = await fetch(`/api/user/${doctorId}`);
+      const res = await fetch("/api/booking/getBookings");
       const data = await res.json();
       if (res.ok) {
-        return data.username;
-      }
-      return "Unknown";
-    } catch (error) {
-      console.error(error);
-      return "Unknown";
-    }
-  };
-
-  //function to fetch patient name
-  const fetchPatientName = async (patientId) => {
-    try {
-      const res = await fetch(`/api/user/${patientId}`);
-      const data = await res.json();
-      if (res.ok) {
-        return data.username;
-      }
-      return "Not Assigned";
-    } catch (error) {
-      console.error(error);
-      return "Not Assgined";
-    }
-  };
-
-  const handleCancelSelected = async () => {
-    try {
-      const selectedIds = bookings
-        .filter((booking) => booking.isSelected)
-        .map((booking) => booking._id);
-
-      // Make an API call to cancel the selected bookings
-      const res = await fetch("/api/booking/cancelSelected", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingIds: selectedIds }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(data.message);
-
-        // Clear the isSelected property of each booking
-        const updatedBookings = bookings.map((booking) => ({
-          ...booking,
-          isSelected: false,
-        }));
-        setBookings(updatedBookings);
-        fetchBookings();
-      } else {
-        toast.error(data.error || "Failed to cancel selected bookings");
+        setBookings(data.bookings);
+        setFilteredBookings(data.bookings); // Reset filtered bookings
       }
     } catch (error) {
-      toast.error("Failed to cancel selected bookings");
-      console.error(error);
+      console.log(error.message);
     }
   };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
+      <div className="p-3 md:mx-auto">
+        <h1 className="text-3xl font-bold mb-4 ">Todays Bookings</h1>
+        <div className="flex-wrap flex gap-4 justify-center">
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Total Bookings
+                </h3>
+                <p className="text-2xl">{totalBookings}</p>
+              </div>
+              <FaCalendar className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Pending Bookings
+                </h3>
+                <p className="text-2xl">{pendingBookings}</p>
+              </div>
+              <FaCalendar className="bg-yellow-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Completed Bookings
+                </h3>
+                <p className="text-2xl">{completedBookings}</p>
+              </div>
+              <FaCalendar className="bg-green-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+            <div className="flex justify-between">
+              <div className="">
+                <h3 className="text-gray-500 text-md uppercase">
+                  Cancelled Bookings
+                </h3>
+                <p className="text-2xl">{cancelledBookings}</p>
+              </div>
+              <FaCalendar className="bg-red-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="flex mb-2">
         <h1 className="text-3xl font-bold mb-4 ">
           {" "}
@@ -506,34 +672,16 @@ export default function Booking() {
       </div>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          {!(
-            currentUser.isOutPatient ||
-            currentUser.isUser ||
-            currentUser.isInPatient
-          ) && (
-            <Button
-              className="mr-4"
-              gradientDuoTone="purpleToPink"
-              outline
-              onClick={() => setShowAddModal(true)}
-            >
-              Add Booking
-            </Button>
-          )}
-
-          <form onSubmit={handleSearch}>
+          <form onSubmit={(e) => handleSearch(e)}>
             <TextInput
               type="text"
               placeholder="Search...."
               rightIcon={AiOutlineSearch}
               className="hidden lg:inline"
               id="search"
-              onChange={onChange}
+              onChange={handleSearch}
               style={{ width: "300px" }}
             />
-            <Button className="w-12 h-10 lg:hidden" color="gray">
-              <AiOutlineSearch />
-            </Button>
           </form>
         </div>
         <Button
@@ -557,6 +705,20 @@ export default function Booking() {
           <option value="lastyear">Last Year</option>
           <option value="Bydate">By Date</option>
         </select>
+        <select
+          id="statusFilter"
+          onChange={handleStatusFilterChange}
+          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        >
+          <option value="">Filter by Status</option>
+          <option value="Not Booked">Not Booked</option>
+          <option value="Pending Payment">Pending Payment</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Booked">Booked</option>
+        </select>
+        <Button color="purple" onClick={generateReport}>
+          Generate Report
+        </Button>
       </div>
       {(currentUser.isAdmin ||
         currentUser.isDoctor ||
@@ -582,7 +744,7 @@ export default function Booking() {
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
-            {bookings.map((booking, index) => (
+            {currentBookings.map((booking, index) => (
               <Table.Body className="divide-y" key={booking._id}>
                 <Table.Row
                   className={`bg-white dar:border-gray-700 dark:bg-gray-800 ${
@@ -618,9 +780,21 @@ export default function Booking() {
                   </Table.Cell>
                   <Table.Cell>
                     <Link className="text-teal-500 hover:underline">
-                      {booking.status !== "Not Booked" ? (
+                      {booking.status === "Cancelled" ? (
                         <span>
                           <HiOutlineExclamationCircle className="inline-block w-5 h-5 mr-1 text-red-500" />
+                        </span>
+                      ) : booking.status === "Booked" ? (
+                        <span onClick={() => handleViewBookingDetails(booking)}>
+                          View
+                        </span>
+                      ) : booking.status === "Pending Payment" ? (
+                        <span>
+                          <HiOutlineExclamationCircle className="inline-block w-5 h-5 mr-1 text-red-500" />
+                        </span>
+                      ) : booking.status === "Completed" ? (
+                        <span onClick={() => handleGenerateBooking(booking)}>
+                          Generate Booking
                         </span>
                       ) : (
                         <span onClick={() => handleBookModal(booking)}>
@@ -660,14 +834,40 @@ export default function Booking() {
               Cancel Selected
             </Button>
           </div>
-          {showMore && (
+          <div className="flex justify-center mt-6">
             <button
-              onClick={handleShowMore}
-              className="w-full text-teal-500 self-center text-sm py-7"
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-l"
             >
-              Show More
+              Prev
             </button>
-          )}
+            {[
+              ...Array(Math.ceil(filteredBookings.length / bookingsPerPage)),
+            ].map((_, index) => (
+              <button
+                key={index}
+                onClick={() => paginate(index + 1)}
+                className={`mx-1 px-3 py-2 rounded-md ${
+                  currentPage === index + 1
+                    ? "bg-gray-800 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={
+                currentPage ===
+                Math.ceil(filteredBookings.length / bookingsPerPage)
+              }
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-r"
+            >
+              Next
+            </button>
+          </div>
         </>
       ) : (
         <p>You have no Bookings</p>
@@ -699,105 +899,12 @@ export default function Booking() {
           </div>
         </Modal.Body>
       </Modal>
-      <Modal
-        show={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        popup
-        size="xlg"
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Add Booking
-            </h3>
-          </div>
-          <form onSubmit={handleAddBooking}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select
-                  id="type"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.type || ""}
-                >
-                  <option value="">Select Type</option>
-                  <option value="MACS">MACS</option>
-                  <option value="Online Appointment">Online Appointment</option>
-                  <option value="Hospital Booking">Hospital Booking</option>
-                </Select>
-              </div>
-              {formData.type === "Hospital Booking" && (
-                <div>
-                  <Label htmlFor="roomNo">Room No.</Label>
-                  <TextInput
-                    type="number"
-                    id="roomNo"
-                    onChange={onChange}
-                    className="input-field"
-                    value={formData.roomNo || ""}
-                  />
-                </div>
-              )}
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <TextInput
-                  type="date"
-                  id="date"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.date || ""}
-                />
-              </div>
-              <div>
-                <Label htmlFor="time">Time</Label>
-                <Select
-                  id="time"
-                  onChange={(e) =>
-                    setSelectedTimeSlots([...selectedTimeSlots, e.target.value])
-                  }
-                  className="input-field"
-                  value=""
-                >
-                  <option value="">Select Time</option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </Select>
-                <div>
-                  {selectedTimeSlots.map((time) => (
-                    <span key={time}>{time}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center mt-3">
-              <Button color="blue" type="submit" outline>
-                Submit
-              </Button>
-              <Button
-                className="ml-4"
-                color="red"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setFormData({});
-                  setSelectedTimeSlots([]);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
+
       <Modal
         show={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
         popup
-        size="xlg"
+        size="md"
       >
         <Modal.Header />
         <Modal.Body>
@@ -807,83 +914,133 @@ export default function Booking() {
             </h3>
           </div>
           <form onSubmit={handleUpdateSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select
-                  id="type"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.type || ""}
-                >
-                  <option value="">Select Type</option>
-                  <option value="MACS">MACS</option>
-                  <option value="Online Appointment">Online Appointment</option>
-                  <option value="Hospital Booking">Hospital Booking</option>
-                </Select>
-              </div>
-              {formData.type === "Hospital Booking" && (
-                <div>
-                  <Label htmlFor="roomNo">Room No.</Label>
-                  <TextInput
-                    type="number"
-                    id="roomNo"
+            <div className="grid grid-cols-1 gap-6">
+              <div className="flex flex-col items-center">
+                <div className="w-full">
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    id="type"
                     onChange={onChange}
                     className="input-field"
-                    value={formData.roomNo || ""}
+                    value={formData.type || ""}
+                  >
+                    <option value="">Select Type</option>
+                    <option value="MACS">MACS</option>
+                    <option value="Online Appointment">
+                      Online Appointment
+                    </option>
+                    <option value="Hospital Booking">Hospital Booking</option>
+                  </Select>
+                </div>
+                {formData.type === "Hospital Booking" && (
+                  <div className="w-full">
+                    <Label htmlFor="roomNo">Room No.</Label>
+                    <Select
+                      id="roomNo"
+                      onChange={onChange}
+                      className="input-field"
+                      value={formData.roomNo || ""}
+                    >
+                      <option value="">Select Room </option>
+                      <option value="1">Consultaion</option>
+                      <option value="2">OPD</option>
+                      <option value="3">Emergency Room </option>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="w-full">
+                  <Label htmlFor="date">Date</Label>
+                  <TextInput
+                    type="date"
+                    id="date"
+                    onChange={onChange}
+                    className="input-field"
+                    value={formData.date || ""}
                   />
                 </div>
-              )}
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <TextInput
-                  type="date"
-                  id="date"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.date || ""}
-                />
-              </div>
-              <div>
-                <Label htmlFor="time">Time</Label>
-                <Select
-                  id="time"
-                  onChange={(e) =>
-                    setSelectedTimeSlots([...selectedTimeSlots, e.target.value])
-                  }
-                  className="input-field"
-                  value=""
-                >
-                  <option value="">Select Time</option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
+                <div className="w-full">
+                  <Label htmlFor="time">Time</Label>
+                  <Select
+                    id="time"
+                    onChange={(e) =>
+                      setFormData({ ...formData, time: e.target.value })
+                    }
+                    className="input-field"
+                    value={formData.time || ""}
+                  >
+                    <option value="">Select Time</option>
+                    {timeSlots.map((slot) => (
+                      <option key={slot} value={slot}>
+                        {slot}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="w-full">
+                  <Label htmlFor="selectedPatientId" className="mr-2">
+                    Select Patient:
+                  </Label>
+                  <Select
+                    id="selectedPatientId"
+                    className="mt-1"
+                    value={selectedPatientId}
+                    onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
+                    required
+                  >
+                    <option value="">Select Patient</option>
+                    {patientOptions.map((patient) => (
+                      <option key={patient.value} value={patient.value}>
+                        {patient.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="w-full">
+                  <Label htmlFor="status" className="mr-2">
+                    Select Status:
+                  </Label>
+                  <Select
+                    id="status"
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value })
+                    }
+                    className="input-field"
+                    value={formData.status || ""}
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Not Booked" className="text-yellow-500">
+                      Not Booked
                     </option>
-                  ))}
-                </Select>
-                <div>
-                  {selectedTimeSlots.map((time) => (
-                    <span key={time}>{time}</span>
-                  ))}
+                    <option value="Pending Payment" className="text-orange-500">
+                      Pending Payment
+                    </option>
+                    <option value="Cancelled" className="text-red-500">
+                      Cancelled
+                    </option>
+                    <option value="Booked" className="text-green-500">
+                      Booked
+                    </option>
+                  </Select>
                 </div>
               </div>
-            </div>
-            <div className="flex justify-center mt-3">
-              <Button color="blue" type="submit" outline>
-                Update
-              </Button>
-              <Button
-                className="ml-4"
-                color="red"
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setFormData({});
-                  setSelectedTimeSlots([]);
-                  setSelectedBooking(null);
-                }}
-              >
-                Cancel
-              </Button>
+              <div className="flex justify-center mt-3">
+                <Button color="blue" type="submit" outline>
+                  Update
+                </Button>
+                <Button
+                  className="ml-4"
+                  color="red"
+                  onClick={() => {
+                    setShowUpdateModal(false);
+                    setFormData({});
+                    setSelectedTimeSlots([]);
+                    setSelectedBooking(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </form>
         </Modal.Body>
@@ -891,109 +1048,144 @@ export default function Booking() {
       <Modal
         show={showBookModal}
         onClose={() => setShowBookModal(false)}
-        popup
-        size="xl"
+        size="md"
       >
         <Modal.Header />
         <Modal.Body>
           <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Book Appointment
-            </h3>
-          </div>
-          <form onSubmit={handleBookAppointment}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <TextInput
-                  type="text"
-                  id="type"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.type || ""}
-                  readOnly
-                />
-              </div>
-              {formData.type === "Hospital Booking" && (
-                <div>
-                  <Label htmlFor="roomNo">Room No.</Label>
-                  <TextInput
-                    type="number"
-                    id="roomNo"
-                    onChange={onChange}
-                    className="input-field"
-                    value={formData.roomNo || ""}
-                    readOnly
-                  />
+            <h3 className="mb-4 text-lg text-gray-500">Book Appointment</h3>
+            <form onSubmit={handleBookAppointment} className="space-y-6">
+              <div className="grid grid-cols-1gap-6">
+                <div className="flex items-center">
+                  <Label htmlFor="type" className="mr-2">
+                    Type:
+                  </Label>
+                  <span className="text-gray-700">{formData.type || ""}</span>
                 </div>
-              )}
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <TextInput
-                  type="date"
-                  id="date"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.date || ""}
-                  readOnly
-                />
+                <div className="flex items-center">
+                  <Label htmlFor="date" className="mr-2">
+                    Date:
+                  </Label>
+                  <span className="text-gray-700">{formData.date || ""}</span>
+                </div>
+                <div className="flex items-center">
+                  <Label htmlFor="time" className="mr-2">
+                    Time:
+                  </Label>
+                  <span className="text-gray-700">{formData.time || ""}</span>
+                </div>
+                <div className="flex items-center">
+                  <Label htmlFor="doctorName" className="mr-2">
+                    Doctor Name:
+                  </Label>
+                  <span className="text-gray-700">
+                    {formData.doctorName || ""}
+                  </span>
+                </div>
+                {formData.type === "Hospital Booking" && (
+                  <div className="flex items-center">
+                    <Label htmlFor="roomNo" className="mr-2">
+                      Room:
+                    </Label>
+                    <span className="text-gray-700">{formData.roomNo}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center">
+                  <Label htmlFor="selectedPatientId" className="mr-2">
+                    Select Patient:
+                  </Label>
+                  <Select
+                    id="selectedPatientId"
+                    className="mt-1"
+                    onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
+                    required
+                  >
+                    <option value="">Select Patient</option>
+                    {patientOptions.map((patient) => (
+                      <option key={patient.value} value={patient.value}>
+                        {patient.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="time">Time</Label>
-                <TextInput
-                  type="text"
-                  id="time"
-                  onChange={onChange}
-                  className="input-field"
-                  value={formData.time || ""}
-                  readOnly
-                />
-              </div>
-              <div>
-                <Label>Select Patient</Label>
-                <Select
-                  id="selectedPatientId"
-                  className="mt-1"
-                  onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
-                  required
+              <div className="flex justify-center mt-6 space-x-4">
+                <Button color="blue" type="submit" outline>
+                  Book
+                </Button>
+                <Button
+                  color="red"
+                  onClick={() => {
+                    setShowBookModal(false);
+                    setFormData({});
+                    setSelectedTimeSlots([]);
+                  }}
                 >
-                  <option value="">Select Patient</option>
-                  {patientOptions.map((patient) => (
-                    <option key={patient.value} value={patient.value}>
-                      {patient.label}
-                    </option>
-                  ))}
-                </Select>
+                  Cancel
+                </Button>
               </div>
-              <TextInput
-                type="id"
-                id="id"
-                onChange={onChange}
-                className="input-field"
-                value={bookingData._id}
-                isDisabled
-                style={{ display: "none" }} // Inline style to hide the input
-              />
-            </div>
-            <div className="flex justify-center mt-3">
-              <Button color="blue" type="submit" outline>
-                Book
-              </Button>
-              <Button
-                className="ml-4"
-                color="red"
-                onClick={() => {
-                  setShowBookModal(false);
-                  setFormData({});
-                  setSelectedTimeSlots([]);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
+            </form>
+          </div>
         </Modal.Body>
       </Modal>
+      <Modal
+    show={showViewBookingModal}
+    onClose={() => setShowViewBookingModal(false)}
+    size="md"
+>
+    <Modal.Header />
+    <Modal.Body>
+        <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500">View Booking Details</h3>
+            <div className="space-y-6">
+                <div className="flex items-center">
+                    <Label htmlFor="type" className="mr-2">
+                        Type:
+                    </Label>
+                    <span className="text-gray-700">{formData.type || ""}</span>
+                </div>
+                <div className="flex items-center">
+                    <Label htmlFor="date" className="mr-2">
+                        Date:
+                    </Label>
+                    <span className="text-gray-700">{formData.date || ""}</span>
+                </div>
+                <div className="flex items-center">
+                    <Label htmlFor="time" className="mr-2">
+                        Time:
+                    </Label>
+                    <span className="text-gray-700">{formData.time || ""}</span>
+                </div>
+                <div className="flex items-center">
+                    <Label htmlFor="doctorName" className="mr-2">
+                        Doctor Name:
+                    </Label>
+                    <span className="text-gray-700">
+                        {formData.doctorName || ""}
+                    </span>
+                </div>
+                {formData.type === "Hospital Booking" && (
+                    <div className="flex items-center">
+                        <Label htmlFor="roomNo" className="mr-2">
+                            Room:
+                        </Label>
+                        <span className="text-gray-700">{formData.roomNo}</span>
+                    </div>
+                )}
+                <div className="flex items-center">
+                    <Label htmlFor="selectedPatientId" className="mr-2">
+                        Select Patient:
+                    </Label>
+                    <span className="text-gray-700">{formData.selectedPatientId}</span>
+                </div>
+            </div>
+        </div>
+    </Modal.Body>
+</Modal>
+
+
+
     </div>
   );
 }

@@ -562,3 +562,13 @@ export const getPatient = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getPatientsforBooking = async (req, res, next) => {
+  try {
+    const patients = await Patient.find(); // Retrieve all patients from the database
+    res.status(200).json(patients); // Send the retrieved patients as JSON response
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
