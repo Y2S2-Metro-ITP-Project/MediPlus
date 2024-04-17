@@ -341,9 +341,20 @@ export default function Booking() {
   const handleViewBookingDetails = (booking) => {
     setSelectedBooking(booking);
     const formattedDate = new Date(booking.date).toISOString().split("T")[0];
+
+    let roomName; // Declare roomName variable without assignment
+
+    if (booking.roomNo == "1") {
+      roomName = "Consultation";
+    } else if (booking.roomNo == "2") {
+      roomName = "OPD";
+    } else if (booking.roomNo == "3") {
+      roomName = "Emergency Room";
+    }
+
     setFormData({
         type: booking.type,
-        roomNo: booking.roomNo || '',
+        roomNo: roomName || '',
         date: formattedDate || '',
         doctorName: booking.doctorName || '', // Set doctorName
         patientName: booking.patientName || '', // Set patientName
@@ -1174,10 +1185,10 @@ export default function Booking() {
                     </div>
                 )}
                 <div className="flex items-center">
-                    <Label htmlFor="selectedPatientId" className="mr-2">
-                        Select Patient:
+                    <Label htmlFor="patientName" className="mr-2">
+                        Patient Name:
                     </Label>
-                    <span className="text-gray-700">{formData.selectedPatientId}</span>
+                    <span className="text-gray-700">{formData.patientName}</span>
                 </div>
             </div>
         </div>
