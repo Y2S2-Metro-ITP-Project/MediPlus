@@ -581,7 +581,6 @@ export const downloadDoctorOrderReport = async (req, res) => {
       .status(403)
       .json({ message: "You are not allowed to access these resources" });
   }
-  console.log(req.body);
   try {
     const prescriptionOrders = await PrescriptionOrder.find({
       doctorId: req.params.id,
@@ -732,7 +731,6 @@ export const getFilteredOrderData = async (req, res) => {
   }
   try {
     const filterOption = req.body.filterValue;
-    console.log(req.body);
     if (filterOption === "Pending") {
       try {
         const prescriptionOrders = await PrescriptionOrder.find({
@@ -784,7 +782,7 @@ export const getFilteredOrderByPaymentStatusData = async (req, res) => {
   try {
     const filterOption = req.body.filterValue;
     console.log(req.body);
-    if (filterOption === "Pending" || filterOption === "Completed" || filterOption === "Rejected") {
+    if (filterOption === "Pending" || filterOption === "Completed" || filterOption === "Rejected" ) {
       try {
         const prescriptionOrders = await PrescriptionOrder.aggregate([
           {
@@ -818,7 +816,6 @@ export const getFilteredOrderByPaymentStatusData = async (req, res) => {
             }
           }
         ]);
-    
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
         res.status(500).json({ message: error.message });

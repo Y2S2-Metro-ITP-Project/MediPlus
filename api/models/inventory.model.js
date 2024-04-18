@@ -34,11 +34,9 @@ const inventorySchema= new mongoose.Schema({
     },
     supplierName: {
         type:String,
-        required:true
     },
     supplierEmail: {
         type:String,
-        required:true
     },
 },{timestamps:true})
 

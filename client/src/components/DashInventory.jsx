@@ -483,9 +483,7 @@ export default function DashOutPatients() {
           setImageFile(null),
           setImageFileUploadingError(false),
           setImageFileUploadingProgress(false),
-          setFileUploadSuccess(false),
-          fileUploadSuccess(false),
-          setImageFileUploadingError(false);
+          setFileUploadSuccess(false)
       } else {
         toast.error(data.message);
       }

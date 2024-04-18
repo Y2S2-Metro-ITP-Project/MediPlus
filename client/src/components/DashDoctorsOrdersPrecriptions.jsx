@@ -510,7 +510,6 @@ export default function DashDoctorsOrdersPrecriptions() {
           <option value="Completed">Completed</option>
           <option value="Rejected">Rejected</option>
           <option value="Pending">Pending</option>
-          <option value="Not Created">Not Created</option>
         </select>
         <Button
           className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
