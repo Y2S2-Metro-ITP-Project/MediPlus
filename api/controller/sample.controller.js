@@ -1,5 +1,6 @@
 import Sample from "../models/sample.model.js";
 import { errorHandler } from "../utils/error.js";
+import TestOrder from "../models/orderedTest.model.js";
 
 //GET A SAMPLES
 
@@ -77,13 +78,14 @@ export const registerSample = async (req, res) => {
         .json({ message: "You are not allowed to access these resources" });
     }
 
+   
+
     const collectionEmployeeId = req.params.id;
-    const types = req.body.formData.types; 
-    const testOrderId = req.body.formData.testOrderId;
-    const testId = req.body.formData.testId;
-    const patientId = req.body.formData.patientId;
-    const sampleStatus = req.body.formData.sampleStatus;
-    const AssignedStorage = req.body.formData.AssignedStorage;
+    const types = req.body.types; 
+    const testOrderId = req.body.testOrderId;
+    const testId = req.body.testId;
+    const patientId = req.body.patientId;
+   
 
     
     if(
@@ -103,19 +105,33 @@ export const registerSample = async (req, res) => {
 
     const newSamples = uniqueSampleTypesArray.map((sampleType) =>{
 
+
        return  new Sample({
           sampleType, 
           testOrderId,
           testId,
           patientId,
           collectionEmployeeId,
-          sampleStatus,
-          AssignedStorage, 
+       
         });
     });
 
+ 
+
     await Sample.insertMany(newSamples);
-    res.status(201).json({message: ` ${sampleObjects.length} sample object(s) created succesfully`});
+
+    const testOrder = await TestOrder.findById(testOrderId);
+
+    if (!testOrder) {
+      return res.status(404).json({ error: "Test Order Not Found" });
+    }
+
+    testOrder.orderStages="inStorage";
+
+    await testOrder.save();
+    res.status(201).json({message: ` ${newSamples.length} sample object(s) created succesfully`});
+
+
       
       
     } catch (error) {

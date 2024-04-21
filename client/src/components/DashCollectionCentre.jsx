@@ -28,14 +28,12 @@ export default function DashCollectionCentre() {
   const [logSampleModal, setLogSampleModal] = useState(false);
   const [labOrders, setLabOrders] = useState([]);
   const [testOrderToLog, setTestOrderToLog] = useState("");
-  const [orderData, setOrderData] = useState({
-    type: false,
-    testOrderId: false,
-    testId: false,
-    patientId: false,
-    sampleStatus: false,
-    AssignedStorage: false,
-  });
+  
+
+
+
+
+ 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -44,7 +42,7 @@ export default function DashCollectionCentre() {
   const handleSampleLog = async (e) => {
     e.preventDefault();
 
-    console.log(formData);
+   
 
     try {
       const res = await fetch(`/api/sample/logSample/${currentUser._id}`, {
@@ -54,9 +52,10 @@ export default function DashCollectionCentre() {
         },
         body: JSON.stringify(
           formData
-          // patientId: id,
-        ),
+      ),
       });
+
+      
 
       const data = await res.json();
 
@@ -76,20 +75,18 @@ export default function DashCollectionCentre() {
 
 
   const handleSetOrderDetails = (
-    type,
-    testOrderId,
-    testId,
-    patientId,
-    sampleStatus,
-    AssignedStorage
+    orders 
   ) => {
-    setOrderData({
-      type,
-      testOrderId,
-      testId,
-      patientId,
-      sampleStatus,
-      AssignedStorage,
+    const sampleTypes =  orders.testId.map((test) => test.sampleType);
+    const orderId =orders._id;
+    const testIds =orders.testId.map((test) => test._id);
+    const patient = orders.patientId._id;
+  
+    setFormData({
+      types: sampleTypes,
+      testOrderId: orderId,
+      testId: testIds,
+      patientId: patient,
     });
   };
 
@@ -104,8 +101,10 @@ export default function DashCollectionCentre() {
     } catch (error) {
       console.log(error.message);
     }
+
   };
 
+  
   useEffect(() => {
     const fetchTestOrders = async () => {
       try {
@@ -168,12 +167,7 @@ export default function DashCollectionCentre() {
                     <Button
                       onClick={() => {
                         setTestOrderToLog(orders._id);
-                        handleSetOrderDetails(
-                          orders.testId.map((test) => test.sampleType),
-                          orders._id,
-                          orders.testId.map((test) => test._id),
-                          orders.patientId._id
-                        );
+                        handleSetOrderDetails(orders)
                         setLogSampleModal(true);
                       }}
                     >
@@ -219,21 +213,22 @@ export default function DashCollectionCentre() {
           <form onSubmit={handleSampleLog}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <Label htmlFor="type">Sample Type/s</Label>
+                <Label htmlFor="types">Sample Type/s</Label>
                 <TextInput
                   type="text"
-                  placeholder={orderData.type}
-                  id="type"
+                  value={formData.types}
+                  id="types"
                   onChange={handleChange}
                   className="input-field"
                 />
               </div>
 
+
               <div>
-                <Label htmlFor="type">Test Order ID:</Label>
+                <Label htmlFor="testOrderId">Test Order ID:</Label>
                 <TextInput
                   type="text"
-                  placeholder={orderData.testOrderId}
+                  value={formData.testOrderId}
                   id="testOrderId"
                   onChange={handleChange}
                   className="input-field"
@@ -241,22 +236,22 @@ export default function DashCollectionCentre() {
               </div>
 
               <div>
-                <Label htmlFor="type">Test ID/s</Label>
+                <Label htmlFor="testId">Test ID/s</Label>
                 <TextInput
                   type="text"
-                  placeholder={orderData.testId}
-                  id="typeId"
+                  value={formData.testId}
+                  id="testId"
                   onChange={handleChange}
                   className="input-field"
                 />
               </div>
 
               <div>
-                <Label htmlFor="type">patient ID/s</Label>
+                <Label htmlFor="patientId">patient ID/s</Label>
                 <TextInput
                   type="text"
-                  placeholder={orderData.patientId}
-                  id="type"
+                  value={formData.patientId}
+                  id="patientId"
                   onChange={handleChange}
                   className="input-field"
                 />

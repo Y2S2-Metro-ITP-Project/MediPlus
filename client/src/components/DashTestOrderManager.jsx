@@ -6,13 +6,14 @@ import {
   Button,
   TextInput,
   Label,
-  Select,
   TableCell,
   Textarea,
   ModalHeader,
   ModalBody,
   Modal,
+  Checkbox,
 } from "flowbite-react";
+import Select from "react-select";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -22,47 +23,165 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { BiShow } from "react-icons/bi";
 
 const DashTestOrderManager = () => {
-
   const { currentUser } = useSelector((state) => state.user);
-  const  [labOrders, setLabOrders] = useState([]);
+  const [labOrders, setLabOrders] = useState([]);
+
+  const [formData, setFormData] = useState([]);
+
+  const [selectedPatient, setSelectedPatient] = useState("");
+  const [patients, setPatients] = useState([]);
+
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [teststoSubmit, setTeststoSubmit] = useState([]);
+
   const [testOrderIdToDelete, setTestOrderIdToDelete] = useState(" ");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [priority, setPriority] = useState(true);
+  const [AddModal, setAddModal] = useState(false);
 
-  
-
-  
-  useEffect(()=> {
+  useEffect(() => {
     const fetchTestOrders = async () => {
       try {
-        
         const res = await fetch(`/api/labOrder/getTestOrders`);
         const data = await res.json();
-  
-  
-        if(res.ok){
+
+        if (res.ok) {
           setLabOrders(data);
         }
-  
       } catch (error) {
         console.log(error.message);
       }
     };
 
-    if(currentUser.isAdmin || currentUser.isLabTech){
+    if (currentUser.isAdmin || currentUser.isLabTech) {
       fetchTestOrders();
     }
   }, [currentUser._id]);
 
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const res = await fetch(`/api/patient/getPatients`);
+        const data = await res.json();
+        console.log(data);
+        if (res.ok) {
+          setPatients(data.patients);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    if (currentUser.isAdmin || currentUser.isReceptionist) {
+      fetchPatients();
+    }
+  }, [currentUser._id]);
+
+  const optionsPatient = patients.map((patient) => ({
+    value: patient._id,
+    label: patient.name,
+  }));
+
+  const handlePatientSelectChange = (selectedOptions) => {
+    // console.log("handleChange", selectedOptions);
+    const { value } = selectedOptions;
+    // console.log("value from patient",value);
+    setSelectedPatient(value);
+
+    setFormData({
+      ...formData,
+      patientId: value,
+    });
+  };
+
+  //=====================================================
+
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const res = await fetch(`/api/labTest/getTests`);
+        const data = await res.json();
+        console.log(data);
+        if (res.ok) {
+          setTests(data.labtests);
+        }
+      } catch (error) {
+        console.error(error.message);
+      }
+    };
+    if (currentUser.isAdmin || currentUser.isLabTech) {
+      fetchTests();
+    }
+  }, [currentUser._id]);
+
+  const options = tests.map((test) => ({
+    value: test._id,
+    label: test.name,
+  }));
+
+  const handleTestSelectChange = (selectedOptions) => {
+    // console.log("handleChange", selectedOptions);
+    const tests = selectedOptions.map((test) => test.value);
+    //console.log("value from tests:", tests);
+    setTeststoSubmit(tests);
+    setSelectedTests(selectedOptions);
+    setFormData({
+      ...formData,
+      testId: tests,
+    });
+  };
+
+  //========================================================
+
+  const handlePriorityChange = (e) => {
+    setPriority(e.target.checked);
+    setFormData({
+      ...formData,
+      highPriority: priority,
+    });
+  };
+
+  //========================================================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formData,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message);
+      } else {
+        toast.success("Test order placed");
+      }
+
+      setFormData([]);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   //Delete test orders handler
   const handleDeleteTestOrder = async () => {
     setShowDeleteModal(false);
 
     try {
-      const res = await fetch(`/api/labOrder/deleteOrder/${testOrderIdToDelete}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/labOrder/deleteOrder/${testOrderIdToDelete}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       const data = await res.json();
 
@@ -78,17 +197,14 @@ const DashTestOrderManager = () => {
     }
   };
 
-
-
   return (
-    
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 ">
       <div className=" flex justify-between items-center mb-5 ">
         <Button
           className=" "
           gradientDuoTone="purpleToPink"
           outline
-          onClick={() => setAddTestOrderModal(true)} // button not implemented yet
+          onClick={() => setAddModal(true)} // button not implemented yet
         >
           Create Test Order
         </Button>
@@ -100,7 +216,7 @@ const DashTestOrderManager = () => {
             rightIcon={AiOutlineSearch}
             className="hidden lg:inline"
             id="search"
-           //missing handle change here
+            //missing handle change here
             style={{ width: "300px" }}
           />
           <Button className="w-12 h-10 lg:hidden" color="gray">
@@ -109,7 +225,8 @@ const DashTestOrderManager = () => {
         </form>
       </div>
 
-      {currentUser.isAdmin || (currentUser.isLabTech && labOrders.length > 0) ? (
+      {currentUser.isAdmin ||
+      (currentUser.isLabTech && labOrders.length > 0) ? (
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
@@ -133,24 +250,28 @@ const DashTestOrderManager = () => {
                     </div>
                   </Table.Cell>
 
-                  <Table.Cell>{labOrder.testId.map((test) => test.name).join("/")}</Table.Cell>
+                  <Table.Cell>
+                    {labOrder.testId.map((test) => test.name).join("/")}
+                  </Table.Cell>
                   <Table.Cell>{labOrder.DoctorId.username} </Table.Cell>
                   <Table.Cell>
-                    {labOrder.highPriority? "High priortiy" : " Low priority"}
+                    {labOrder.highPriority ? "High priortiy" : " Low priority"}
                   </Table.Cell>
-                  <Table.Cell>{labOrder.paymentComplete? "Payment complete" : "Payment Pending"}</Table.Cell>
-                  <Table.Cell>{labOrder.orderStages}</Table.Cell>
-                 
                   <Table.Cell>
-                    <span
-                      className="text-green-500 hover: cursor-pointer "
-                    >
+                    {labOrder.paymentComplete
+                      ? "Payment complete"
+                      : "Payment Pending"}
+                  </Table.Cell>
+                  <Table.Cell>{labOrder.orderStages}</Table.Cell>
+
+                  <Table.Cell>
+                    <span className="text-green-500 hover: cursor-pointer ">
                       <FaEdit />
                     </span>
                   </Table.Cell>
-                 
+
                   <Table.Cell>
-                  <span
+                    <span
                       onClick={() => {
                         setShowDeleteModal(true);
                         setTestOrderIdToDelete(labOrder._id);
@@ -160,12 +281,10 @@ const DashTestOrderManager = () => {
                       <FaTrashCan />
                     </span>
                   </Table.Cell>
-                  
+
                   <TableCell>
                     {" "}
-                    <span
-                      className=" text-blue-600 hover:cursor-pointer "
-                    >
+                    <span className=" text-blue-600 hover:cursor-pointer ">
                       <BiShow className=" " />
                     </span>
                   </TableCell>
@@ -178,9 +297,8 @@ const DashTestOrderManager = () => {
         <p>There are no test Orders Currently </p>
       )}
 
-
-       {/* DELETE TEST ORDER MODAL */}
-       <Modal
+      {/* DELETE TEST ORDER MODAL */}
+      <Modal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         popup
@@ -205,8 +323,64 @@ const DashTestOrderManager = () => {
         </Modal.Body>
       </Modal>
 
-    </div>
-  )
-}
+      <Modal show={AddModal} onClose={() => setAddModal(false)} popup size="lg">
+        <ModalHeader />
+        <ModalBody>
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            <div>
+              <Label>Select Lab Tests:</Label>
+              <Select
+                isMulti
+                id="labTests"
+                value={selectedTests}
+                options={options}
+                onChange={handleTestSelectChange}
+              />
+            </div>
 
-export default DashTestOrderManager
+            <div>
+              <Label>Select patient:</Label>
+              <Select
+                id="patient"
+                value={selectedPatient}
+                onChange={handlePatientSelectChange}
+                options={optionsPatient}
+                isSearchable={true}
+              />
+            </div>
+
+            <div>
+              <Label> Test order placed by: </Label>
+              <TextInput
+                id="test order employe name"
+                value={currentUser.username}
+                readOnly={true}
+              />
+            </div>
+
+            <div>
+              <Label value="High priority?  " />
+              <Checkbox
+                id="priority"
+                checked={priority}
+                onChange={handlePriorityChange}
+              />
+            </div>
+
+            <div>
+              <p className="p-1 border-solid border-2 border-sky-700 rounded-lg">
+                order total price:
+              </p>
+            </div>
+
+            <Button gradientDuoTone="purpleToPink" outline type="submit">
+              Create Order
+            </Button>
+          </form>
+        </ModalBody>
+      </Modal>
+    </div>
+  );
+};
+
+export default DashTestOrderManager;

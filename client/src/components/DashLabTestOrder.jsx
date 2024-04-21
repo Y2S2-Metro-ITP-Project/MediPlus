@@ -30,9 +30,7 @@ const DashLabTestOrder = () => {
         console.log(data);
         if (res.ok) {
           setPatients(data.patients);
-          if (data.patients.length < 9) {
-            setShowMore(false);
-          }
+         
         }
       } catch (error) {
         console.log(error);

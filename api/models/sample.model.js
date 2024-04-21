@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const sampleSchema = new mongoose.Schema(
   {
-    type: {
+    sampleType: {
       type: String,
       enum:["BLOOD","URINE","STOOL","SALIVA","MUCUS"],
       required: true,
