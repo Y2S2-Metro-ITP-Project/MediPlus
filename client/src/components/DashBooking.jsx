@@ -7,6 +7,8 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { FaCalendar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import TextArea from "./TextArea";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function Booking() {
   const { currentUser } = useSelector((state) => state.user);
@@ -503,25 +505,63 @@ export default function Booking() {
 
     return timeSlots;
   };
+  
 
   const generateReport = () => {
-    let report = "";
-
-    report += `Total Bookings: ${totalBookings}\n`;
-    report += `Pending Bookings: ${pendingBookings}\n`;
-    report += `Completed Bookings: ${completedBookings}\n`;
-    report += `Cancelled Bookings: ${cancelledBookings}\n\n`;
-
-    report += "Booking Details:\n";
-    bookings.forEach((booking) => {
-      report += `\nDate: ${booking.formattedDate}\n`;
-      report += `Type: ${booking.type}\n`;
-      report += `Doctor: ${booking.doctorName}\n`;
-      report += `Patient: ${booking.patientName}\n`;
-      report += `Status: ${booking.status}\n`;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4',
     });
-
-    console.log(report);
+    const marginLeft = 20;
+    const marginRight = 20;
+    const marginTop = 20;
+    const marginBottom = 20;
+  
+    const contentWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
+    const contentHeight = doc.internal.pageSize.getHeight() - marginTop - marginBottom;
+  
+    let report = `
+      <h1 style="text-align: center;">Booking Report</h1>
+      <h2>Summary</h2>
+      <p>Total Bookings: ${totalBookings}</p>
+      <p>Pending Bookings: ${pendingBookings}</p>
+      <p>Completed Bookings: ${completedBookings}</p>
+      <p>Cancelled Bookings: ${cancelledBookings}</p>
+  
+      <h2>Booking Details</h2>
+      <table style="width: 100%; border-collapse: collapse; max-width: ${contentWidth}pt;">
+        <tr>
+          <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Type</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Doctor</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Patient</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
+        </tr>
+        ${bookings.map((booking) => `
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">${booking.formattedDate}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${booking.type}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${booking.doctorName}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${booking.patientName}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${booking.status}</td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
+  
+    doc.setFontSize(12);
+    doc.html(report, {
+      callback: function (doc) {
+        doc.save('report.pdf');
+      },
+      x: marginLeft,
+      y: marginTop,
+      html2canvas: {
+        scale: 1, 
+      },
+      autoPagination: true,
+    });
   };
 
   const handleReasonChange = (newValue) => {

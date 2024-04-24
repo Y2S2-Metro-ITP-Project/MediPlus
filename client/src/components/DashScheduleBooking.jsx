@@ -670,9 +670,15 @@ export default function ScheduleAppointment() {
                 <Label htmlFor="time">Time</Label>
                 <Select
                   id="time"
-                  onChange={(e) =>
-                    setSelectedTimeSlots([...selectedTimeSlots, e.target.value])
-                  }
+                  onChange={(e) => {
+                    const selectedTime = e.target.value;
+                    if (!selectedTimeSlots.includes(selectedTime)) {
+                      setSelectedTimeSlots([
+                        ...selectedTimeSlots,
+                        selectedTime,
+                      ]);
+                    }
+                  }}
                   className="input-field"
                   value=""
                 >
