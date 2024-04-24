@@ -260,7 +260,6 @@ export default function OutPatientPaymentProfile() {
                     <Table.HeadCell>Date</Table.HeadCell>
                     <Table.HeadCell>Order Type</Table.HeadCell>
                     <Table.HeadCell>Status</Table.HeadCell>
-                    <Table.HeadCell>Payment Type</Table.HeadCell>
                     <Table.HeadCell>Price</Table.HeadCell>
                     <Table.HeadCell>Action</Table.HeadCell>
                   </Table.Head>
@@ -278,7 +277,6 @@ export default function OutPatientPaymentProfile() {
                             {payment.status}
                           </span>
                         </Table.Cell>
-                        <Table.Cell>{payment.paymentType}</Table.Cell>
                         <Table.Cell>{payment.totalPayment}</Table.Cell>
                         <Table.Cell>
                           <span className="font-medium text-red-500 hover:underline cursor-pointer">

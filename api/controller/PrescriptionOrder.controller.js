@@ -71,7 +71,13 @@ export const getPrescriptionPatientOrder = async (req, res) => {
   }
   const { id } = req.params;
   try {
-    const prescriptionOrders = await PrescriptionOrder.findById(id);
+    const prescriptionOrders = await PrescriptionOrder.findById(id)
+      .populate("patientId")
+      .populate("doctorId")
+      .populate({
+        path: "prescriptions",
+        populate: { path: "itemId" },
+      });
     res.status(200).json({ prescriptionOrders });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -575,7 +581,6 @@ export const downloadDoctorOrderReport = async (req, res) => {
       .status(403)
       .json({ message: "You are not allowed to access these resources" });
   }
-  console.log(req.body);
   try {
     const prescriptionOrders = await PrescriptionOrder.find({
       doctorId: req.params.id,
@@ -715,6 +720,107 @@ export const downloadDoctorOrderReport = async (req, res) => {
     });
 
     res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getFilteredOrderData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    if (filterOption === "Pending") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Pending",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Completed") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Completed",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Rejected") {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.find({
+          status: "Rejected",
+        })
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getFilteredOrderByPaymentStatusData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    console.log(req.body);
+    if (filterOption === "Pending" || filterOption === "Completed" || filterOption === "Rejected" ) {
+      try {
+        const prescriptionOrders = await PrescriptionOrder.aggregate([
+          {
+            $lookup: {
+              from: "payments",
+              localField: "payment",
+              foreignField: "_id",
+              as: "payment"
+            }
+          },
+          {
+            $match: { "payment.status": filterOption }
+          },
+          {
+            $unwind: "$payment"
+          },
+          {
+            $lookup: {
+              from: "doctors",
+              localField: "doctorId",
+              foreignField: "_id",
+              as: "doctor"
+            }
+          },
+          {
+            $lookup: {
+              from: "patients",
+              localField: "patientId",
+              foreignField: "_id",
+              as: "patient"
+            }
+          }
+        ]);
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

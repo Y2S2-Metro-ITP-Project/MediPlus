@@ -660,3 +660,17 @@ export const downloadByDatePaymentReport = async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 };
+
+export const deletePaymentOrder= async (req, res) => {
+  const paymentOrderID = req.params.id;
+  console.log(paymentOrderID)
+  try {
+    const paymentOrder= await PaymentOrder.findByIdAndDelete(paymentOrderID);
+    if(!paymentOrder){
+      return res.status(404).json({message: "Payment order not found"})
+    }
+    res.status(200).json({message: "Payment order deleted successfully"})
+  } catch (error) {
+    res.status(500).json({message: error.message})
+  }
+}

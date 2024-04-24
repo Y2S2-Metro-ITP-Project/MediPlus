@@ -36,6 +36,7 @@ export default function DashMedicineDispence() {
   const [orders, setOrders] = useState([]);
   const [patient, setPatient] = useState({});
   const [prescriptions, setPrescriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -43,18 +44,14 @@ export default function DashMedicineDispence() {
           `/api/prescriptionOrder/getPrescriptionPatientOrder/${id}`
         );
         const data = await res.json();
+        if(!res.ok) {
+          throw new Error(data.message);
+          setLoading(false);
+        }
         setOrders(data.prescriptionOrders);
-        const res2 = await fetch(
-          `/api/patient/getPatient/${data.prescriptionOrders.patientId}`
-        );
-        const data1 = await res2.json();
-        const res3 = await fetch(
-          `/api/prescription/getPrescriptionsDataOrders/${data.prescriptionOrders.patientId}`
-        );
-        const data2 = await res3.json();
-        setPatient(data1);
-        setPrescriptions(data2.prescriptions);
+        setLoading(false);
       } catch (error) {
+        setLoading(false);
         console.log(error);
       }
     };
@@ -62,9 +59,10 @@ export default function DashMedicineDispence() {
       fetchOrders();
     }
   }, [currentUser._id]);
-
-  console.log(orders.prescriptions);
-  console.log(prescriptions);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  console.log(orders);
   const formatDateOfBirth = (dateOfBirth) => {
     const date = new Date(dateOfBirth);
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -90,10 +88,6 @@ export default function DashMedicineDispence() {
       console.log(error);
     }
   };
-  const totalPrice = prescriptions.reduce(
-    (total, prescription) => total + prescription.totalPrice,
-    0
-  );
   const handleOrderConfirmation = async () => {
     try {
       const res = await fetch(
@@ -103,7 +97,7 @@ export default function DashMedicineDispence() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ totalPayment: totalPrice }),
+          body: JSON.stringify({ totalPayment: totalPrice1 }),
         }
       );
       if (res.ok) {
@@ -129,6 +123,14 @@ export default function DashMedicineDispence() {
       console.log(error);
     }
   };
+  let totalPrice1 = 0;
+
+  orders.prescriptions.forEach((prescription) => {
+    let itemPrice = prescription.itemId.itemPrice;
+    let dosage = prescription.dosage;
+    totalPrice1 += itemPrice * dosage;
+  });
+  console.log(orders.patientId.address)
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
@@ -139,7 +141,7 @@ export default function DashMedicineDispence() {
       </a>
       <div className="flex mb-2">
         <h1 className="text-3xl font-bold mb-4 ">
-          {patient.name} Prescription Order
+          {orders.patientId.name} Prescription Order
         </h1>
       </div>
       <div className="bg-white shadow-md rounded-md p-6 dark:bg-gray-800">
@@ -148,7 +150,7 @@ export default function DashMedicineDispence() {
           <div className="mb-4 flex items-center">
             <p className="text-gray-600 mr-4">Patient Profile</p>
             <img
-              src={patient.patientProfilePicture}
+            src={orders.patientId.patientProfilePicture}
               alt="Patient"
               className="h-20 w-20 rounded-full border-2 border-blue-500"
             />
@@ -156,33 +158,41 @@ export default function DashMedicineDispence() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-gray-600">Name</p>
-              <p className="font-semibold">{patient.name}</p>
+              <p className="font-semibold">{orders.patientId.name}</p>
             </div>
             <div>
               <p className="text-gray-600">Gender</p>
-              <p className="font-semibold">{patient.gender}</p>
+              <p className="font-semibold">{orders.patientId.gender}</p>
             </div>
             <div>
               <p className="text-gray-600">Date of Birth</p>
               <p className="font-semibold">
-                {formatDateOfBirth(patient.dateOfBirth)}
+              {formatDateOfBirth(orders.patientId.dateOfBirth)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Contact Email</p>
-              <p className="font-semibold">{patient.contactEmail}</p>
+              <p className="text-gray-600">Contact Phone</p>
+              <p className="font-semibold">{orders.patientId.contactPhone}</p>
             </div>
             <div>
               <p className="text-gray-600">Identification</p>
-              <p className="font-semibold">{patient.identification}</p>
+              <p className="font-semibold">{orders.patientId.identification}</p>
             </div>
             <div>
               <p className="text-gray-600">Contact Email</p>
-              <p className="font-semibold">{patient.contactPhone}</p>
+              <p className="font-semibold">{orders.patientId.contactEmail}</p>
             </div>
             <div>
               <p className="text-gray-600">Address</p>
-              <p className="font-semibold">{patient.address}</p>
+              <p className="font-semibold">{orders.patientId.address}</p>
+            </div>
+            <div>
+              <p className="text-red-600">Emergency Contact Name</p>
+              <p className="font-semibold">{orders.patientId.emergencyContact.name}</p>
+            </div>
+            <div>
+              <p className="text-red-600">Emergency Contact Phone</p>
+              <p className="font-semibold">{orders.patientId.emergencyContact.phoneNumber}</p>
             </div>
           </div>
         </div>
@@ -197,7 +207,7 @@ export default function DashMedicineDispence() {
             <div className="flex items-center">
               <div className="flex ml-4"></div>
             </div>
-            {prescriptions.length > 0 ? (
+            {orders.prescriptions.length > 0 ? (
               <>
                 <Table hoverable className="shadow-md">
                   <Table.Head>
@@ -208,15 +218,15 @@ export default function DashMedicineDispence() {
                     <Table.HeadCell>Stock Level</Table.HeadCell>
                     <Table.HeadCell>Action</Table.HeadCell>
                   </Table.Head>
-                  {prescriptions.map((prescription) => (
+                  {orders.prescriptions.map((prescription) => (
                     <Table.Body className="divide-y" key={prescription._id}>
                       <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell>{prescription.itemName}</Table.Cell>
+                        <Table.Cell>{prescription.itemId.itemName}</Table.Cell>
                         <Table.Cell>{prescription.dosage}</Table.Cell>
-                        <Table.Cell>{prescription.itemPrice}</Table.Cell>
-                        <Table.Cell>{prescription.totalPrice}</Table.Cell>
+                        <Table.Cell>{prescription.itemId.itemPrice}</Table.Cell>
+                        <Table.Cell>{prescription.itemId.itemPrice * prescription.dosage}</Table.Cell>
                         <Table.Cell>
-                          {prescription.itemQuantity > prescription.dosage ? (
+                          {prescription.itemId.itemQuantity > prescription.dosage ? (
                             <span className="font-bold text-green-500">
                               In Stock
                             </span>
@@ -249,7 +259,7 @@ export default function DashMedicineDispence() {
               {/* Changed flex direction to column */}
               <h1 className="mb-2 font-semibold">Total Price:</h1>
               <span className="font-bold text-xl mb-4">
-                {totalPrice} LKR
+                {totalPrice1} LKR
               </span>{" "}
               {/* Replace with actual total price */}
               <div className="flex">

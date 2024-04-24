@@ -522,9 +522,10 @@ export default function DashOutPatientProfile() {
   {
     /** Handle vitals delete */
   }
-  const handleVitalDelete = async (e) => {
-    if (vitalIdToDelete !== null) {
-      const res = await fetch(`/api/vital/deleteVitals/${vitalIdToDelete}`, {
+  const handleVitalDelete = async (id) => {
+    console.log(id)
+    try {
+      const res = await fetch(`/api/vital/deleteVitals/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -541,7 +542,10 @@ export default function DashOutPatientProfile() {
       fetchPrescriptions();
       fetchDieseases();
       fetchDiagnosticData();
+    } catch (error) {
+      console.log(error);
     }
+    
   };
 
   {
@@ -672,9 +676,9 @@ export default function DashOutPatientProfile() {
   {
     /** Hnadle prescription delete */
   }
-  const handlePrescriptionDelete = async (e) => {
+  const handlePrescriptionDelete = async (id) => {
     const res = await fetch(
-      `/api/prescription/deletePrescription/${prescriptionIdToDelete}`,
+      `/api/prescription/deletePrescription/${id}`,
       {
         method: "DELETE",
         headers: {
@@ -683,7 +687,6 @@ export default function DashOutPatientProfile() {
       }
     );
     if (!res.ok) {
-      console.log("Failed to delete prescription");
       toast.error("Failed to delete prescription");
     } else {
       toast.success("Prescription deleted successfully");
@@ -857,10 +860,10 @@ export default function DashOutPatientProfile() {
   {
     /** Handle Diagnosis Delete */
   }
-  const handleDiagnosisDelete = async (e) => {
+  const handleDiagnosisDelete = async (id) => {
     try {
       const res = await fetch(
-        `/api/diagnosis/deleteDiagnosticData/${diagnosisIDDelete}`,
+        `/api/diagnosis/deleteDiagnosticData/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -1029,8 +1032,8 @@ export default function DashOutPatientProfile() {
             )}
             <span
               onClick={() => {
-                setPrescriptionIdToDelete(prescription._id);
-                handlePrescriptionDelete();
+                //setPrescriptionIdToDelete(prescription._id);
+                handlePrescriptionDelete(prescription._id);
               }}
               className="font-medium text-red-500 hover:underline cursor-pointer"
             >
@@ -1108,8 +1111,8 @@ export default function DashOutPatientProfile() {
           <Table.Cell>
             <span
               onClick={() => {
-                setVitalIdToDelete(vital._id);
-                handleVitalDelete();
+                //setVitalIdToDelete(vital._id);
+                handleVitalDelete(vital._id)
               }}
               className="font-medium text-red-500 hover:underline cursor-pointer"
             >
@@ -1155,8 +1158,8 @@ export default function DashOutPatientProfile() {
           <Table.Cell>
             <span
               onClick={() => {
-                setDiagnosisIDDelete(diagnosis._id);
-                handleDiagnosisDelete();
+                //setDiagnosisIDDelete(diagnosis._id);
+                handleDiagnosisDelete(diagnosis._id);
               }}
               className="font-medium text-red-500 hover:underline cursor-pointer"
             >
@@ -1598,7 +1601,7 @@ export default function DashOutPatientProfile() {
                   (!selectedDiagnosisDate && !selectedDiagnosisDoctor)
                 }
               >
-                Download Prescription Report
+                Download Diagnosis Report
               </Button>
             </div>
             {diagnosticData.length > 0 ? (
@@ -1934,6 +1937,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 36.5 - 37.5"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1944,6 +1948,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 70"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1954,6 +1959,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 1.75"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1964,6 +1970,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 80 - 120"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1976,6 +1983,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 90 - 120"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1988,6 +1996,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 80"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1998,6 +2007,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 100"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -2008,6 +2018,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 12 - 20"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -2018,6 +2029,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 95 - 100"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
             </div>
@@ -2030,6 +2042,7 @@ export default function DashOutPatientProfile() {
                 color="red"
                 onClick={() => {
                   setVitalsModal(false);
+                  setFormData({});
                 }}
               >
                 Cancel
