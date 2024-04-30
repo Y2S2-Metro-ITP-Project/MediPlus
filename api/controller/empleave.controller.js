@@ -129,3 +129,41 @@ export const getUserLeaves = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+export const getTodaysTotalLeave = async (req, res) => {
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    const todaysTotalLeave = await Leave.countDocuments({
+      $or: [
+        { startDate: { $gte: startOfDay, $lt: endOfDay } }, // Leave starts today
+        { endDate: { $gte: startOfDay, $lt: endOfDay } },   // Leave ends today
+        { $and: [
+            { startDate: { $lt: startOfDay } },            // Leave starts before today
+            { endDate: { $gte: endOfDay } }                // Leave ends after today
+          ]
+        }
+      ]
+    });
+
+    res.status(200).json({ todaysTotalLeave });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+  
+
+export const getTotalPendingLeave = async (req, res) => {
+  try {
+    const totalPendingLeave = await Leave.countDocuments({ status: "pending" });
+    console.log("Total pending leave count:", totalPendingLeave);
+    res.status(200).json({ totalPendingLeave });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

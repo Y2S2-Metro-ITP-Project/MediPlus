@@ -149,6 +149,25 @@ export default function DashOutPatientProfile() {
       if (!res.ok) {
         throw new Error(data.message);
       }
+
+      const uniqueDates = [
+        ...new Set(
+          data.diagnosis.map((diagnosis) =>
+            format(new Date(diagnosis.date), "MMMM dd, yyyy")
+          )
+        ),
+      ];
+
+      const uniqueDoctors = [
+        ...new Set(
+          data.diagnosis.map((diagnosis) => ({
+            doctorId: diagnosis.doctorId._id,
+            username: diagnosis.doctorId.username,
+          }))
+        ),
+      ];
+      setDiagnosisDate(uniqueDates);
+      setDiagnosisDoctor(uniqueDoctors);
       setDiagnosticData(data.diagnosis);
     } catch (error) {
       console.error("Error fetching diagnosis:", error);
@@ -620,6 +639,87 @@ export default function DashOutPatientProfile() {
       console.log(error);
     }
   };
+
+  {
+    /** Handle Diagnosis Report Download */
+  }
+  const [selectedDiagnosisDate, setSelectedDiagnosisDate] = useState("");
+  const [selectedDiagnosisDoctor, setSelectedDiagnosisDoctor] = useState("");
+
+  const handleDiagnosisDateChange = (selectedOption) => {
+    setSelectedDiagnosisDate(selectedOption);
+  };
+
+  const handleDiagnosisDoctorChange = (selectedOption) => {
+    setSelectedDiagnosisDoctor(selectedOption);
+  };
+
+  console.log(selectedDiagnosisDate);
+  console.log(selectedDiagnosisDoctor);
+  const handleDownloadDiagnosisReport = async () => {
+    if (selectedDiagnosisDate !== null) {
+      try {
+        const res = await fetch(
+          `/api/diagnosis/DownloadPDFDateDiagnosisDate/${id}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ patientId: id, selectedDiagnosisDate }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${patient.name}-Diagnosis.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    if (selectedDiagnosisDoctor !== null) {
+      try {
+        const res = await fetch(
+          `/api/diagnosis/DownloadPDFDiagnosisDoctor/${id}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              patientId: id,
+              selectedDoctor: selectedDiagnosisDoctor,
+            }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${patient.name}-Diagnosis.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
