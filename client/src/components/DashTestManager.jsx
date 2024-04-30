@@ -172,22 +172,7 @@ export default function DashTestManager() {
     }
   };
 
-  // // VIEW TEST DATA
-  // const handleTestDetailsView = (
-  //   name,
-  //   sampleType,
-  //   sampleVolume,
-  //   completionTime,
-  //   price
-  // ) =>
-  //   setTestData({
-  //     name,
-  //     sampleType,
-  //     sampleVolume,
-  //     completionTime,
-  //     price,
-  //   });
-  // setShowTestData(true);
+
 
   // UPDATE TESTS HANDLER
 

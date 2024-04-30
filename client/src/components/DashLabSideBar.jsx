@@ -38,7 +38,7 @@ export default function DashLabSideBar() {
 
           {/* add current user trace option */}
 
-          <Link to=" ">
+          <Link to="/lab-dashboard?tab=sampleManager">
             <Sidebar.Item
               active={tab === "sampleManager"}
               icon={ImLab}

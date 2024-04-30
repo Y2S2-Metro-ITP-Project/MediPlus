@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.get("/getSamples",verifyToken, getSamples);
 router.get("/getSample/:id",verifyToken, getSample);
-router.post("/registerSample",verifyToken, registerSample);
+router.post("/registerSample",verifyToken, registerSample);// not used in final build 
 router.put("/updateSample/:id",verifyToken, updateSample);
 router.delete("/deleteSample",verifyToken, deleteSample);
 

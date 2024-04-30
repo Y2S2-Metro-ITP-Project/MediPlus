@@ -3,16 +3,50 @@ import { errorHandler } from "../utils/error.js";
 import TestOrder from "../models/orderedTest.model.js";
 
 //GET A SAMPLES
+//======================================================================================================================
 
 export const getSamples = async (req, res) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isDoctor &&
+    !req.user.isNurse &&
+    !req.user.isPharmacist &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isLabTech
+  ) {
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to access these resources" });
+  }
   try {
-    const samples = await Sample.find({});
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+
+    const samples = await Sample.find({})
+      .populate({
+        path: "patientId",
+        select: "name dateOfBirth gender address contactPhone contactEmail",
+      })
+      .populate({
+        path: "testOrderId",
+        select: "DoctorId",
+      })
+      .populate({
+        path: "testId",
+        select: "name",
+      })
+      .sort({ createdAt: sortDirection })
+      .skip(startIndex)
+      .limit(limit);
+
     res.status(200).json(samples);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
+//==============================================================================================================
 //GET UNIQUE LAB TEST
 export const getSample = async (req, res) => {
   try {
@@ -53,70 +87,57 @@ export const registerSample = async (req, res) => {
   try {
     await newSample.save();
     res.status(200).json(newSample);
-   
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
-// LOG SAMPLE/S 
+// LOG SAMPLE/S
 //========================================================================================================================
-  
-  export const logSample = async(req, res, next) => {
 
-    if (
-      !req.user.isAdmin &&
-      !req.user.isDoctor &&
-      !req.user.isNurse &&
-      !req.user.isReceptionist &&
-      !req.user.isHeadNurse &&
-      !req.user.isLabTech
-    ) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to access these resources" });
-    }
+export const logSample = async (req, res, next) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isDoctor &&
+    !req.user.isNurse &&
+    !req.user.isReceptionist &&
+    !req.user.isHeadNurse &&
+    !req.user.isLabTech
+  ) {
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to access these resources" });
+  }
 
-   
+  const collectionEmployeeId = req.params.id;
+  const types = req.body.types;
+  const testOrderId = req.body.testOrderId;
+  const testId = req.body.testId;
+  const patientId = req.body.patientId;
 
-    const collectionEmployeeId = req.params.id;
-    const types = req.body.types; 
-    const testOrderId = req.body.testOrderId;
-    const testId = req.body.testId;
-    const patientId = req.body.patientId;
-   
+  if (
+    !collectionEmployeeId ||
+    !types ||
+    !testOrderId ||
+    !testId ||
+    !patientId
+  ) {
+    return res.status(400).json({ message: "Please fill out all fields" });
+  }
 
-    
-    if(
-      !collectionEmployeeId ||
-      !types ||
-      !testOrderId ||
-      !testId ||
-      !patientId 
-    ){
-        return res.status(400).json({message: "Please fill out all fields"});
-      }
+  const uniqueSampleTypesSet = new Set(types);
+  const uniqueSampleTypesArray = [...uniqueSampleTypesSet];
 
-      const uniqueSampleTypesSet = new Set(types);
-      const uniqueSampleTypesArray = [...uniqueSampleTypesSet];
-
-    try {
-
-    const newSamples = uniqueSampleTypesArray.map((sampleType) =>{
-
-
-       return  new Sample({
-          sampleType, 
-          testOrderId,
-          testId,
-          patientId,
-          collectionEmployeeId,
-       
-        });
+  try {
+    const newSamples = uniqueSampleTypesArray.map((sampleType) => {
+      return new Sample({
+        sampleType,
+        testOrderId,
+        testId,
+        patientId,
+        collectionEmployeeId,
+      });
     });
-
- 
 
     await Sample.insertMany(newSamples);
 
@@ -126,20 +147,18 @@ export const registerSample = async (req, res) => {
       return res.status(404).json({ error: "Test Order Not Found" });
     }
 
-    testOrder.orderStages="inStorage";
+    testOrder.orderStages = "inStorage";
 
     await testOrder.save();
-    res.status(201).json({message: ` ${newSamples.length} sample object(s) created succesfully`});
-
-
-      
-      
-    } catch (error) {
-      res.status(500).json({message: error.message});
-    }
-
+    res
+      .status(201)
+      .json({
+        message: ` ${newSamples.length} sample object(s) created succesfully`,
+      });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
+};
 
 //UPDATE EXISTING SAMPLE
 
