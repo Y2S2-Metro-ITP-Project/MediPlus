@@ -154,15 +154,6 @@ export default function DashSideBar() {
                   Book Appointment
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=bookingOrders">
-                <Sidebar.Item
-                  active={tab === "bookingOrders"}
-                  icon={HiOutlineUserGroup}
-                  as="div"
-                >
-                  BookingOrders
-                </Sidebar.Item>
-              </Link>
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
@@ -335,15 +326,7 @@ export default function DashSideBar() {
                   Appointment
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=bookingOrders">
-                <Sidebar.Item
-                  active={tab === "bookingOrders"}
-                  icon={HiOutlineUserGroup}
-                  as="div"
-                >
-                  BookingOrders
-                </Sidebar.Item>
-              </Link>
+              
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
