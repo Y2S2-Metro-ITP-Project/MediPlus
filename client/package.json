@@ -17,6 +17,7 @@
     "firebase": "^10.8.1",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.7.8",
+    "html2pdf.js": "^0.10.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "mdb-react-ui-kit": "^7.2.0",

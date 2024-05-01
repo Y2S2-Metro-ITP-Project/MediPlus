@@ -7,8 +7,9 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { FaCalendar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import TextArea from "./TextArea";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import html2pdf from "html2pdf.js";
 
 export default function Booking() {
   const { currentUser } = useSelector((state) => state.user);
@@ -36,9 +37,9 @@ export default function Booking() {
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [showBookingDetailsModal, setShowBookingDetailsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showViewBookingModal,setShowViewBookingModal] = useState(false);
+  const [showViewBookingModal, setShowViewBookingModal] = useState(false);
 
-  //Pagination
+  // Pagination
   const bookingsPerPage = 5;
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const indexOfLastBooking = currentPage * bookingsPerPage;
@@ -161,7 +162,7 @@ export default function Booking() {
       const response = await fetch("/api/patient/getPatientsforBooking");
       const data = await response.json();
       if (!response.ok) {
-        throw newError(data.message);
+        throw new Error(data.message);
       }
       const options = data.map((patient) => ({
         value: patient._id,
@@ -199,7 +200,7 @@ export default function Booking() {
       return "Not Assigned";
     } catch (error) {
       console.error(error);
-      return "Not Assgined";
+      return "Not Assigned";
     }
   };
 
@@ -355,19 +356,17 @@ export default function Booking() {
     }
 
     setFormData({
-        type: booking.type,
-        roomNo: roomName || '',
-        date: formattedDate || '',
-        doctorName: booking.doctorName || '', // Set doctorName
-        patientName: booking.patientName || '', // Set patientName
-        time: booking.time || '',
-        status: booking.status || '',
-        selectedPatientId: booking.patientId || '',
+      type: booking.type,
+      roomNo: roomName || "",
+      date: formattedDate || "",
+      doctorName: booking.doctorName || "", // Set doctorName
+      patientName: booking.patientName || "", // Set patientName
+      time: booking.time || "",
+      status: booking.status || "",
+      selectedPatientId: booking.patientId || "",
     });
     setShowViewBookingModal(true);
-};
-
-
+  };
 
   const handleBookingDelete = async (bookingId) => {
     try {
@@ -437,7 +436,22 @@ export default function Booking() {
     const filteredBookings = bookings.filter(
       (booking) => booking.status === selectedStatus
     );
-    setFilteredBookings(filteredBookings);
+
+    // Update filtered bookings with doctor and patient names
+    const updatedBookings = await Promise.all(
+      filteredBookings.map(async (booking) => {
+        const doctorName = await fetchDoctorName(booking.doctorId);
+        const patientName = await fetchPatientName(booking.patientId);
+
+        // Format date with time
+        const date = new Date(booking.date);
+        const formattedDate = `${date.toLocaleDateString()} ${booking.time}`;
+
+        return { ...booking, doctorName, patientName, formattedDate };
+      })
+    );
+
+    setFilteredBookings(updatedBookings);
   };
 
   const toggleSelectAll = () => {
@@ -505,64 +519,344 @@ export default function Booking() {
 
     return timeSlots;
   };
-  
 
   const generateReport = () => {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: 'a4',
-    });
     const marginLeft = 20;
     const marginRight = 20;
     const marginTop = 20;
     const marginBottom = 20;
-  
-    const contentWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
-    const contentHeight = doc.internal.pageSize.getHeight() - marginTop - marginBottom;
-  
+
+    const contentWidth = document.body.clientWidth - marginLeft - marginRight;
+    const contentHeight = document.body.clientHeight - marginTop - marginBottom;
+
+    const currentDate = new Date().toISOString().slice(0, 10); // Get current date in "YYYY-MM-DD" format
+
+    const filename = `AppointmentReport_${currentDate}.pdf`; // Construct filename with current date
+
+
     let report = `
-      <h1 style="text-align: center;">Booking Report</h1>
-      <h2>Summary</h2>
-      <p>Total Bookings: ${totalBookings}</p>
-      <p>Pending Bookings: ${pendingBookings}</p>
-      <p>Completed Bookings: ${completedBookings}</p>
-      <p>Cancelled Bookings: ${cancelledBookings}</p>
-  
-      <h2>Booking Details</h2>
-      <table style="width: 100%; border-collapse: collapse; max-width: ${contentWidth}pt;">
-        <tr>
-          <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Type</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Doctor</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Patient</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
-        </tr>
-        ${bookings.map((booking) => `
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${booking.formattedDate}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${booking.type}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${booking.doctorName}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${booking.patientName}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${booking.status}</td>
-          </tr>
-        `).join('')}
-      </table>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Report</title>
+    <style>
+    .top_rw{ background-color:#f4f4f4; }
+    .td_w{ }
+    button{ padding:5px 10px; font-size:14px;}
+    .invoice-box {
+        max-width: 890px;
+        margin: auto;
+        padding:10px;
+        border: 1px solid #eee;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+        font-size: 14px;
+        line-height: 24px;
+        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+        color: #555;
+    }
+    .invoice-box table {
+        width: 100%;
+        line-height: inherit;
+        text-align: left;
+        border-bottom: solid 1px #ccc;
+    }
+    .invoice-box table td {
+        padding: 5px;
+        vertical-align:top; /* Adjusted vertical alignment */
+    }
+    .invoice-box table tr td:nth-child(2) {
+        text-align: left; /* Adjusted text alignment */
+    }
+    .invoice-box table tr.top table td {
+        padding-bottom: 20px;
+    }
+    .invoice-box table tr.top table td.title {
+        font-size: 45px;
+        line-height: 45px;
+        color: #333;
+    }
+    .invoice-box table tr.information table td {
+        padding-bottom: 10px; /* Adjusted padding */
+    }
+    .invoice-box table tr.heading td {
+        background: #eee;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+        font-size:12px;
+    }
+    .invoice-box table tr.details td {
+        padding-bottom: 10px; /* Adjusted padding */
+    }
+    .invoice-box table tr.item td{
+        border-bottom: 1px solid #eee;
+    }
+    .invoice-box table tr.item.last td {
+        border-bottom: none;
+    }
+    .invoice-box table tr.total td:nth-child(2) {
+        border-top: 2px solid #eee;
+        font-weight: bold;
+    }
+    @media only screen and (max-width: 600px) {
+        .invoice-box table tr.top table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+        .invoice-box table tr.information table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+    }
+    /** RTL **/
+    .rtl {
+        direction: rtl;
+        font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+    }
+    .rtl table {
+        text-align: right;
+    }
+    .rtl table tr td:nth-child(2) {
+        text-align: left;
+    }
+    </style>
+    </head>
+    <body>
+    
+    <div class="invoice-box">
+        <table cellpadding="0" cellspacing="0">
+            <tr class="top_rw">
+                <td colspan="2">
+                    <h2 style="margin-bottom: 0px;"> Isamils Hospital Pvt Ltd </h2>
+                    <span style=""> Booking Report </span>
+                </td>
+            </tr>
+            <tr class="information">
+                <td colspan="2">
+                    <b>Hospital Information:</b> <br>
+                    <b>Hospital Name:</b> Isamils Hospital Pvt Ltd <br>
+                    <b>Address:</b> 123, Sample Street, City, Country <br>
+                    <b>Phone:</b> +1234567890 <br>
+                    <b>Email:</b> info@example.com <br>
+                </td>
+            </tr>
+        </table>
+        <h2 style="margin-bottom: 20px;">Booking Details</h2>
+        <table cellpadding="0" cellspacing="0">
+          <tr class="heading">
+          <td style="width:15%;">Date</td>
+          <td style="width:15%;">Type</td>
+          <td style="width:15%;">Room</td>
+          <td style="width:20%;">Doctor</td>
+          <td style="width:25%;">Patient</td>
+          <td style="width:15%;">Status</td>
+      </tr>
+      <tbody>
+                ${filteredBookings.map(
+                  (booking) => {
+                    let roomName;
+
+                    if (booking.roomNo == "1") {
+                      roomName = "Consultation";
+                    } else if (booking.roomNo == "2") {
+                      roomName = "OPD";
+                    } else if (booking.roomNo == "3") {
+                      roomName = "Emergency Room";
+                    }
+
+                    return `
+                    <tr class="item">
+                        <td>${booking.formattedDate}</td>
+                        <td>${booking.type}</td>
+                        <td>${roomName}</td>
+                        <td>${booking.doctorName}</td>
+                        <td>${booking.patientName}</td>
+                        <td>${booking.status}</td>
+                    </tr>
+                    `;
+                  }
+                ).join('')}
+      </tbody>
+        </table>
+    </div>
+    
+    </body>
+    </html>
+    
     `;
-  
-    doc.setFontSize(12);
-    doc.html(report, {
-      callback: function (doc) {
-        doc.save('report.pdf');
-      },
-      x: marginLeft,
-      y: marginTop,
-      html2canvas: {
-        scale: 1, 
-      },
-      autoPagination: true,
-    });
+
+    html2pdf().from(report).toPdf().save(filename);
   };
+
+  const generateDoctorsReport = () => {
+    const marginLeft = 20;
+    const marginRight = 20;
+    const marginTop = 20;
+    const marginBottom = 20;
+
+    const contentWidth = document.body.clientWidth - marginLeft - marginRight;
+    const contentHeight = document.body.clientHeight - marginTop - marginBottom;
+
+    let roomName = ''; // Initialize roomName variable
+
+    if (filteredBookings.length > 0) {
+        // Get room name from the first booking
+        const firstBooking = filteredBookings[0];
+        if (firstBooking.roomNo == "1") {
+            roomName = "Consultation";
+        } else if (firstBooking.roomNo == "2") {
+            roomName = "OPD";
+        } else if (firstBooking.roomNo == "3") {
+            roomName = "Emergency Room";
+        }
+    }
+
+    // Generate a filename based on doctor's name, date, and starting time
+    const doctorName = filteredBookings[0]?.doctorName || '';
+    const date = new Date().toLocaleDateString().replace(/\//g, '-'); // Replace slashes with hyphens for safe filename
+    const startingTime = filteredBookings.length > 0 ? filteredBookings[0].time : '';
+
+    const filename = `${doctorName}_${date}_${startingTime}.pdf`;
+
+    let report = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Doctor's Daily Schedule</title>
+        <style>
+        .top_rw{ background-color:#f4f4f4; }
+      .td_w{ }
+      button{ padding:5px 10px; font-size:14px;}
+      .invoice-box {
+          max-width: 890px;
+          margin: auto;
+          padding:10px;
+          border: 1px solid #eee;
+          box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+          font-size: 14px;
+          line-height: 24px;
+          font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+          color: #555;
+      }
+      .invoice-box table {
+          width: 100%;
+          line-height: inherit;
+          text-align: left;
+          border-bottom: solid 1px #ccc;
+      }
+      .invoice-box table td {
+          padding: 5px;
+          vertical-align:top; /* Adjusted vertical alignment */
+      }
+      .invoice-box table tr td:nth-child(2) {
+          text-align: left; /* Adjusted text alignment */
+      }
+      .invoice-box table tr.top table td {
+          padding-bottom: 20px;
+      }
+      .invoice-box table tr.top table td.title {
+          font-size: 45px;
+          line-height: 45px;
+          color: #333;
+      }
+      .invoice-box table tr.information table td {
+          padding-bottom: 10px; /* Adjusted padding */
+      }
+      .invoice-box table tr.heading td {
+          background: #eee;
+          border-bottom: 1px solid #ddd;
+          font-weight: bold;
+          font-size:12px;
+      }
+      .invoice-box table tr.details td {
+          padding-bottom: 10px; /* Adjusted padding */
+      }
+      .invoice-box table tr.item td{
+          border-bottom: 1px solid #eee;
+      }
+      .invoice-box table tr.item.last td {
+          border-bottom: none;
+      }
+      .invoice-box table tr.total td:nth-child(2) {
+          border-top: 2px solid #eee;
+          font-weight: bold;
+      }
+      @media only screen and (max-width: 600px) {
+          .invoice-box table tr.top table td {
+              width: 100%;
+              display: block;
+              text-align: center;
+          }
+          .invoice-box table tr.information table td {
+              width: 100%;
+              display: block;
+              text-align: center;
+          }
+      }
+      /** RTL **/
+      .rtl {
+          direction: rtl;
+          font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+      }
+      .rtl table {
+          text-align: right;
+      }
+      .rtl table tr td:nth-child(2) {
+          text-align: left;
+      }
+        </style>
+        </head>
+        <body>
+
+        <div class="invoice-box">
+            <table cellpadding="0" cellspacing="0">
+                <tr class="top_rw">
+                    <td colspan="2">
+                        <h2 style="margin-bottom: 0px;"> Isamils Hospital Pvt Ltd </h2>
+                        <span style=""> Doctor's Daily Schedule </span><br>
+                        <b>Doctor:</b> ${doctorName} <br>
+                        <b>Date:</b> ${new Date().toLocaleDateString()} <br>
+                        <b>Room:</b> ${roomName} <br>
+                    </td>
+                </tr>
+            </table>
+
+            <table cellpadding="0" cellspacing="0">
+                <tr class="heading">
+                    <td style="width:20%;">Time</td>
+                    <td style="width:20%;">Type</td>
+                    <td style="width:60%;">Patient</td>
+                </tr>
+                <tbody>
+                    ${filteredBookings.map(
+                        (booking) => {
+                            return `
+                            <tr class="item">
+                                <td>${booking.time}</td>
+                                <td>${booking.type}</td>
+                                <td>${booking.patientName}</td>
+                            </tr>
+                            `;
+                        }
+                    ).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        </body>
+        </html>
+
+    `;
+
+    html2pdf().from(report).toPdf().save(filename);
+};
+
+
 
   const handleReasonChange = (newValue) => {
     setReason(newValue);
@@ -640,7 +934,6 @@ export default function Booking() {
       console.log(error.message);
     }
   };
-
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -769,6 +1062,9 @@ export default function Booking() {
         </select>
         <Button color="purple" onClick={generateReport}>
           Generate Report
+        </Button>
+        <Button color="purple" onClick={generateDoctorsReport}>
+          Doctors Report
         </Button>
       </div>
       {(currentUser.isAdmin ||
@@ -1181,62 +1477,59 @@ export default function Booking() {
         </Modal.Body>
       </Modal>
       <Modal
-    show={showViewBookingModal}
-    onClose={() => setShowViewBookingModal(false)}
-    size="md"
->
-    <Modal.Header />
-    <Modal.Body>
-        <div className="text-center">
+        show={showViewBookingModal}
+        onClose={() => setShowViewBookingModal(false)}
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
             <h3 className="mb-4 text-lg text-gray-500">View Booking Details</h3>
             <div className="space-y-6">
+              <div className="flex items-center">
+                <Label htmlFor="type" className="mr-2">
+                  Type:
+                </Label>
+                <span className="text-gray-700">{formData.type || ""}</span>
+              </div>
+              <div className="flex items-center">
+                <Label htmlFor="date" className="mr-2">
+                  Date:
+                </Label>
+                <span className="text-gray-700">{formData.date || ""}</span>
+              </div>
+              <div className="flex items-center">
+                <Label htmlFor="time" className="mr-2">
+                  Time:
+                </Label>
+                <span className="text-gray-700">{formData.time || ""}</span>
+              </div>
+              <div className="flex items-center">
+                <Label htmlFor="doctorName" className="mr-2">
+                  Doctor Name:
+                </Label>
+                <span className="text-gray-700">
+                  {formData.doctorName || ""}
+                </span>
+              </div>
+              {formData.type === "Hospital Booking" && (
                 <div className="flex items-center">
-                    <Label htmlFor="type" className="mr-2">
-                        Type:
-                    </Label>
-                    <span className="text-gray-700">{formData.type || ""}</span>
+                  <Label htmlFor="roomNo" className="mr-2">
+                    Room:
+                  </Label>
+                  <span className="text-gray-700">{formData.roomNo}</span>
                 </div>
-                <div className="flex items-center">
-                    <Label htmlFor="date" className="mr-2">
-                        Date:
-                    </Label>
-                    <span className="text-gray-700">{formData.date || ""}</span>
-                </div>
-                <div className="flex items-center">
-                    <Label htmlFor="time" className="mr-2">
-                        Time:
-                    </Label>
-                    <span className="text-gray-700">{formData.time || ""}</span>
-                </div>
-                <div className="flex items-center">
-                    <Label htmlFor="doctorName" className="mr-2">
-                        Doctor Name:
-                    </Label>
-                    <span className="text-gray-700">
-                        {formData.doctorName || ""}
-                    </span>
-                </div>
-                {formData.type === "Hospital Booking" && (
-                    <div className="flex items-center">
-                        <Label htmlFor="roomNo" className="mr-2">
-                            Room:
-                        </Label>
-                        <span className="text-gray-700">{formData.roomNo}</span>
-                    </div>
-                )}
-                <div className="flex items-center">
-                    <Label htmlFor="patientName" className="mr-2">
-                        Patient Name:
-                    </Label>
-                    <span className="text-gray-700">{formData.patientName}</span>
-                </div>
+              )}
+              <div className="flex items-center">
+                <Label htmlFor="patientName" className="mr-2">
+                  Patient Name:
+                </Label>
+                <span className="text-gray-700">{formData.patientName}</span>
+              </div>
             </div>
-        </div>
-    </Modal.Body>
-</Modal>
-
-
-
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
