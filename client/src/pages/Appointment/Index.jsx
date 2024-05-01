@@ -1,5 +1,4 @@
 // Index.js
-
 import React, { useState, useEffect } from "react";
 import { Button, TextInput } from "flowbite-react";
 import Select from "react-select";
@@ -129,67 +128,74 @@ const Index = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-      }}
-    >
-      <div
-        style={{
-          padding: "20px",
-          borderRadius: "5px",
-          maxWidth: "500px",
-          width: "100%",
-        }}
-      >
-        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-          Channel Your Doctor
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100vh" }}>
+      {/* Form Container */}
+      <div style={{ width: "850px", backgroundColor: "#0077b6", padding: "20px", borderRadius: "5px", marginBottom: "20px", marginTop: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Select
+            id="doctor"
+            value={selectedDoctor}
+            onChange={setSelectedDoctor}
+            options={doctorOptions}
+            placeholder="Select a doctor"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "white",
+                marginRight: "10px",
+                width: "300px", // Set fixed width
+              }),
+              input: (provided) => ({
+                ...provided,
+                boxShadow: "none",
+                outline: "none",
+                border: "none", // Removing border
+              }),
+            }}
+          />
+          <Select
+            placeholder="Select specialization"
+            value={selectedSpecialization}
+            onChange={setSelectedSpecialization}
+            options={specializationOptions}
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "white",
+                marginRight: "10px",
+                width: "200px", // Set fixed width
+              }),
+            }}
+          />
+          <TextInput
+            type="date"
+            placeholder="dd/mm/yyyy"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            min={new Date().toISOString().split("T")[0]}
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "white",
+                marginRight: "10px",
+                width: "200px", // Set fixed width
+              }),
+            }}
+          />
+          <Button color="white" onClick={handleSearch}>
+            Search
+          </Button>
+          <Button color="white" onClick={handleClear}>
+            Clear
+          </Button>
+        </div>
+      </div>
+  
+      {/* Doctor Profile Container */}
+      <div style={{ width: "100%" }}>
+        <div style={{ padding: "20px", borderRadius: "5px"}}>
           {showDoctorList ? (
-            <>
-              <div style={{ marginBottom: "10px" }}>
-                <label htmlFor="doctor">Doctor</label>
-                <Select
-                  id="doctor"
-                  value={selectedDoctor}
-                  onChange={setSelectedDoctor}
-                  options={doctorOptions}
-                  placeholder="Select a doctor"
-                  styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
-                />
-              </div>
-              <div style={{ marginBottom: "10px" }}>
-                <label htmlFor="specialization">Specialization</label>
-                <Select
-                  id="specialization"
-                  value={selectedSpecialization}
-                  onChange={setSelectedSpecialization}
-                  options={specializationOptions}
-                  placeholder="Select a specialization"
-                  styles={{ option: (provided) => ({ ...provided, color: "black" }) }}
-                />
-              </div>
-              <div>
-                <label htmlFor="date">Date</label>
-                <TextInput
-                  type="date"
-                  id="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div style={{ display: "flex", marginTop: "20px" }}>
-                <Button className="btn-lg" onClick={handleSearch}>Search</Button>
-                <Button className="btn-lg btn-outline-danger" onClick={handleClear}>Clear</Button>
-              </div>
-              {/* Render doctor details and appointment details here */}
-              <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} /> {/* Pass handleViewProfile function */}
-            </>
+            <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} />
           ) : (
             <DoctorProfile doctor={selectedDoctorProfile} onBack={handleBackToList} />
           )}
@@ -197,6 +203,9 @@ const Index = () => {
       </div>
     </div>
   );
-};
+  
+  
+  
+}; 
 
 export default Index;

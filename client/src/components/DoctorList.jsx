@@ -1,5 +1,3 @@
-// DoctorsList.js
-
 import React from 'react';
 
 const DoctorsList = ({ doctorDetails, onViewProfile }) => {

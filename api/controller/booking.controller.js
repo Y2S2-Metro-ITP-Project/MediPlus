@@ -62,6 +62,17 @@ export const getBookings = async (req, res, next) => {
   }
 };
 
+export const getBookingsForDoctor = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId;
+    const bookings = await Booking.find({ doctorId });
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error("Error fetching bookings for doctor:", error);
+    res.status(500).json({ message: "Failed to fetch bookings for doctor" });
+  }
+};
+
 export const deleteBooking = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(errorHandler(403, "You are not allowed to delete this booking"));
@@ -300,6 +311,7 @@ export const cancelSelectedBookings = async (req, res) => {
 };
 
 // const createOrUpdatePaymentOrder = async (
+
 //   patientId,
 //   patientName,
 //   patientEmail,

@@ -3,6 +3,7 @@ import { verifyToken } from "../utils/verifyUser.js";
 import {
   createBooking,
   getBookings,
+  getBookingsForDoctor,
   deleteBooking,
   searchBookings,
   filterBookings,
@@ -16,6 +17,7 @@ const router = express.Router();
 
 router.post("/create", verifyToken, createBooking);
 router.get("/getBookings", verifyToken, getBookings);
+router.get("/getBookingsForDoctor/:doctorId", verifyToken, getBookingsForDoctor); 
 router.delete("/delete/:bookingId", verifyToken, deleteBooking);
 router.post("/searchBookings", verifyToken, searchBookings);
 router.get("/appointments", verifyToken, searchAppointments);
