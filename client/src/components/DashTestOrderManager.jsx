@@ -204,7 +204,7 @@ const DashTestOrderManager = () => {
           className=" "
           gradientDuoTone="purpleToPink"
           outline
-          onClick={() => setAddModal(true)} // button not implemented yet
+          onClick={() => setAddModal(true)} 
         >
           Create Test Order
         </Button>

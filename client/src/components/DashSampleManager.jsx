@@ -85,6 +85,7 @@ const DashSampleManager = () => {
             <Table.HeadCell>Sample Status</Table.HeadCell>
             <Table.HeadCell>Delete</Table.HeadCell>
             <Table.HeadCell>Show More</Table.HeadCell>
+            <Table.HeadCell> Upload Results</Table.HeadCell>
           </Table.Head>
 
           {samples.map((sample) => (
@@ -116,6 +117,11 @@ const DashSampleManager = () => {
                 <TableCell>
                   <span>
                     <BiShow className=" " />
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className=" hover: cursor-pointer">
+                    Uplaod Test Results
                   </span>
                 </TableCell>
               </Table.Row>
