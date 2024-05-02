@@ -93,14 +93,14 @@ export default function DashOutPatientProfile() {
   const [vitalsModal, setVitalsModal] = useState(false);
   const [vitals, setVitals] = useState([]);
   const [formData, setFormData] = useState([]);
-  const [vitalIdToDelete, setVitalIdToDelete] = useState("");
+  const [vitalIdToDelete, setVitalIdToDelete] = useState(null);
   const [latestVitals, setLatestVitals] = useState([]);
   const [PrecriptionsModal, setPrescriptionModal] = useState(false);
   const [medicine, setMedicine] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
-  const [prescriptionIdToDelete, setPrescriptionIdToDelete] = useState("");
+  const [prescriptionIdToDelete, setPrescriptionIdToDelete] = useState(null);
   const [dates, setDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
   const [doctorName, setDoctorName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
@@ -109,12 +109,13 @@ export default function DashOutPatientProfile() {
   const [selectedDisease, setSelectedDisease] = useState("");
   const [icdCode, setIcdCode] = useState("");
   const [diagnosticData, setDiagnosticData] = useState([]);
-  const [diagnosisIDDelete, setDiagnosisIDDelete] = useState("");
+  const [diagnosisIDDelete, setDiagnosisIDDelete] = useState(null);
   const [searchTerm1, setSearchTerm1] = useState("");
+  const [searchTerm2, setSearchTerm2] = useState("");
   const [prescriptionUpdate, setPrescriptionUpdate] = useState(false);
   const [prescriptionUpdateModal, setPrescriptionUpdateModal] = useState(false);
   const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [precriptionDetails, setPrescriptionDetails] = useState({
     medicine: "",
     dosage: "",
@@ -187,14 +188,6 @@ export default function DashOutPatientProfile() {
   {
     /** Pagination implementation */
   }
-  const itemsPerPage = 2; // Adjust as needed
-
-  const handlePageClick = ({ selected }) => {
-    setCurrentPage(selected);
-  };
-  const offset = currentPage * itemsPerPage;
-  const pageCount = Math.ceil(prescriptions.length / itemsPerPage);
-  const currentPageData = prescriptions.slice(offset, offset + itemsPerPage);
 
   {
     /** Handle fetch diseases to be shown in the select diesease */
@@ -236,6 +229,12 @@ export default function DashOutPatientProfile() {
         throw new Error(data.message);
       }
 
+      const filteredDiagnosis = data.diagnosis.filter((diagnosis) =>
+        diagnosis.doctorId.username
+          .toLowerCase()
+          .includes(searchTerm2.toLowerCase())
+      );
+
       const uniqueDates = [
         ...new Set(
           data.diagnosis.map((diagnosis) =>
@@ -244,17 +243,25 @@ export default function DashOutPatientProfile() {
         ),
       ];
 
-      const uniqueDoctors = [
-        ...new Set(
-          data.diagnosis.map((diagnosis) => ({
-            doctorId: diagnosis.doctorId._id,
-            username: diagnosis.doctorId.username,
-          }))
-        ),
-      ];
+      const uniqueDoctors = [];
+      const uniqueDoctorIds = new Set();
+
+      data.diagnosis.forEach((diagnosis) => {
+        const { doctorId } = diagnosis;
+        const doctorIdString = doctorId._id.toString(); // Assuming _id is the unique identifier
+
+        if (!uniqueDoctorIds.has(doctorIdString)) {
+          uniqueDoctorIds.add(doctorIdString);
+          uniqueDoctors.push({
+            doctorId: doctorId._id,
+            username: doctorId.username,
+          });
+        }
+      });
+
       setDiagnosisDate(uniqueDates);
       setDiagnosisDoctor(uniqueDoctors);
-      setDiagnosticData(data.diagnosis);
+      setDiagnosticData(filteredDiagnosis);
     } catch (error) {
       console.error("Error fetching diagnosis:", error);
     }
@@ -284,14 +291,22 @@ export default function DashOutPatientProfile() {
           )
         ),
       ];
-      const uniqueDoctors = [
-        ...new Set(
-          data.prescriptions.map((prescription) => ({
-            doctorId: prescription.doctorId,
-            username: prescription.doctorId.username,
-          }))
-        ),
-      ];
+      const uniqueDoctors = [];
+      const uniqueDoctorIds = new Set();
+
+      data.prescriptions.forEach((prescription) => {
+        const { doctorId } = prescription;
+        const doctorIdString = doctorId._id.toString(); // Assuming _id is the unique identifier
+
+        if (!uniqueDoctorIds.has(doctorIdString)) {
+          uniqueDoctorIds.add(doctorIdString);
+          uniqueDoctors.push({
+            doctorId: doctorId._id,
+            username: doctorId.username,
+          });
+        }
+      });
+
       setDoctors(uniqueDoctors);
       setDates(uniqueDates);
       setPrescriptions(filteredPrescriptions);
@@ -299,8 +314,7 @@ export default function DashOutPatientProfile() {
       console.error("Error fetching prescriptions:", error);
     }
   };
-  console.log(prescriptions);
-
+  console.log(doctors);
   {
     /** Handle fetch medicine to show in prescription */
   }
@@ -396,7 +410,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
     }
-  }, [currentUser._id, searchTerm1]);
+  }, [currentUser._id, searchTerm1, searchTerm2]);
   const formatDateOfBirth = (dateOfBirth) => {
     const date = new Date(dateOfBirth);
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -508,24 +522,30 @@ export default function DashOutPatientProfile() {
   {
     /** Handle vitals delete */
   }
-  const handleVitalDelete = async (e) => {
-    const res = await fetch(`/api/vital/deleteVitals/${vitalIdToDelete}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) {
-      console.log("Failed to delete vitals");
-      toast.error("Failed to delete vitals");
-    } else {
-      toast.success("Vitals deleted successfully");
+  const handleVitalDelete = async (id) => {
+    console.log(id)
+    try {
+      const res = await fetch(`/api/vital/deleteVitals/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) {
+        console.log("Failed to delete vitals");
+        toast.error("Failed to delete vitals");
+      } else {
+        toast.success("Vitals deleted successfully");
+      }
+      fetchPatient();
+      fetchPatientVital();
+      fetchPrescriptions();
+      fetchDieseases();
+      fetchDiagnosticData();
+    } catch (error) {
+      console.log(error);
     }
-    fetchPatient();
-    fetchPatientVital();
-    fetchPrescriptions();
-    fetchDieseases();
-    fetchDiagnosticData();
+    
   };
 
   {
@@ -656,9 +676,9 @@ export default function DashOutPatientProfile() {
   {
     /** Hnadle prescription delete */
   }
-  const handlePrescriptionDelete = async (e) => {
+  const handlePrescriptionDelete = async (id) => {
     const res = await fetch(
-      `/api/prescription/deletePrescription/${prescriptionIdToDelete}`,
+      `/api/prescription/deletePrescription/${id}`,
       {
         method: "DELETE",
         headers: {
@@ -667,7 +687,6 @@ export default function DashOutPatientProfile() {
       }
     );
     if (!res.ok) {
-      console.log("Failed to delete prescription");
       toast.error("Failed to delete prescription");
     } else {
       toast.success("Prescription deleted successfully");
@@ -841,10 +860,10 @@ export default function DashOutPatientProfile() {
   {
     /** Handle Diagnosis Delete */
   }
-  const handleDiagnosisDelete = async (e) => {
+  const handleDiagnosisDelete = async (id) => {
     try {
       const res = await fetch(
-        `/api/diagnosis/deleteDiagnosticData/${diagnosisIDDelete}`,
+        `/api/diagnosis/deleteDiagnosticData/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -871,8 +890,8 @@ export default function DashOutPatientProfile() {
   {
     /** Handle Diagnosis Report Download */
   }
-  const [selectedDiagnosisDate, setSelectedDiagnosisDate] = useState("");
-  const [selectedDiagnosisDoctor, setSelectedDiagnosisDoctor] = useState("");
+  const [selectedDiagnosisDate, setSelectedDiagnosisDate] = useState(null);
+  const [selectedDiagnosisDoctor, setSelectedDiagnosisDoctor] = useState(null);
 
   const handleDiagnosisDateChange = (selectedOption) => {
     setSelectedDiagnosisDate(selectedOption);
@@ -882,8 +901,6 @@ export default function DashOutPatientProfile() {
     setSelectedDiagnosisDoctor(selectedOption);
   };
 
-  console.log(selectedDiagnosisDate);
-  console.log(selectedDiagnosisDoctor);
   const handleDownloadDiagnosisReport = async () => {
     if (selectedDiagnosisDate !== null) {
       try {
@@ -948,6 +965,370 @@ export default function DashOutPatientProfile() {
     }
   };
 
+  {
+    /** Pagination for prescriptions */
+  }
+
+  const [pageNumber, setPageNumber] = useState(0);
+  const prescriptionsPerPage = 5;
+
+  const pageCount = Math.ceil(prescriptions.length / prescriptionsPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+  const displayPrecriptions = prescriptions
+    .slice(
+      pageNumber * prescriptionsPerPage,
+      (pageNumber + 1) * prescriptionsPerPage
+    )
+    .map((prescription) => (
+      <Table.Body className="divide-y" key={prescription._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>{prescription.medicine}</Table.Cell>
+          <Table.Cell>
+            {prescription.dosage} {prescription.dosageType}
+          </Table.Cell>
+          <Table.Cell>{prescription.frequency} Times/Day</Table.Cell>
+          <Table.Cell>{prescription.duration} Days</Table.Cell>
+          <Table.Cell>{prescription.route}</Table.Cell>
+          <Table.Cell>{prescription.foodRelation}</Table.Cell>
+          <Table.Cell>{prescription.doctorId.username}</Table.Cell>
+          <Table.Cell
+            style={{
+              color:
+                prescription.status === "Pending"
+                  ? "orange"
+                  : prescription.status === "Rejected"
+                  ? "red"
+                  : "green",
+              fontWeight: "bold",
+            }}
+          >
+            {prescription.status}
+          </Table.Cell>
+
+          <Table.Cell>
+            {prescription.status === "Pending" && (
+              <span
+                onClick={() => {
+                  setPrescriptionUpdate(prescription._id);
+                  handleSetPrescriotionDetails(
+                    prescription.medicine,
+                    prescription.dosage,
+                    prescription.dosageType,
+                    prescription.route,
+                    prescription.frequency,
+                    prescription.duration,
+                    prescription.foodRelation,
+                    prescription.instructions
+                  );
+                  setPrescriptionUpdateModal(true);
+                }}
+                className="font-medium text-green-500 hover:underline cursor-pointer mr-4"
+              >
+                Update
+              </span>
+            )}
+            <span
+              onClick={() => {
+                //setPrescriptionIdToDelete(prescription._id);
+                handlePrescriptionDelete(prescription._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Pagination for vitals */
+  }
+
+  const [pageNumber1, setPageNumber1] = useState(0);
+  const vitalsPerPage = 5;
+
+  const pageCount1 = Math.ceil(vitals.length / vitalsPerPage);
+
+  const handlePageChange1 = ({ selected }) => {
+    setPageNumber1(selected);
+  };
+
+  const displayVitals = vitals
+    .slice(pageNumber1 * vitalsPerPage, (pageNumber1 + 1) * vitalsPerPage)
+    .map((vital) => (
+      <Table.Body className="divide-y" key={vital._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell
+            className={getColorClass(vital.temperature, THRESHOLDS.temperature)}
+          >
+            {vital.temperature}
+          </Table.Cell>
+          <Table.Cell
+            className={`${getColorClass(
+              vital.bloodPressureSystolic,
+              THRESHOLDS.bloodPressureSystolic
+            )} ${getColorClass(
+              vital.bloodPressureDiastolic,
+              THRESHOLDS.bloodPressureDiastolic
+            )}`}
+          >
+            {vital.bloodPressureSystolic}/{vital.bloodPressureDiastolic}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(vital.heartRate, THRESHOLDS.heartRate)}
+          >
+            {vital.heartRate}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(
+              vital.bloodGlucose,
+              THRESHOLDS.bloodGlucose
+            )}
+          >
+            {vital.bloodGlucose}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(
+              vital.oxygenSaturation,
+              THRESHOLDS.oxygenSaturation
+            )}
+          >
+            {vital.oxygenSaturation}
+          </Table.Cell>
+          <Table.Cell>{vital.bodyweight}</Table.Cell>
+          <Table.Cell>{vital.height}</Table.Cell>
+          <Table.Cell
+            className={
+              BMI_COLORS[getBMICategory(parseFloat(vital.BMI).toFixed(2))]
+            }
+          >
+            {parseFloat(vital.BMI).toFixed(2)}
+          </Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                //setVitalIdToDelete(vital._id);
+                handleVitalDelete(vital._id)
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Pagiantion for Diagnosis*/
+  }
+
+  const [pageNumber2, setPageNumber2] = useState(0);
+  const diagnosisPerPage = 5;
+
+  const pageCount2 = Math.ceil(diagnosticData.length / diagnosisPerPage);
+
+  const handlePageChange2 = ({ selected }) => {
+    setPageNumber2(selected);
+  };
+
+  const displaydiagnosis = diagnosticData
+    .slice(pageNumber2 * diagnosisPerPage, (pageNumber2 + 1) * diagnosisPerPage)
+    .map((diagnosis) => (
+      <Table.Body className="divide-y" key={diagnosis._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>
+            {new Date(diagnosis.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </Table.Cell>
+          <Table.Cell>{diagnosis.type}</Table.Cell>
+          <Table.Cell className={getColorClass2(diagnosis.level)}>
+            {diagnosis.level}
+          </Table.Cell>
+          <Table.Cell>{diagnosis.diagnosis}</Table.Cell>
+          <Table.Cell>{diagnosis.ICD10}</Table.Cell>
+          <Table.Cell>{diagnosis.doctorId.username}</Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                //setDiagnosisIDDelete(diagnosis._id);
+                handleDiagnosisDelete(diagnosis._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Diagnosis search */
+  }
+  const [formdata2, setFormData2] = useState([]);
+  const onChangeDiagnosisSearch = (e) => {
+    setFormData2({
+      ...formdata2,
+      [e.target.id]: e.target.value,
+    });
+  };
+  console.log(formdata2);
+  const handleDiagnosisSearch = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/diagnosis/searchDiagnosis/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formdata2),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.error("Error fetching diagnosis:", error);
+    }
+  };
+
+  const handleReset = async () => {
+    fetchDiagnosticData();
+    fetchPatient();
+    fetchPrescriptions();
+    fetchPatientVital();
+    fetchDieseases();
+  };
+
+  {
+    /** Filter function for diagnosis */
+  }
+
+  const handleDiagnosisFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/diagnosis/filterDiagnosis/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedOption }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+  {
+    /** filter for diagnosis crirtial state */
+  }
+  const handleStatusDiagnosisFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/diagnosis/handleStatusDiagnosisFilter/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selectedOption }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  {
+    /** Filter function for prescriptions */
+  }
+  const handleStatusPrecriptionDispenceFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/prescription/handleStatusPrecriptionDispenceFilter/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selectedOption }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setPrescriptions(data.prescriptions);
+      fetchPatient();
+      fetchPatientVital();
+      fetchDieseases();
+      fetchDiagnosticData();
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+  {
+    /** Filter function for prescriptions */
+  }
+  const handlePrecriptionFilter= async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/prescription/filterPrescription/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedOption }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setPrescriptions(data.Precriptions);
+      fetchPatient();
+      fetchPatientVital();
+      fetchDieseases();
+      fetchDiagnosticData();
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
@@ -1087,6 +1468,49 @@ export default function DashOutPatientProfile() {
         <div className="flex mb-2">
           <h1 className="text-3xl font-bold mb-4 ">Patient Diagnosis</h1>
         </div>
+        <div className="flex mb-4">
+          <TextInput
+            type="text"
+            value={searchTerm2}
+            onChange={(e) => setSearchTerm2(e.target.value)}
+            placeholder="Search by doctor name"
+            rightIcon={AiOutlineSearch}
+            className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
+          />
+          <select
+            id="filter"
+            onChange={handleDiagnosisFilter}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a filter option
+            </option>
+            <option value="today">Today</option>
+            <option value="latest">Latest</option>
+            <option value="oldest">Oldest</option>
+          </select>
+
+          <select
+            id="filter"
+            onChange={handleStatusDiagnosisFilter}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a filter option
+            </option>
+            <option value="Mild">Mild</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Severe">Severe</option>
+          </select>
+
+          <Button
+            className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
+            color="gray"
+            onClick={() => handleReset()}
+          >
+            Reset
+          </Button>
+        </div>
         <div className="">
           <div className="mb-4">
             <div className="flex items-center">
@@ -1177,7 +1601,7 @@ export default function DashOutPatientProfile() {
                   (!selectedDiagnosisDate && !selectedDiagnosisDoctor)
                 }
               >
-                Download Prescription Report
+                Download Diagnosis Report
               </Button>
             </div>
             {diagnosticData.length > 0 ? (
@@ -1192,41 +1616,25 @@ export default function DashOutPatientProfile() {
                     <Table.HeadCell>Doctor</Table.HeadCell>
                     <Table.HeadCell>Action</Table.HeadCell>
                   </Table.Head>
-                  {diagnosticData.map((diagnosis) => (
-                    <Table.Body className="divide-y" key={diagnosis._id}>
-                      <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell>
-                          {new Date(diagnosis.date).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>{diagnosis.type}</Table.Cell>
-                        <Table.Cell className={getColorClass2(diagnosis.level)}>
-                          {diagnosis.level}
-                        </Table.Cell>
-                        <Table.Cell>{diagnosis.diagnosis}</Table.Cell>
-                        <Table.Cell>{diagnosis.ICD10}</Table.Cell>
-                        <Table.Cell>{diagnosis.doctorId.username}</Table.Cell>
-                        <Table.Cell>
-                          <span
-                            onClick={() => {
-                              setDiagnosisIDDelete(diagnosis._id);
-                              handleDiagnosisDelete();
-                            }}
-                            className="font-medium text-red-500 hover:underline cursor-pointer"
-                          >
-                            Delete
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                    </Table.Body>
-                  ))}
+                  {displaydiagnosis}
                 </Table>
+                <div className="mt-9 center">
+                  <ReactPaginate
+                    previousLabel={"Previous"}
+                    nextLabel={"Next"}
+                    pageCount={pageCount2}
+                    onPageChange={handlePageChange2}
+                    containerClassName={"pagination flex justify-center"}
+                    previousLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    nextLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    disabledClassName={"opacity-50 cursor-not-allowed"}
+                    activeClassName={"bg-indigo-500 text-white"}
+                  />
+                </div>
               </>
             ) : (
               <p>Patient Has No recorded Diagnosis</p>
@@ -1308,79 +1716,25 @@ export default function DashOutPatientProfile() {
                     <Table.HeadCell>BMI</Table.HeadCell>
                     <Table.HeadCell>Action</Table.HeadCell>
                   </Table.Head>
-                  {vitals.map((vital) => (
-                    <Table.Body className="divide-y" key={vital._id}>
-                      <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell
-                          className={getColorClass(
-                            vital.temperature,
-                            THRESHOLDS.temperature
-                          )}
-                        >
-                          {vital.temperature}
-                        </Table.Cell>
-                        <Table.Cell
-                          className={`${getColorClass(
-                            vital.bloodPressureSystolic,
-                            THRESHOLDS.bloodPressureSystolic
-                          )} ${getColorClass(
-                            vital.bloodPressureDiastolic,
-                            THRESHOLDS.bloodPressureDiastolic
-                          )}`}
-                        >
-                          {vital.bloodPressureSystolic}/
-                          {vital.bloodPressureDiastolic}
-                        </Table.Cell>
-                        <Table.Cell
-                          className={getColorClass(
-                            vital.heartRate,
-                            THRESHOLDS.heartRate
-                          )}
-                        >
-                          {vital.heartRate}
-                        </Table.Cell>
-                        <Table.Cell
-                          className={getColorClass(
-                            vital.bloodGlucose,
-                            THRESHOLDS.bloodGlucose
-                          )}
-                        >
-                          {vital.bloodGlucose}
-                        </Table.Cell>
-                        <Table.Cell
-                          className={getColorClass(
-                            vital.oxygenSaturation,
-                            THRESHOLDS.oxygenSaturation
-                          )}
-                        >
-                          {vital.oxygenSaturation}
-                        </Table.Cell>
-                        <Table.Cell>{vital.bodyweight}</Table.Cell>
-                        <Table.Cell>{vital.height}</Table.Cell>
-                        <Table.Cell
-                          className={
-                            BMI_COLORS[
-                              getBMICategory(parseFloat(vital.BMI).toFixed(2))
-                            ]
-                          }
-                        >
-                          {parseFloat(vital.BMI).toFixed(2)}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span
-                            onClick={() => {
-                              setVitalIdToDelete(vital._id);
-                              handleVitalDelete();
-                            }}
-                            className="font-medium text-red-500 hover:underline cursor-pointer"
-                          >
-                            Delete
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                    </Table.Body>
-                  ))}
+                  {displayVitals}
                 </Table>
+                <div className="mt-9 center">
+                  <ReactPaginate
+                    previousLabel={"Previous"}
+                    nextLabel={"Next"}
+                    pageCount={pageCount1}
+                    onPageChange={handlePageChange1}
+                    containerClassName={"pagination flex justify-center"}
+                    previousLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    nextLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    disabledClassName={"opacity-50 cursor-not-allowed"}
+                    activeClassName={"bg-indigo-500 text-white"}
+                  />
+                </div>
               </>
             ) : (
               <p>Patient Has No recorded Vitals</p>
@@ -1393,6 +1747,42 @@ export default function DashOutPatientProfile() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex mb-2">
           <h1 className="text-3xl font-bold mb-4 ">Patient Prescriptions</h1>
+        </div>
+        <div className="flex mb-4">
+          <select
+            id="filter"
+            onChange={handlePrecriptionFilter}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a filter option
+            </option>
+            <option value="current">Current Meidication</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="lastWeek">Last Week</option>
+          </select>
+
+          <select
+            id="filter"
+            onChange={handleStatusPrecriptionDispenceFilter}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Dispence Status
+            </option>
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+
+          <Button
+            className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
+            color="gray"
+            onClick={() => handleReset()}
+          >
+            Reset
+          </Button>
         </div>
         <div className="">
           <div className="mb-4">
@@ -1493,78 +1883,28 @@ export default function DashOutPatientProfile() {
                     <Table.HeadCell>Route</Table.HeadCell>
                     <Table.HeadCell>Food Relation</Table.HeadCell>
                     <Table.HeadCell>Doctor</Table.HeadCell>
-                    <Table.HeadCell>Status</Table.HeadCell>
+                    <Table.HeadCell>Dispense Status</Table.HeadCell>
                     <Table.HeadCell>Action</Table.HeadCell>
                   </Table.Head>
-                  {prescriptions.map((prescription) => (
-                    <Table.Body className="divide-y" key={prescription._id}>
-                      <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell>{prescription.medicine}</Table.Cell>
-                        <Table.Cell>
-                          {prescription.dosage} {prescription.dosageType}
-                        </Table.Cell>
-                        <Table.Cell>
-                          {prescription.frequency} Times/Day
-                        </Table.Cell>
-                        <Table.Cell>{prescription.duration} Days</Table.Cell>
-                        <Table.Cell>{prescription.route}</Table.Cell>
-                        <Table.Cell>{prescription.foodRelation}</Table.Cell>
-                        <Table.Cell>
-                          {prescription.doctorId.username}
-                        </Table.Cell>
-                        <Table.Cell
-                          style={{
-                            color:
-                              prescription.status === "Pending"
-                                ? "orange"
-                                : prescription.status === "Rejected"
-                                ? "red"
-                                : "green",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {prescription.status}
-                        </Table.Cell>
-
-                        <Table.Cell>
-                          {prescription.status === "Pending" ? (
-                            <span
-                              onClick={() => {
-                                setPrescriptionUpdate(prescription._id);
-                                handleSetPrescriotionDetails(
-                                  prescription.medicine,
-                                  prescription.dosage,
-                                  prescription.dosageType,
-                                  prescription.route,
-                                  prescription.frequency,
-                                  prescription.duration,
-                                  prescription.foodRelation,
-                                  prescription.instructions
-                                );
-                                setPrescriptionUpdateModal(true);
-                              }}
-                              className="font-medium text-green-500 hover:underline cursor-pointer mr-4"
-                            >
-                              Update
-                            </span>
-                          ) : (
-                            <p>No Update</p>
-                          )}
-                          <span
-                            onClick={() => {
-                              setPrescriptionIdToDelete(prescription._id);
-                              handlePrescriptionDelete();
-                            }}
-                            className="font-medium text-red-500 hover:underline cursor-pointer"
-                          >
-                            Delete
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                    </Table.Body>
-                  ))}
+                  {displayPrecriptions}
                 </Table>
-                {/* Pagination */}
+                <div className="mt-9 center">
+                  <ReactPaginate
+                    previousLabel={"Previous"}
+                    nextLabel={"Next"}
+                    pageCount={pageCount}
+                    onPageChange={handlePageChange}
+                    containerClassName={"pagination flex justify-center"}
+                    previousLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    nextLinkClassName={
+                      "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }
+                    disabledClassName={"opacity-50 cursor-not-allowed"}
+                    activeClassName={"bg-indigo-500 text-white"}
+                  />
+                </div>
               </>
             ) : (
               <p>Patient Has No recorded Precriptions</p>
@@ -1597,6 +1937,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 36.5 - 37.5"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1607,6 +1948,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 70"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1617,6 +1959,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 1.75"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1627,6 +1970,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 80 - 120"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1639,6 +1983,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 90 - 120"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1651,6 +1996,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 80"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1661,6 +2007,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 100"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1671,6 +2018,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 12 - 20"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
               <div>
@@ -1681,6 +2029,7 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 95 - 100"
                   onChange={onVitalChange}
+                  required
                 />
               </div>
             </div>
@@ -1693,6 +2042,7 @@ export default function DashOutPatientProfile() {
                 color="red"
                 onClick={() => {
                   setVitalsModal(false);
+                  setFormData({});
                 }}
               >
                 Cancel

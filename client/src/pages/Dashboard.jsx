@@ -14,6 +14,8 @@ import DashEMPLeave from "../components/DashEMPLeave";
 import { DashaddEmp } from "../components/DashaddEmp";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
+import DashBooking from "../components/DashBooking";
+import DashScheduleBooking from "../components/DashScheduleBooking";
 import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
 import DashOutPatientProfile from "../components/DashOutPatientProfile";
 import PatientPrescriptions from "../components/PatientPrescriptions";
@@ -21,6 +23,10 @@ import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
 import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
 import DashMedicineDispence from "../components/DashMedicineDispence";
+import DashOutPatientBilling from "../components/DashOutPatientBilling";
+import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
+import DoctorsList from "../components/DoctorList";
+import DoctorProfile from "../components/DoctorProfile";
 
 
 
@@ -44,6 +50,14 @@ export default function Dashboard() {
       {tab === "profile" && <DashProfile />}
       {/** <DashUserProfiles /> */}
       {tab === "users" && <DashUserProfiles />}
+      {/** <DashBooking /> */}
+      {tab === "booking" && <DashBooking />}
+      {/** <DoctorsList /> */}
+      {tab === "doctorList" && <DoctorsList />}
+      {/** <DoctorProfile /> */}
+      {tab === "doctorProfile" && <DoctorProfile />}
+      {/** <DashScheduleBooking /> */}
+      {tab === "schedule" && <DashScheduleBooking />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
@@ -82,6 +96,10 @@ export default function Dashboard() {
       {tab==="orderPrescritions" && <DashDoctorsOrdersPrecriptions/>}
       {/** <DashMedicineDispence/> */}
       {tab==="Dispence" && <DashMedicineDispence/>}
+      {/** <DashOutPatientBilling/> */}
+      {tab==="OutPatientBilling" && <DashOutPatientBilling/>}
+      {/** <DashOutPatientPaymentProfile/> */}
+      {tab==="OutPatientPaymentProfile" && <OutPatientPaymentProfile/>}
     </div>
   );
 }
