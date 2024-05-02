@@ -132,6 +132,9 @@ const DashTestOrderManager = () => {
     });
   };
 
+
+ 
+
   //========================================================
 
   const handlePriorityChange = (e) => {
@@ -166,9 +169,12 @@ const DashTestOrderManager = () => {
       }
 
       setFormData([]);
+    
     } catch (error) {
       console.log(error);
     }
+
+   
   };
 
   //Delete test orders handler
@@ -204,7 +210,7 @@ const DashTestOrderManager = () => {
           className=" "
           gradientDuoTone="purpleToPink"
           outline
-          onClick={() => setAddModal(true)} 
+          onClick={() => setAddModal(true)}
         >
           Create Test Order
         </Button>
@@ -360,11 +366,7 @@ const DashTestOrderManager = () => {
 
             <div>
               <Label value="High priority?  " />
-              <Checkbox
-                id="priority"
-                checked={priority}
-                onChange={handlePriorityChange}
-              />
+              <Checkbox id="priority" onChange={handlePriorityChange} />
             </div>
 
             <div>

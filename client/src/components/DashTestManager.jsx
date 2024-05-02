@@ -53,6 +53,7 @@ export default function DashTestManager() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+    
   };
 
   const fetchTests = async () => {
@@ -132,14 +133,14 @@ export default function DashTestManager() {
   const handleTestSubmit = async (e) => {
     e.preventDefault();
 
+    console.log(formData)
+
     const name = formData.name ? formData.name.trim() : "";
     const sampleType = formData.sampleType;
     const sampleVolume = formData.sampleVolume
       ? formData.sampleVolume.trim()
       : "";
-    const completionTime = formData.completionTime
-      ? formData.completionTime.trim()
-      : "";
+    const completionTime = formData.completionTime;
     const price = formData.price ? formData.price.trim() : "";
     const advice = formData.advice ? formData.advice.trim() : "";
     const description = formData.description ? formData.description.trim() : "";
@@ -447,13 +448,27 @@ export default function DashTestManager() {
               </div>
               <div>
                 <Label htmlFor="completionTime">Time for completion</Label>
-                <TextInput
-                  type="text"
-                  placeholder="submit time as seconds"
-                  id="completionTime"
-                  onChange={handleChange}
-                  className="input-field"
-                />
+                <Select
+                id="completionTime"
+                onChange={handleChange}
+                className="input-field"
+                >
+                  <option value={""}>Select Duration</option>
+                  <option value={"3600"}>1 Hour</option>
+                  <option value={"7200"}>2 Hours</option>
+                  <option value={"10800"}>3 Hours</option>
+                  <option value={"14400"}>4 Hours</option>
+                  <option value={"18000"}>5 Hours</option>
+                  <option value={"21600"}>6 Hours</option>
+                  <option value={"43200"}>12 Hours</option>
+                  <option value={"86400"}>24 Hours</option>
+                  <option value={"129600"}>36 Hours</option>
+                  <option value={"172800"}>48 Hours</option>
+                  <option value={"216000"}>60 Hour</option>
+                  <option value={"259200"}>72 Hours</option>
+                  <option value={"604800"}>1 Week</option>
+                  <option value={"1210000"}>2 Weeks</option>
+                </Select>
               </div>
 
               <div className="">
@@ -567,15 +582,30 @@ export default function DashTestManager() {
                   className="input-field"
                 />
               </div>
+              
               <div>
                 <Label htmlFor="completionTime">Time for completion</Label>
-                <TextInput
-                  type="text"
-                  placeholder={testData.completionTime}
-                  id="completionTime"
-                  onChange={handleChange}
-                  className="input-field"
-                />
+                <Select
+                id="completionTime"
+                onChange={handleChange}
+                className="input-field"
+                >
+                  <option value={""}>{formatSeconds(testData.completionTime)}</option>
+                  <option value={"3600"}>1 Hour</option>
+                  <option value={"7200"}>2 Hours</option>
+                  <option value={"10800"}>3 Hours</option>
+                  <option value={"14400"}>4 Hours</option>
+                  <option value={"18000"}>5 Hours</option>
+                  <option value={"21600"}>6 Hours</option>
+                  <option value={"43200"}>12 Hours</option>
+                  <option value={"86400"}>24 Hours</option>
+                  <option value={"129600"}>36 Hours</option>
+                  <option value={"172800"}>48 Hours</option>
+                  <option value={"216000"}>60 Hour</option>
+                  <option value={"259200"}>72 Hours</option>
+                  <option value={"604800"}>1 Week</option>
+                  <option value={"1210000"}>2 Weeks</option>
+                </Select>
               </div>
 
               <div className="">
