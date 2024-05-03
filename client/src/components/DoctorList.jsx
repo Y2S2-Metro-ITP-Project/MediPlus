@@ -18,7 +18,7 @@ const DoctorsList = ({ doctorDetails, onViewProfile }) => {
               </span>
             </div>
             <div style={styles.infoContainer}>
-              <h3 style={styles.name}>{doctor.doctorDetails.Name}</h3>
+              <h3 style={styles.name}>Dr {doctor.doctorDetails.Name}</h3>
               <p style={styles.specialization}>{doctor.doctorDetails.specialization}</p>
             </div>
             <button style={styles.button} onClick={() => handleViewProfile(doctor)}>View Profile</button> {/* Pass the selected doctor to handleViewProfile */}
