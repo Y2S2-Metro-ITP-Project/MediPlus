@@ -325,13 +325,13 @@ export const cancelSelectedBookings = async (req, res) => {
 
 export const updateStatus = async (req, res) => {
   try {
-    const { bookingId, status } = req.body;
+    const { bookingId, status, patientId } = req.body; // Extract patientId from request body
     console.log("Request received:", req.body);
 
-    // Find the booking by ID and update its status
+    // Find the booking by ID and update its status and patientId
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { status },
+      { status, patientId }, // Include patientId in the update object
       { new: true }
     );
 
@@ -345,6 +345,7 @@ export const updateStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 
 // const createOrUpdatePaymentOrder = async (
 

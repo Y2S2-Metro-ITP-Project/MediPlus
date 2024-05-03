@@ -61,6 +61,10 @@ const DoctorProfile = ({ doctor, onBack }) => {
 
   const handlePayToBook = async () => {
     try {
+      if (!selectedSession || !formData._id) {
+        throw new Error("No session or patient selected");
+      }
+  
       // Make an API call to update the booking status to "payment pending"
       const response = await fetch(`/api/booking/updateStatus`, {
         method: "PUT",
@@ -70,13 +74,14 @@ const DoctorProfile = ({ doctor, onBack }) => {
         body: JSON.stringify({
           bookingId: selectedSession._id,
           status: "Pending Payment",
+          patientId: formData._id, // Include patientId in the request body
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to update booking status");
       }
-
+  
       setModalIsOpen(false);
       setPaymentStatus("pending");
     } catch (error) {
@@ -87,14 +92,55 @@ const DoctorProfile = ({ doctor, onBack }) => {
     }
   };
 
-  const handlePayment = async (paymentSuccess) => {
+  const handlePayment = async (paymentSuccess, selectedSession) => {
     try {
       if (paymentSuccess) {
+        if (!selectedSession || !selectedSession._id) {
+          throw new Error("No session selected");
+        }
+  
+        // Make an API call to update the booking status to "Booked" if payment is successful
+        const response = await fetch(`/api/booking/updateStatus`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bookingId: selectedSession._id,
+            status: "Booked",
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to update booking status");
+        }
+  
         setPaymentStatus("success");
-        handleCloseModal();
+        handleClosewithSessionModal();
         toast.success("Payment successful!");
       } else {
+        // If payment is rejected, update the booking status to "Not Booked"
+        if (!selectedSession || !selectedSession._id) {
+          throw new Error("No session selected");
+        }
+  
+        const response = await fetch(`/api/booking/updateStatus`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bookingId: selectedSession._id,
+            status: "Not Booked",
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to update booking status");
+        }
+  
         setPaymentStatus("failed");
+        handleClosewithSessionModal();
         toast.error("Payment failed. Please try again.");
       }
     } catch (error) {
@@ -111,9 +157,15 @@ const DoctorProfile = ({ doctor, onBack }) => {
     }
   }, [doctor]);
 
-  const handleCloseModal = () => {
+  const handleClosewithSessionModal = () => {
     setModalIsOpen(false);
     setSelectedSession(null);
+    setFormData({});
+    setPaymentStatus(null);
+  };
+
+  const handleCloseModal = () => {
+    setModalIsOpen(false);
     setFormData({});
     setPaymentStatus(null);
   };
@@ -204,7 +256,7 @@ const DoctorProfile = ({ doctor, onBack }) => {
 
   const groupedSessions = groupSessionsByDateAndTime();
 
-  const PaymentForm = ({ totalAmount, onPayment }) => (
+  const PaymentForm = ({ totalAmount, onPayment, selectedSession }) => (
     <Modal
       show={paymentStatus === "pending"}
       onClose={() => setPaymentStatus(null)}
@@ -503,8 +555,11 @@ const DoctorProfile = ({ doctor, onBack }) => {
         </Modal.Footer>
       </Modal>
 
-      <PaymentForm totalAmount={totalAmount} onPayment={handlePayment} />
-
+      <PaymentForm
+  totalAmount={totalAmount}
+  onPayment={(success) => handlePayment(success, selectedSession)}
+  selectedSession={selectedSession}
+/>
       <Modal
         show={paymentStatus == "success"}
         onClose={() => setPaymentStatus(null)}
