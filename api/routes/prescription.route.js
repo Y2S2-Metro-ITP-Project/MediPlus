@@ -10,9 +10,7 @@ import {
   downloadPatientDocotorPDFPrescription,
   getPrescriptionOrdersInventoryData,
   updatePrescription,
-  downloadDoctorPrescription,
-  getFilterStatusPrescriptionData,
-  getFilterDatePrescriptionData
+  downloadDoctorPrescription
 } from "../controller/prescription.controller.js";
 const router = express.Router();
 
@@ -46,7 +44,5 @@ router.post(
 router.get("/getPrescriptionsDataOrders/:id", verifyToken, getPrescriptionOrdersInventoryData);
 router.put("/updatePrescription", verifyToken, updatePrescription);
 router.post("/DownloadPDFPrescriptionDoctor/:id", verifyToken, downloadDoctorPrescription);
-router.post("/handleStatusPrecriptionDispenceFilter/:id", verifyToken, getFilterStatusPrescriptionData);
-router.post("/filterPrescription/:id", verifyToken, getFilterDatePrescriptionData);
 
 export default router;

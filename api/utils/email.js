@@ -9,6 +9,9 @@ export const sendEmail = async ({ to, subject, text,html}) => {
       user: "mediplusv2@outlook.com",
       pass: "MediPlus890@",
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 
   const mailOptions = {

@@ -22,7 +22,6 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
-import ReactPaginate from "react-paginate";
 export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
   const [patients, setPatients] = useState([]);
@@ -38,78 +37,6 @@ export default function DashOutPatients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [patientName, setPatient] = useState("");
   const [patientIdDownloadPDF, setPatientIdDownloadPDF] = useState("");
-  {
-    /** Pagination */
-  }
-  const [pageNumber, setPageNumber] = useState(0);
-  const OutpatientsPerPage = 5;
-
-  const pageCount = Math.ceil(patients.length / OutpatientsPerPage);
-
-  const handlePageChange = ({ selected }) => {
-    setPageNumber(selected);
-  };
-
-  const displayOuPatientsOrders = patients
-    .slice(
-      pageNumber * OutpatientsPerPage,
-      (pageNumber + 1) * OutpatientsPerPage
-    )
-    .map((patient) => (
-      <Table.Body className="divide-y" key={patient._id}>
-        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-          <Table.Cell>
-            {new Date(patient.createdAt).toLocaleDateString()}
-          </Table.Cell>
-          <Table.Cell>{patient.name}</Table.Cell>
-          <Table.Cell>{patient.contactEmail}</Table.Cell>
-          <Table.Cell>{patient.contactPhone}</Table.Cell>
-          <Table.Cell>
-            <Link to={`/dashboard?tab=PatientProfile&id=${patient._id}`}>
-              <HiEye className="text-blue-500 cursor-pointer" />
-            </Link>
-          </Table.Cell>
-          <Table.Cell>
-            <Link className="text-teal-500 hover:underline">
-              <span
-                onClick={() => {
-                  setPatientIdToUpdate(patient._id);
-                  handleSetPatientDetails(
-                    patient.name,
-                    patient.gender,
-                    patient.contactEmail,
-                    patient.contactPhone,
-                    patient.createdAt,
-                    patient.illness,
-                    patient.dateOfBirth,
-                    patient.address,
-                    patient.identification,
-                    patient.emergencyContact.name,
-                    patient.emergencyContact.phoneNumber,
-                    patient.patientProfilePicture
-                  );
-                  setUpdatePatientModal(true);
-                }}
-              >
-                Update
-              </span>
-            </Link>
-          </Table.Cell>
-          <Table.Cell>
-            <span
-              onClick={() => {
-                setShowModal(true);
-                setPatientIdToDelete(patient._id);
-              }}
-              className="font-medium text-red-500 hover:underline cursor-pointer"
-            >
-              Delete
-            </span>
-          </Table.Cell>
-        </Table.Row>
-      </Table.Body>
-    ));
-
   const fetchPatients = async () => {
     try {
       const res = await fetch(`/api/patient/getPatients`);
@@ -140,7 +67,7 @@ export default function DashOutPatients() {
         console.log(error);
       }
     };
-    if (currentUser.isAdmin || currentUser.isReceptionist || currentUser.isDoctor || currentUser.isNurse) {
+    if (currentUser.isAdmin || currentUser.isReceptionist) {
       fetchPatients();
     }
   }, [currentUser._id]);
@@ -252,7 +179,6 @@ export default function DashOutPatients() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
-  console.log(formData);
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
     useState(null);
   const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
@@ -516,14 +442,12 @@ export default function DashOutPatients() {
             Choose a filter option
           </option>
           <option value="today">Today</option>
-          <option value="lastweek">Last Week</option>
           <option value="lastmonth">Last Month</option>
           <option value="lastyear">Last Year</option>
-          <option value="latest">Latest</option>
-          <option value="oldest">Oldest</option>
+          <option value="Bydate">By Date</option>
         </select>
       </div>
-      {(currentUser.isAdmin || currentUser.isReceptionist || currentUser.isDoctor || currentUser.isNurse) &&
+      {(currentUser.isAdmin || currentUser.isReceptionist) &&
       patients.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
@@ -536,25 +460,63 @@ export default function DashOutPatients() {
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
-            {displayOuPatientsOrders}
+            {patients.map((patient) => (
+              <Table.Body className="divide-y" key={patient._id}>
+                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+                  <Table.Cell>
+                    {new Date(patient.createdAt).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell>{patient.name}</Table.Cell>
+                  <Table.Cell>{patient.contactEmail}</Table.Cell>
+                  <Table.Cell>{patient.contactPhone}</Table.Cell>
+                  <Table.Cell>
+                    <Link
+                      to={`/dashboard?tab=PatientProfile&id=${patient._id}`}
+                    >
+                      <HiEye className="text-blue-500 cursor-pointer" />
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Link className="text-teal-500 hover:underline">
+                      <span
+                        onClick={() => {
+                          setPatientIdToUpdate(patient._id);
+                          handleSetPatientDetails(
+                            patient.name,
+                            patient.gender,
+                            patient.contactEmail,
+                            patient.contactPhone,
+                            patient.createdAt,
+                            patient.illness,
+                            patient.dateOfBirth,
+                            patient.address,
+                            patient.identification,
+                            patient.emergencyContact.name,
+                            patient.emergencyContact.phoneNumber,
+                            patient.patientProfilePicture
+                          );
+                          setUpdatePatientModal(true);
+                        }}
+                      >
+                        Update
+                      </span>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span
+                      onClick={() => {
+                        setShowModal(true);
+                        setPatientIdToDelete(patient._id);
+                      }}
+                      className="font-medium text-red-500 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </span>
+                  </Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            ))}
           </Table>
-          <div className="mt-9 center">
-            <ReactPaginate
-              previousLabel={"Previous"}
-              nextLabel={"Next"}
-              pageCount={pageCount}
-              onPageChange={handlePageChange}
-              containerClassName={"pagination flex justify-center"}
-              previousLinkClassName={
-                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              }
-              nextLinkClassName={
-                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              }
-              disabledClassName={"opacity-50 cursor-not-allowed"}
-              activeClassName={"bg-indigo-500 text-white"}
-            />
-          </div>
           {showMore && (
             <button
               onClick={handleShowMore}

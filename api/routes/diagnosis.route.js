@@ -8,8 +8,6 @@ import {
   downloadPatientDoctorPDFDiagnosis,
   downloadDoctorDiagnosis,
   downloadDateDiagnosis,
-  getFilterDiagnosisData,
-  getFilterStatusDiagnosisData
 } from "../controller/diagnosis.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
@@ -42,6 +40,5 @@ router.post(
   verifyToken,
   downloadDateDiagnosis
 );
-router.post("/filterDiagnosis/:id", verifyToken, getFilterDiagnosisData);
-router.post ("/handleStatusDiagnosisFilter/:id",verifyToken, getFilterStatusDiagnosisData);
+
 export default router;

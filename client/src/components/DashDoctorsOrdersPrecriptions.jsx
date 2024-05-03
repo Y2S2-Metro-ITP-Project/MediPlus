@@ -194,16 +194,8 @@ export default function DashDoctorsOrdersPrecriptions() {
               {order.status}
             </span>
           </Table.Cell>
-          <Table.Cell>
-            {order.payment?.status ? (
-              <span style={{ color: getStatusColor(order.payment.status) }}>
-                {order.payment.status}
-              </span>
-            ) : (
-              <span style={{ fontWeight: "bold", color: "yellow" }}>
-                Not Created
-              </span>
-            )}
+          <Table.Cell style={{ color: getStatusColor(order.payment?.status) }}>
+            {order.payment?.status}
           </Table.Cell>
 
           <Table.Cell>
@@ -379,60 +371,7 @@ export default function DashDoctorsOrdersPrecriptions() {
       console.log(error);
     }
   };
-  {
-    /** Implmentation of filteration */
-  }
-  const handleInventoryFilterByDispenseStatus = async (e) => {
-    const filterValue = e.target.value;
-    try {
-      const res = await fetch(
-        `/api/prescriptionOrder/getprescriptionOrderByDispense/${filterValue}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filterValue,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setOrders(data.prescriptionOrders);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  {/** Implementation of Reset */}
-  const handleReset = async () => {
-    fetchOrders();
-  };
-  {/** Implementation of fileration by payment status */}
-  const handleInventoryFilterByPaymentStatus = async (e) => {
-    const filterValue = e.target.value;
-    try {
-      const res = await fetch(
-        `/api/prescriptionOrder/getprescriptionOrderByPayment/${filterValue}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filterValue,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setOrders(data.prescriptionOrders);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  console.log(seleactedDoctor)
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -448,6 +387,12 @@ export default function DashDoctorsOrdersPrecriptions() {
               </div>
               <BiCapsule className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
             <div className="flex justify-between">
@@ -458,6 +403,12 @@ export default function DashDoctorsOrdersPrecriptions() {
                 <p className="text-2xl">{totalPendingOrders}</p>
               </div>
               <BiCapsule className="bg-yellow-600 text-white rounded-full text-5xl p-3 shadow-lg" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+              <div className="text-gray-500">Last Month</div>
             </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
@@ -470,6 +421,12 @@ export default function DashDoctorsOrdersPrecriptions() {
               </div>
               <BiCapsule className="bg-green-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
             <div className="flex justify-between">
@@ -481,44 +438,16 @@ export default function DashDoctorsOrdersPrecriptions() {
               </div>
               <BiCapsule className="bg-red-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
+            <div className="flex gap-2 text-sm">
+              <span className="text-green-500 flex items-center">
+                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
+              </span>
+              <div className="text-gray-500">Last Month</div>
+            </div>
           </div>
         </div>
       </div>
-      <div></div>
       <div>
-        <div className="flex">
-        <select
-          id="filter"
-          onChange={handleInventoryFilterByDispenseStatus}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue" disabled selected>
-            Choose a Dispense status
-          </option>
-          <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Pending">Pending</option>
-        </select>
-        <select
-          id="filter"
-          onChange={handleInventoryFilterByPaymentStatus}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue" disabled selected>
-            Choose a Payment status
-          </option>
-          <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Pending">Pending</option>
-        </select>
-        <Button
-          className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
-          color="gray"
-          onClick={() => handleReset()}
-        >
-          Reset
-        </Button>
-        </div>
         <div className=" flex items-center mb-2">
           <TextInput
             type="text"

@@ -31,13 +31,7 @@ const inventorySchema= new mongoose.Schema({
     itemExpireDate: {
         type:String,
         required:true
-    },
-    supplierName: {
-        type:String,
-    },
-    supplierEmail: {
-        type:String,
-    },
+    }
 },{timestamps:true})
 
 const Inventory=mongoose.model('Inventory',inventorySchema)

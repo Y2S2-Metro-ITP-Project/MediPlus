@@ -1,5 +1,5 @@
 {
-  "name": "shadcn-ui",
+  "name": "vite-project",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,15 +11,10 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.1",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "firebase": "^10.8.1",
     "flowbite": "^2.3.0",
-    "flowbite-react": "^0.7.8",
-    "html2pdf.js": "^0.10.1",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2",
+    "flowbite-react": "^0.7.3",
     "mdb-react-ui-kit": "^7.2.0",
     "notistack": "^3.0.1",
     "react": "^18.2.0",
@@ -31,10 +26,7 @@
     "react-router-dom": "^6.21.3",
     "react-select": "^5.8.0",
     "react-toastify": "^10.0.5",
-    "redux-persist": "^6.0.0",
-    "styled-components": "^6.1.8",
-    "tailwind-merge": "^2.2.2",
-    "tailwindcss-animate": "^1.0.7"
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",
@@ -48,9 +40,5 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.4"
-  },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
-  "main": "postcss.config.js",
-  "author": "",
-  "license": "ISC"
+  }
 }
