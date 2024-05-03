@@ -119,6 +119,31 @@ export default function DashOutPatientProfile() {
   const [searchTerm1, setSearchTerm1] = useState("");
   const [labOrders, setLabOrders] = useState([]);
   const [addTestModal, setAddTestModal] = useState(false);
+  const [searchTerm2, setSearchTerm2] = useState("");
+  const [prescriptionUpdate, setPrescriptionUpdate] = useState(false);
+  const [prescriptionUpdateModal, setPrescriptionUpdateModal] = useState(false);
+  const [doctors, setDoctors] = useState([]);
+  const [vitalsDate, setVitalsDate] = useState([]);
+  const [selectedVitalsDate, setSelectedVitalsDate] = useState(null);
+  const [vitalstime, setVitalsTime] = useState([]);
+  const [selectedVitalsTime, setSelectedVitalsTime] = useState(null);
+  const [vitalsDoctor, setVitalsDoctor] = useState([]);
+  const [selectedVitalsDoctor, setSelectedVitalsDoctor] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  {
+    /** Searching for vitals */
+  }
+  const [searchTerm3, setSearchTerm3] = useState("");
+  const [precriptionDetails, setPrescriptionDetails] = useState({
+    medicine: "",
+    dosage: "",
+    dosageType: "",
+    route: "",
+    frequency: "",
+    duration: "",
+    foodRelation: "",
+    instructions: "",
+  });
 
   const itemsPerPage = 2; // Adjust as needed
 
@@ -126,7 +151,7 @@ export default function DashOutPatientProfile() {
     setCurrentPage(selected);
   };
   const offset = currentPage * itemsPerPage;
-  const pageCount = Math.ceil(prescriptions.length / itemsPerPage);
+  
   const currentPageData = prescriptions.slice(offset, offset + itemsPerPage);
   const fetchDieseases = async () => {
     try {
@@ -278,10 +303,52 @@ export default function DashOutPatientProfile() {
     if (!res.ok) {
       console.log(data.message);
     } else {
-      setVitals(data.vitals);
+      const filteredVitals = data.vitals.filter((vitals) =>
+        vitals.doctorId.username
+          .toLowerCase()
+          .includes(searchTerm3.toLowerCase())
+      );
+      const uniqueDates = [
+        ...new Set(
+          data.vitals.map((vitals) =>
+            format(new Date(vitals.date), "MMMM dd, yyyy")
+          )
+        ),
+      ];
+
+      const uniqueDoctors = [];
+      const uniqueDoctorIds = new Set();
+
+      data.vitals.forEach((vitals) => {
+        const { doctorId } = vitals;
+        const doctorIdString = doctorId._id.toString();
+
+        if (!uniqueDoctorIds.has(doctorIdString)) {
+          uniqueDoctorIds.add(doctorIdString);
+          uniqueDoctors.push({
+            doctorId: doctorId._id,
+            username: doctorId.username,
+          });
+        }
+      });
+      const uniqueTimes = [
+        ...new Set(
+          data.vitals.map((vitals) => format(new Date(vitals.date), "hh:mm a"))
+        ),
+      ];
+      setVitals(filteredVitals);
+      setVitalsTime(uniqueTimes);
+      setVitalsDoctor(uniqueDoctors);
+      setVitalsDate(uniqueDates);
       setLatestVitals(data.latestVitals);
     }
   };
+  console.log(vitalsDoctor);
+  console.log(vitalsDate);
+  console.log(vitalstime);
+  {
+    /** Handle fetch patients */
+  }
   const fetchPatient = async () => {
     const res = await fetch(`/api/patient/getPatient/${id}`, {
       method: "GET",
@@ -308,7 +375,46 @@ export default function DashOutPatientProfile() {
       if (!res.ok) {
         console.log(data.message);
       } else {
-        setVitals(data.vitals);
+        const filteredVitals = data.vitals.filter((vitals) =>
+        vitals.doctorId.username
+          .toLowerCase()
+          .includes(searchTerm3.toLowerCase())
+      );
+        const uniqueDates = [
+          ...new Set(
+            data.vitals.map((vitals) =>
+              format(new Date(vitals.date), "MMMM dd, yyyy")
+            )
+          ),
+        ];
+
+        const uniqueDoctors = [];
+        const uniqueDoctorIds = new Set();
+
+        data.vitals.forEach((vitals) => {
+          const { doctorId } = vitals;
+          const doctorIdString = doctorId._id.toString();
+
+          if (!uniqueDoctorIds.has(doctorIdString)) {
+            uniqueDoctorIds.add(doctorIdString);
+            uniqueDoctors.push({
+              doctorId: doctorId._id,
+              username: doctorId.username,
+            });
+          }
+        });
+        const uniqueTimes = [
+          ...new Set(
+            data.vitals.map((vitals) =>
+              format(new Date(vitals.date), "hh:mm a")
+            )
+          ),
+        ];
+        setVitals(filteredVitals);
+        setVitalsTime(uniqueTimes);
+        setVitalsDoctor(uniqueDoctors);
+        setVitalsDate(uniqueDates);
+        setLatestVitals(data.latestVitals);
         setLatestVitals(data.latestVitals);
       }
     };
@@ -339,7 +445,7 @@ export default function DashOutPatientProfile() {
       fetchDiagnosticData();
       fetchTestOrders();
     }
-  }, [currentUser._id, searchTerm1]);
+  }, [currentUser._id, searchTerm1, searchTerm2, searchTerm3]);
   const formatDateOfBirth = (dateOfBirth) => {
     const date = new Date(dateOfBirth);
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -388,15 +494,46 @@ export default function DashOutPatientProfile() {
       [e.target.id]: e.target.value,
     });
   };
-  console.log(formData);
+
+  {
+    /** Handle Vitals Submit */
+  }
   const handleVitalSubmit = async (e) => {
     e.preventDefault();
+
+    // Define validation ranges for each field
+    const validationRanges = {
+      bloodGlucose: { min: 40, max: 500 },
+      bloodPressureDiastolic: { min: 40, max: 120 },
+      bloodPressureSystolic: { min: 70, max: 180 },
+      heartRate: { min: 40, max: 180 },
+      oxygenSaturation: { min: 90, max: 100 },
+      respiratoryRate: { min: 12, max: 20 },
+      temperature: { min: 32, max: 41 },
+    };
+    const errors = {};
+
+    Object.entries(formData).forEach(([field, value]) => {
+      const range = validationRanges[field];
+      if (range && (value < range.min || value > range.max)) {
+        errors[
+          field
+        ] = `${field} value must be between ${range.min} and ${range.max}`;
+      }
+    });
+    if (Object.keys(errors).length > 0) {
+      Object.values(errors).forEach((error) => {
+        toast.error(error);
+      });
+      return;
+    }
+
     const res = await fetch(`/api/vital/addVitals/${id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ formData, doctorId: currentUser._id }),
     });
     if (!res.ok) {
       toast.error("Failed to add vitals");
@@ -411,26 +548,40 @@ export default function DashOutPatientProfile() {
     fetchDieseases();
     fetchDiagnosticData();
   };
-  const handleVitalDelete = async (e) => {
-    const res = await fetch(`/api/vital/deleteVitals/${vitalIdToDelete}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) {
-      console.log("Failed to delete vitals");
-      toast.error("Failed to delete vitals");
-    } else {
-      toast.success("Vitals deleted successfully");
+  
+
+  {
+    /** Handle vitals delete */
+  }
+  const handleVitalDelete = async (id) => {
+    console.log(id);
+    try {
+      const res = await fetch(`/api/vital/deleteVitals/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) {
+        console.log("Failed to delete vitals");
+        toast.error("Failed to delete vitals");
+      } else {
+        toast.success("Vitals deleted successfully");
+      }
+      fetchPatient();
+      fetchPatientVital();
+      fetchPrescriptions();
+      fetchDieseases();
+      fetchDiagnosticData();
+      fetchTestOrders();
+    } catch (error) {
+      console.log(error);
     }
-    fetchPatient();
-    fetchPatientVital();
-    fetchPrescriptions();
-    fetchDieseases();
-    fetchDiagnosticData();
-    fetchTestOrders();
   };
+
+  {
+    /** Handle download vitals report */
+  }
   const handlePdfDownloadVitals = async () => {
     try {
       const res = await fetch(`/api/vital/DownloadPDFVitals/${id}`, {
@@ -544,16 +695,17 @@ export default function DashOutPatientProfile() {
       dosageType: selectedOption.value,
     });
   };
-  const handlePrescriptionDelete = async (e) => {
-    const res = await fetch(
-      `/api/prescription/deletePrescription/${prescriptionIdToDelete}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+
+  {
+    /** Hnadle prescription delete */
+  }
+  const handlePrescriptionDelete = async (id) => {
+    const res = await fetch(`/api/prescription/deletePrescription/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     if (!res.ok) {
       console.log("Failed to delete prescription");
       toast.error("Failed to delete prescription");
@@ -567,9 +719,15 @@ export default function DashOutPatientProfile() {
     fetchDiagnosticData();
     fetchTestOrders();
   };
- 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
+
+  {
+    /** Handle Prescription Report download */
+  }
+  const handleDateChange = (selectedOption) => {
+    setSelectedDate(selectedOption);
+  };
+  const handleDoctorChange = (selectedOption) => {
+    setSelectedDoctor(selectedOption);
   };
   const handleDownloadPrescriptionReport = async () => {
     try {
@@ -676,15 +834,12 @@ export default function DashOutPatientProfile() {
   };
   const handleDiagnosisDelete = async (e) => {
     try {
-      const res = await fetch(
-        `/api/diagnosis/deleteDiagnosticData/${diagnosisIDDelete}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await fetch(`/api/diagnosis/deleteDiagnosticData/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       if (!res.ok) {
         console.log("Failed to delete diagnosis");
         toast.error("Failed to delete diagnosis");
@@ -773,6 +928,472 @@ export default function DashOutPatientProfile() {
         const a = document.createElement("a");
         a.href = url;
         a.download = `Patient-${patient.name}-Diagnosis.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
+  {
+    /** Pagination for prescriptions */
+  }
+
+  const [pageNumber, setPageNumber] = useState(0);
+  const prescriptionsPerPage = 5;
+
+  const pageCount = Math.ceil(prescriptions.length / prescriptionsPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+  const displayPrecriptions = prescriptions
+    .slice(
+      pageNumber * prescriptionsPerPage,
+      (pageNumber + 1) * prescriptionsPerPage
+    )
+    .map((prescription) => (
+      <Table.Body className="divide-y" key={prescription._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>{prescription.medicine}</Table.Cell>
+          <Table.Cell>
+            {prescription.dosage} {prescription.dosageType}
+          </Table.Cell>
+          <Table.Cell>{prescription.frequency} Times/Day</Table.Cell>
+          <Table.Cell>{prescription.duration} Days</Table.Cell>
+          <Table.Cell>{prescription.route}</Table.Cell>
+          <Table.Cell>{prescription.foodRelation}</Table.Cell>
+          <Table.Cell>{prescription.doctorId.username}</Table.Cell>
+          <Table.Cell
+            style={{
+              color:
+                prescription.status === "Pending"
+                  ? "orange"
+                  : prescription.status === "Rejected"
+                  ? "red"
+                  : "green",
+              fontWeight: "bold",
+            }}
+          >
+            {prescription.status}
+          </Table.Cell>
+
+          <Table.Cell>
+            {prescription.status === "Pending" && (
+              <span
+                onClick={() => {
+                  setPrescriptionUpdate(prescription._id);
+                  handleSetPrescriotionDetails(
+                    prescription.medicine,
+                    prescription.dosage,
+                    prescription.dosageType,
+                    prescription.route,
+                    prescription.frequency,
+                    prescription.duration,
+                    prescription.foodRelation,
+                    prescription.instructions
+                  );
+                  setPrescriptionUpdateModal(true);
+                }}
+                className="font-medium text-green-500 hover:underline cursor-pointer mr-4"
+              >
+                Update
+              </span>
+            )}
+            <span
+              onClick={() => {
+                //setPrescriptionIdToDelete(prescription._id);
+                handlePrescriptionDelete(prescription._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Pagination for vitals */
+  }
+
+  const [pageNumber1, setPageNumber1] = useState(0);
+  const vitalsPerPage = 5;
+
+  const pageCount1 = Math.ceil(vitals.length / vitalsPerPage);
+
+  const handlePageChange1 = ({ selected }) => {
+    setPageNumber1(selected);
+  };
+
+  const displayVitals = vitals
+    .slice(pageNumber1 * vitalsPerPage, (pageNumber1 + 1) * vitalsPerPage)
+    .map((vital) => (
+      <Table.Body className="divide-y" key={vital._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell
+            className={getColorClass(vital.temperature, THRESHOLDS.temperature)}
+          >
+            {vital.temperature}
+          </Table.Cell>
+          <Table.Cell
+            className={`${getColorClass(
+              vital.bloodPressureSystolic,
+              THRESHOLDS.bloodPressureSystolic
+            )} ${getColorClass(
+              vital.bloodPressureDiastolic,
+              THRESHOLDS.bloodPressureDiastolic
+            )}`}
+          >
+            {vital.bloodPressureSystolic}/{vital.bloodPressureDiastolic}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(vital.heartRate, THRESHOLDS.heartRate)}
+          >
+            {vital.heartRate}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(
+              vital.bloodGlucose,
+              THRESHOLDS.bloodGlucose
+            )}
+          >
+            {vital.bloodGlucose}
+          </Table.Cell>
+          <Table.Cell
+            className={getColorClass(
+              vital.oxygenSaturation,
+              THRESHOLDS.oxygenSaturation
+            )}
+          >
+            {vital.oxygenSaturation}
+          </Table.Cell>
+          <Table.Cell>{vital.bodyweight}</Table.Cell>
+          <Table.Cell>{vital.height}</Table.Cell>
+          <Table.Cell
+            className={
+              BMI_COLORS[getBMICategory(parseFloat(vital.BMI).toFixed(2))]
+            }
+          >
+            {parseFloat(vital.BMI).toFixed(2)}
+          </Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                //setVitalIdToDelete(vital._id);
+                handleVitalDelete(vital._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Pagiantion for Diagnosis*/
+  }
+
+  const [pageNumber2, setPageNumber2] = useState(0);
+  const diagnosisPerPage = 5;
+
+  const pageCount2 = Math.ceil(diagnosticData.length / diagnosisPerPage);
+
+  const handlePageChange2 = ({ selected }) => {
+    setPageNumber2(selected);
+  };
+
+  const displaydiagnosis = diagnosticData
+    .slice(pageNumber2 * diagnosisPerPage, (pageNumber2 + 1) * diagnosisPerPage)
+    .map((diagnosis) => (
+      <Table.Body className="divide-y" key={diagnosis._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>
+            {new Date(diagnosis.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </Table.Cell>
+          <Table.Cell>{diagnosis.type}</Table.Cell>
+          <Table.Cell className={getColorClass2(diagnosis.level)}>
+            {diagnosis.level}
+          </Table.Cell>
+          <Table.Cell>{diagnosis.diagnosis}</Table.Cell>
+          <Table.Cell>{diagnosis.ICD10}</Table.Cell>
+          <Table.Cell>{diagnosis.doctorId.username}</Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                //setDiagnosisIDDelete(diagnosis._id);
+                handleDiagnosisDelete(diagnosis._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
+  {
+    /** Diagnosis search */
+  }
+  const [formdata2, setFormData2] = useState([]);
+  const onChangeDiagnosisSearch = (e) => {
+    setFormData2({
+      ...formdata2,
+      [e.target.id]: e.target.value,
+    });
+  };
+  console.log(formdata2);
+  const handleDiagnosisSearch = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/diagnosis/searchDiagnosis/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formdata2),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.error("Error fetching diagnosis:", error);
+    }
+  };
+
+  const handleReset = async () => {
+    fetchDiagnosticData();
+    fetchPatient();
+    fetchPrescriptions();
+    fetchPatientVital();
+    fetchDieseases();
+  };
+
+  {
+    /** Filter function for diagnosis */
+  }
+
+  const handleDiagnosisFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/diagnosis/filterDiagnosis/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedOption }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+  {
+    /** filter for diagnosis crirtial state */
+  }
+  const handleStatusDiagnosisFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/diagnosis/handleStatusDiagnosisFilter/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selectedOption }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setDiagnosticData(data.diagnosis);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  {
+    /** Filter function for prescriptions */
+  }
+  const handleStatusPrecriptionDispenceFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/prescription/handleStatusPrecriptionDispenceFilter/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selectedOption }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setPrescriptions(data.prescriptions);
+      fetchPatient();
+      fetchPatientVital();
+      fetchDieseases();
+      fetchDiagnosticData();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+  {
+    /** Filter function for prescriptions */
+  }
+  const handlePrecriptionFilter = async (e) => {
+    e.preventDefault();
+    const selectedOption = e.target.value;
+    try {
+      const res = await fetch(`/api/prescription/filterPrescription/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedOption }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+      setPrescriptions(data.Precriptions);
+      fetchPatient();
+      fetchPatientVital();
+      fetchDieseases();
+      fetchDiagnosticData();
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  {
+    /** Report Generation for Vitals */
+  }
+
+  const handleVitalsDateChange = (selectedOption) => {
+    setSelectedVitalsDate(selectedOption);
+  };
+  const handleVitalsDoctorChange = (selectedOption) => {
+    setSelectedVitalsDoctor(selectedOption);
+  };
+  const handlevitalsTimeChange = (selectedOption) => {
+    setSelectedVitalsTime(selectedOption);
+  };
+
+  const handleDownloadVitalsReport = async () => {
+    if (selectedVitalsDate !== null) {
+      try {
+        const res = await fetch(`/api/vital/DownloadPDFVitals/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ patientId: id, selectedVitalsDate }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${patient.name}-Vitals.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    if (selectedVitalsDoctor !== null) {
+      try {
+        const res = await fetch(`/api/vital/DownloadPDFVitals/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            patientId: id,
+            selectedVitalsDoctor,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${patient.name}-Vitals.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    if (selectedVitalsTime !== null) {
+      try {
+        const res = await fetch(`/api/vital/DownloadPDFVitals/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            patientId: id,
+            selectedVitalsTime,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Patient-${patient.name}-Vitals.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -993,18 +1614,10 @@ export default function DashOutPatientProfile() {
           </div>
         </div>
       </div>
+      {/* Patient Vitals */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex mb-2">
           <h1 className="text-3xl font-bold mb-4 ">Patient Vitals</h1>
-          <Button
-            color="gray"
-            className="ml-8"
-            onClick={() => {
-              handlePdfDownloadVitals(patient.name);
-            }}
-          >
-            Download Report
-          </Button>
         </div>
         <div className="">
           <div className="mb-4">
@@ -1051,6 +1664,110 @@ export default function DashOutPatientProfile() {
                   BMI Obese
                 </span>
               </div>
+            </div>
+            <div className="flex mb-2 mt-2">
+              <TextInput
+                type="text"
+                value={searchTerm3}
+                onChange={(e) => setSearchTerm3(e.target.value)}
+                placeholder="Search by doctor name"
+                rightIcon={AiOutlineSearch}
+                className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
+              />
+              <Select
+                id="filter"
+                className="ml-4 mb-2"
+                onChange={handleVitalsDateChange}
+                placeholder="Select a date"
+                value={selectedVitalsDate}
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    width: "200px",
+                  }),
+                  option: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                }}
+                options={vitalsDate.map((date) => ({
+                  value: date,
+                  label: date,
+                }))}
+                isClearable
+              />
+              <Select
+                id="filter"
+                className="ml-4 mb-2"
+                onChange={handlevitalsTimeChange}
+                placeholder="Select a time"
+                value={selectedVitalsTime}
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    width: "200px",
+                  }),
+                  option: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                }}
+                options={vitalstime.map((time) => ({
+                  value: time,
+                  label: time,
+                }))}
+                isClearable
+              />
+              <Select
+                id="filter"
+                className="ml-4 mb-2"
+                onChange={handleVitalsDoctorChange}
+                placeholder="Select a doctor"
+                value={selectedVitalsDoctor}
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    width: "200px",
+                  }),
+                  option: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: "black",
+                  }),
+                }}
+                options={vitalsDoctor.map((vitalsDoctor) => ({
+                  value: vitalsDoctor.doctorId,
+                  label: vitalsDoctor.username,
+                }))}
+                isClearable
+              />
+              <Button
+                outline
+                gradientDuoTone="greenToBlue"
+                className="mb-2 ml-4"
+                onClick={handleDownloadVitalsReport}
+                disabled={
+                  (selectedVitalsDate &&
+                    selectedVitalsDoctor &&
+                    selectedVitalsTime) ||
+                  (!selectedVitalsDate &&
+                    !selectedVitalsDoctor &&
+                    !selectedVitalsTime)
+                }
+              >
+                Download Vitals Report
+              </Button>
             </div>
             {vitals.length > 0 ? (
               <>
@@ -1422,6 +2139,10 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 36.5 - 37.5"
                   onChange={onVitalChange}
+                  min={32}
+                  max={41}
+                  step={0.1}
+                  required
                 />
               </div>
               <div>
@@ -1432,6 +2153,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 70"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1442,6 +2165,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 1.75"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1452,6 +2177,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 80 - 120"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1464,6 +2191,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 90 - 120"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1476,6 +2205,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 80"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1486,6 +2217,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 60 - 100"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1496,6 +2229,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 12 - 20"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
               <div>
@@ -1506,6 +2241,8 @@ export default function DashOutPatientProfile() {
                   className="input-field"
                   placeholder="e.g., 95 - 100"
                   onChange={onVitalChange}
+                  min={0}
+                  required
                 />
               </div>
             </div>
