@@ -323,6 +323,29 @@ export const cancelSelectedBookings = async (req, res) => {
   }
 };
 
+export const updateStatus = async (req, res) => {
+  try {
+    const { bookingId, status } = req.body;
+    console.log("Request received:", req.body);
+
+    // Find the booking by ID and update its status
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    res.json(updatedBooking);
+  } catch (error) {
+    console.error('Error updating booking status:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // const createOrUpdatePaymentOrder = async (
 
 //   patientId,

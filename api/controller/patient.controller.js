@@ -587,3 +587,43 @@ export const getPatientByUser = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updatePatientDetails = async (req, res, next) => {
+  // Validate the request body
+  const { patientId, name, contactEmail, contactPhone, address } = req.body;
+
+  if (!patientId || !name || !contactEmail || !contactPhone || !address) {
+    return next(errorHandler(400, "All fields are required"));
+  }
+
+  try {
+    // Find the patient by ID and update the specified fields
+    const patient = await Patient.findByIdAndUpdate(
+      patientId,
+      {
+        $set: {
+          name,
+          contactEmail,
+          contactPhone,
+          address,
+        },
+      },
+      { new: true } // Return the updated patient document
+    );
+
+    // If patient is not found, return a 404 error
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+
+    // Return the updated patient details
+    res.status(200).json(patient);
+  } catch (error) {
+    // Handle any errors that occur during the update process
+    next(error);
+  }
+};
+
+
+
+

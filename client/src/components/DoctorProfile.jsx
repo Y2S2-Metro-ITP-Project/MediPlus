@@ -59,15 +59,36 @@ const DoctorProfile = ({ doctor, onBack }) => {
     }
   };
 
-  const handlePayToBook = () => {
-    setModalIsOpen(false);
-    setPaymentStatus("pending");
+  const handlePayToBook = async () => {
+    try {
+      // Make an API call to update the booking status to "payment pending"
+      const response = await fetch(`/api/booking/updateStatus`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bookingId: selectedSession._id,
+          status: "Pending Payment",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update booking status");
+      }
+
+      setModalIsOpen(false);
+      setPaymentStatus("pending");
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      toast.error(
+        "An error occurred while updating booking status. Please try again."
+      );
+    }
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (paymentSuccess) => {
     try {
-      const paymentSuccess = Math.random() > 0.5;
-
       if (paymentSuccess) {
         setPaymentStatus("success");
         handleCloseModal();
@@ -112,6 +133,7 @@ const DoctorProfile = ({ doctor, onBack }) => {
       const userData = await response.json();
       console.log("Fetched user details:", userData);
       setFormData({
+        _id: userData._id,
         name: `${userData.name}`,
         contactEmail: userData.contactEmail,
         contactPhone: userData.contactPhone,
@@ -146,6 +168,40 @@ const DoctorProfile = ({ doctor, onBack }) => {
     return groupedSessions;
   };
 
+  const handleUpdatePatientDetails = async () => {
+    const { _id, name, contactEmail, contactPhone, address } = formData;
+    try {
+      const response = await fetch(`/api/patient/updatePatientDetails`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          patientId: _id,
+          name,
+          contactEmail,
+          contactPhone,
+          address,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update patient details");
+      }
+
+      const updatedPatient = await response.json();
+      console.log("Updated patient:", updatedPatient);
+      // Handle success, e.g., close the modal, show a success message
+      handleCloseModal();
+      toast.success("Patient details updated successfully");
+    } catch (error) {
+      console.error("Error updating patient details:", error);
+      toast.error(
+        "An error occurred while updating patient details. Please try again."
+      );
+    }
+  };
+
   const groupedSessions = groupSessionsByDateAndTime();
 
   const PaymentForm = ({ totalAmount, onPayment }) => (
@@ -164,10 +220,16 @@ const DoctorProfile = ({ doctor, onBack }) => {
       </Modal.Body>
       <Modal.Footer>
         <button
-          onClick={() => onPayment()}
-          className="bg-green-500 hover:bg-green-600 text-white focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg text-sm font-medium px-5 py-2.5"
+          onClick={() => onPayment(true)}
+          className="bg-green-500 hover:bg-green-600 text-white focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg text-sm font-medium px-5 py-2.5 mr-2"
         >
-          Pay
+          Simulate Success
+        </button>
+        <button
+          onClick={() => onPayment(false)}
+          className="bg-red-500 hover:bg-red-600 text-white focus:ring-4 focus:outline-none focus:ring-red-300 rounded-lg text-sm font-medium px-5 py-2.5"
+        >
+          Simulate Failure
         </button>
       </Modal.Footer>
     </Modal>
@@ -241,12 +303,14 @@ const DoctorProfile = ({ doctor, onBack }) => {
                 ) : (
                   <div className="button-container flex items-center">
                     <button
-                      className="button bg-gray-400 text-white rounded-md px-4 py-2 cursor-not-allowed"
+                      className="button bg-gray-400 text-white rounded-md px-4 py-2 flex items-center cursor-not-allowed"
                       disabled
                     >
-                      Full
+                      Full{" "}
+                      <span className="padlock-icon ml-2 text-lg">
+                        &#x1F512;
+                      </span>
                     </button>
-                    <span className="padlock-icon ml-2 text-lg">&#x1F512;</span>
                   </div>
                 )}
               </div>
@@ -269,68 +333,75 @@ const DoctorProfile = ({ doctor, onBack }) => {
                 <h3 className="text-xl font-medium text-gray-900">
                   Book Appointment
                 </h3>
-
-                <form>
-                  <div class="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <TextInput
+                    type="hidden"
+                    id="patientId"
+                    name="patientId"
+                    value={formData._id || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, id: e.target.value })
+                    }
+                  />
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <TextInput
+                      id="name"
+                      type="text"
+                      value={formData.name || ""}
+                      placeholder="Enter your name"
+                      required={true}
+                      class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contactEmail">Email</Label>
+                    <TextInput
+                      id="contactEmail"
+                      type="email"
+                      value={formData.contactEmail || ""}
+                      placeholder="Enter your email"
+                      required={true}
+                      class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    />
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">Name</Label>
+                      <Label htmlFor="contactPhone">Phone Number</Label>
                       <TextInput
-                        id="name"
-                        type="text"
-                        value={formData.name || ""}
-                        placeholder="Enter your name"
+                        id="contactPhone"
+                        type="tel"
+                        value={formData.contactPhone || ""}
+                        placeholder="Enter your phone number"
                         required={true}
                         class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="contactEmail">Email</Label>
+                      <Label htmlFor="identification">NIC</Label>
                       <TextInput
-                        id="contactEmail"
-                        type="email"
-                        value={formData.contactEmail || ""}
-                        placeholder="Enter your email"
-                        required={true}
-                        class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                      />
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="contactPhone">Phone Number</Label>
-                        <TextInput
-                          id="contactPhone"
-                          type="tel"
-                          value={formData.contactPhone || ""}
-                          placeholder="Enter your phone number"
-                          required={true}
-                          class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="identification">NIC</Label>
-                        <TextInput
-                          id="identification"
-                          type="text"
-                          value={formData.identification || ""}
-                          placeholder="Enter your NIC"
-                          required={true}
-                          class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="address">Address</Label>
-                      <TextInput
-                        id="address"
+                        id="identification"
                         type="text"
-                        value={formData.address || ""}
-                        placeholder="Enter your address"
+                        value={formData.identification || ""}
+                        placeholder="Enter your NIC"
                         required={true}
+                        readOnly
                         class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                       />
                     </div>
                   </div>
-                </form>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <TextInput
+                      id="address"
+                      type="text"
+                      value={formData.address || ""}
+                      placeholder="Enter your address"
+                      required={true}
+                      class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -359,7 +430,9 @@ const DoctorProfile = ({ doctor, onBack }) => {
                     </div>
                     <div className="flex justify-between">
                       <div className="flex items-center">
-                        <Label className="font-semibold">Estimated TimeSlot:</Label>
+                        <Label className="font-semibold">
+                          Estimated TimeSlot:
+                        </Label>
                       </div>
                       <p>{selectedSession.time.split(" - ")[0]}</p>
                     </div>
@@ -418,7 +491,10 @@ const DoctorProfile = ({ doctor, onBack }) => {
               Close
             </button>
             <button
-              onClick={handlePayToBook}
+              onClick={() => {
+                handleUpdatePatientDetails();
+                handlePayToBook();
+              }}
               className="bg-green-500 hover:bg-green-600 text-white focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg text-sm font-medium px-5 py-2.5"
             >
               Pay to Book

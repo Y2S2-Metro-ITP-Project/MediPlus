@@ -11,6 +11,7 @@ import {
   getPatient,
   getPatientsforBooking,
   getPatientByUser,
+  updatePatientDetails,
 } from "../controller/patient.controller.js";
 const router = express.Router();
 
@@ -24,4 +25,5 @@ router.post("/searchPatient", verifyToken, searchPateint);
 router.post("/filterPatient", verifyToken, filterPatients);
 router.put("/update/:patientID", verifyToken, updateOutPatient);
 router.post("/DownloadPDFPatient/:patientID", verifyToken, downloadPDFPatient);
+router.put("/updatePatientDetails", updatePatientDetails);
 export default router;

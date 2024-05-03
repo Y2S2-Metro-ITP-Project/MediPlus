@@ -12,6 +12,7 @@ import {
   bookAppointment,
   cancelSelectedBookings,
   getBookingsForScheduling,
+  updateStatus,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.post("/filterBookings", verifyToken, filterBookings);
 router.put("/update/:bookingId", verifyToken, updateBooking);
 router.put("/bookAppointment/:bookingId", verifyToken, bookAppointment);
 router.put("/cancelSelected", verifyToken, cancelSelectedBookings );
+router.put("/updateStatus", verifyToken, updateStatus);
 
 
 export default router;
