@@ -16,6 +16,7 @@ import dieseaseRoutes from "./routes/diesease.route.js";
 import diagnosisRoutes from "./routes/diagnosis.route.js";
 import PrescriptionOrderRoutes from "./routes/PrecriptionOrder.route.js";
 import paymentOrderRoutes from "./routes/paymentOrder.route.js";
+import "./utils/jobs/booking.job.js";
 dotenv.config();
 
 mongoose
