@@ -51,11 +51,24 @@ export const getBookings = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const bookings = await Booking.find()
-      .sort({ createdAt: sortDirection })
-      .skip(startIndex)
-      .limit(limit);
+    const bookings = await Booking.find();
     const totalBookings = await Booking.countDocuments();
+    res.status(200).json({ bookings, totalBookings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBookingsForScheduling = async (req, res, next) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
+    return next(errorHandler(403, "You are not allowed to view all the bookings"));
+  }
+
+  try {
+    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+    const bookings = await Booking.find().sort({ createdAt: sortDirection });
+    const totalBookings = await Booking.countDocuments();
+
     res.status(200).json({ bookings, totalBookings });
   } catch (error) {
     next(error);

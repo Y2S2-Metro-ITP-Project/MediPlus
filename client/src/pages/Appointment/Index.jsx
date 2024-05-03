@@ -128,7 +128,7 @@ const Index = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100vh" }}>
+    <div style={{ display: "flex",marginLeft: "180px",width: "1200px", flexDirection: "column", alignItems: "center",overflow: "auto",minHeight: '700px' }}>
       {/* Form Container */}
       <div style={{ width: "850px", backgroundColor: "#0077b6", padding: "20px", borderRadius: "5px", marginBottom: "20px", marginTop: "20px" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>

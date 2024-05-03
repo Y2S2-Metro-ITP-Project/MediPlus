@@ -572,3 +572,18 @@ export const getPatientsforBooking = async (req, res, next) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getPatientByUser = async (req, res, next) => {
+  const userId = req.params.userId;
+  console.log(userId);
+  try {
+    const patient = await Patient.findOne({ user: userId });
+    console.log(patient);
+    if (!patient) {
+      return next(errorHandler(404, "No patient found for this user"));
+    }
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+};
