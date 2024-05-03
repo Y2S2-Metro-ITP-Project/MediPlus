@@ -7,10 +7,13 @@ import {
   Button,
   Label,
   Modal,
+  ModalBody,
+  ModalHeader,
   Table,
   TableCell,
   TextInput,
   Textarea,
+  Checkbox,
 } from "flowbite-react";
 import { ToastContainer, toast } from "react-toastify";
 import { format } from "date-fns";
@@ -116,6 +119,7 @@ export default function DashOutPatientProfile() {
   const [searchTerm1, setSearchTerm1] = useState("");
   const [labOrders, setLabOrders] = useState([]);
   const [addTestModal, setAddTestModal] = useState(false);
+
   const itemsPerPage = 2; // Adjust as needed
 
   const handlePageClick = ({ selected }) => {
@@ -1749,6 +1753,57 @@ export default function DashOutPatientProfile() {
             </div>
           </form>
         </Modal.Body>
+      </Modal>
+
+      {/* PRESCIRBE TESTS MODAL */}
+
+      <Modal show={addTestModal} onClose={() => setAddTestModal(false)} popup size="lg">
+        <ModalHeader />
+        <ModalBody>
+          <form className="flex flex-col gap-5" onSubmit={""}>
+            <div>
+              <Label>Select Lab Tests:</Label>
+              <Select
+                isMulti
+                id="labTests"
+               // value={selectedTests}
+               // options={options}
+               // onChange={handleTestSelectChange}
+              />
+            </div>
+
+  
+
+            <div>
+              <Label> Test presrcibed by: </Label>
+              <TextInput
+                id="testEmpName"
+                value={currentUser.username}
+                readOnly={true}
+              />
+            </div>
+
+            <div>
+              <Label value="High priority?  " />
+              <Checkbox id="priority"
+              // onChange={handlePriorityChange}
+                />
+            </div>
+
+            <div>
+              <Label value="Patient Advice:"/>
+              <Textarea/>
+
+            </div>
+
+            <Button gradientDuoTone="purpleToPink" outline type="submit">
+              {/* {if(selectedTests.length>1{
+
+              })} */}
+              Order Test
+            </Button>
+          </form>
+        </ModalBody>
       </Modal>
     </div>
   );
