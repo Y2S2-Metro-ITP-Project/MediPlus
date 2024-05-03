@@ -439,21 +439,3 @@ export const updateEmp = async (req, res) => {
     }
   };
   
-  export const getDoctorDetailsById = async (req, res, next) => {
-    try {
-        const doctorId = req.params.doctorId;
-        
-        // Find the corresponding EmployeeDetails document based on the doctorId
-        const doctorDetails = await EmployeeDetails.findOne({ userId: doctorId });
-        
-        if (!doctorDetails) {
-            return res.status(404).json({ message: 'Doctor details not found' });
-        }
-        
-        // If doctor details are found, return them
-        return res.status(200).json({ doctorDetails });
-    } catch (error) {
-        console.error('Error fetching doctor details:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-};
