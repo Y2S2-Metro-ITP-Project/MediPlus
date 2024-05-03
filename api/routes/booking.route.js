@@ -11,13 +11,15 @@ import {
   updateBooking,
   bookAppointment,
   cancelSelectedBookings,
+  getBookingsForScheduling,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
 
 router.post("/create", verifyToken, createBooking);
 router.get("/getBookings", verifyToken, getBookings);
-router.get("/getBookingsForDoctor/:doctorId", verifyToken, getBookingsForDoctor); 
+router.get("/getBookingsForDoctor/:doctorId", getBookingsForDoctor); 
+router.get("/getBookingsForScheduling",verifyToken, getBookingsForScheduling);
 router.delete("/delete/:bookingId", verifyToken, deleteBooking);
 router.post("/searchBookings", verifyToken, searchBookings);
 router.get("/appointments", verifyToken, searchAppointments);
