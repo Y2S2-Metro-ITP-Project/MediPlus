@@ -3,7 +3,6 @@ import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
-import pdf from "html-pdf";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
 function generateRandomPassword(length) {
   const charset =
