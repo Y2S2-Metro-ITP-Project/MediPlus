@@ -1,3 +1,4 @@
+// Index.js
 import React, { useState, useEffect } from "react";
 import { Button, TextInput } from "flowbite-react";
 import Select from "react-select";
@@ -53,154 +54,143 @@ const Index = () => {
       if (!selectedDoctor && !selectedSpecialization && !date) {
         const response = await fetch("/api/user/getAllDoctors");
         const data = await response.json();
-
+        
         console.log("Fetched all doctors:", data);
-
+        
         const detailsPromises = data.map(async (doctor) => {
-          const employeeDetailsResponse = await fetch(
-            `/api/employee/getDoctorDetails/${doctor._id}`
-          );
+          const employeeDetailsResponse = await fetch(`/api/employee/getDoctorDetails/${doctor._id}`);
           const employeeDetails = await employeeDetailsResponse.json();
-
-          console.log(
-            "Fetched details for doctor",
-            doctor._id,
-            ":",
-            employeeDetails
-          );
-
+          
+          console.log("Fetched details for doctor", doctor._id, ":", employeeDetails);
+          
           // Log the entire employeeDetails object
           console.log("Full employee details:", employeeDetails);
-
+          
           // Assuming employeeDetails is an object with doctor details
           return employeeDetails; // Return employeeDetails directly
         });
-
+        
         const doctorsDetails = await Promise.all(detailsPromises);
         console.log("All doctor details:", doctorsDetails);
-
+        
         setDoctorDetails(doctorsDetails); // Update the state with fetched doctor details
       } else {
-        console.log(
-          "At least one selection is made, not fetching all doctors."
-        );
+        console.log("At least one selection is made, not fetching all doctors.");
       }
     } catch (error) {
       console.error("Error fetching doctor details:", error);
     }
   };
 
-  const fetchAppointmentDetails = async () => {
+  const fetchDoctorDetailsById = async (doctorId) => {
     try {
-      // Make an API call to fetch appointment details based on selectedDoctor, selectedSpecialization, and date
-      // Replace this with your actual API call
-      const response = await fetch(`/api/appointments?doctor=${selectedDoctor}&specialization=${selectedSpecialization}&date=${date}`);
+      console.log(`Fetching doctor details for doctorId: ${doctorId}`);
+      const response = await fetch(`/api/employee/getDoctorDetails/${doctorId}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching appointment details:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched doctor details:", data);
+      // Update the state with the fetched doctor details
+      setDoctorDetails([data]);
     } catch (error) {
-      console.error('Error fetching appointment details:', error);
-      return null;
+      console.error("Error fetching doctor details:", error);
     }
   };
   
-  const fetchDoctorDetailsByDoctorAndDate = async (doctorId, date) => {
+  const fetchDoctorsBySpecialization = async (specialization) => {
     try {
-      // Make an API call to fetch doctor details based on doctorId and date
-      // Replace this with your actual API call
-      const response = await fetch(`/api/doctors/${doctorId}?date=${date}`);
+      console.log(`Fetching doctors by specialization: ${specialization}`);
+      const response = await fetch(`/api/user/getDoctorsBySpecialization/${specialization}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching doctor details by doctor and date:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched doctors by specialization:", data);
+      // Update the state with the fetched doctors
+      setDoctorDetails(data);
     } catch (error) {
-      console.error('Error fetching doctor details by doctor and date:', error);
-      return null;
+      console.error("Error fetching doctors by specialization:", error);
     }
   };
   
-  const fetchDoctorDetailsBySpecializationAndDate = async (specialization, date) => {
+  const fetchAppointmentsByDate = async (date) => {
     try {
-      // Make an API call to fetch doctor details based on specialization and date
-      // Replace this with your actual API call
-      const response = await fetch(`/api/doctors?specialization=${specialization}&date=${date}`);
+      console.log(`Fetching appointments by date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDate/${date}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching doctor details by specialization and date:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched appointments by date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
     } catch (error) {
-      console.error('Error fetching doctor details by specialization and date:', error);
-      return null;
+      console.error("Error fetching appointments by date:", error);
     }
   };
   
-  const fetchDoctorDetailsByDoctorAndSpecialization = async (doctorId, specialization) => {
+  const fetchDoctorsBySpecializationAndDoctor = async (doctorId, specialization) => {
     try {
-      // Make an API call to fetch doctor details based on doctorId and specialization
-      // Replace this with your actual API call
-      const response = await fetch(`/api/doctors/${doctorId}?specialization=${specialization}`);
+      console.log(`Fetching doctor by specialization: ${specialization} and doctorId: ${doctorId}`);
+      const response = await fetch(`/api/employee/getDoctorBySpecializationAndId/${specialization}/${doctorId}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching doctor details by doctor and specialization:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched doctor by specialization and ID:", data);
+      // Update the state with the fetched doctor details
+      setDoctorDetails([data]);
     } catch (error) {
-      console.error('Error fetching doctor details by doctor and specialization:', error);
-      return null;
+      console.error("Error fetching doctor by specialization and ID:", error);
     }
   };
   
-  const fetchDoctorDetailsByDoctor = async (doctorId) => {
+  const fetchAppointmentsByDoctorAndDate = async (doctorId, date) => {
     try {
-      // Make an API call to fetch doctor details based on doctorId
-      // Replace this with your actual API call
-      const response = await fetch(`/api/doctors/${doctorId}`);
+      console.log(`Fetching appointments by doctorId: ${doctorId} and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDoctorAndDate/${doctorId}/${date}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching doctor details by doctor:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched appointments by doctor and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
     } catch (error) {
-      console.error('Error fetching doctor details by doctor:', error);
-      return null;
+      console.error("Error fetching appointments by doctor and date:", error);
     }
   };
   
-  const fetchDoctorDetailsBySpecialization = async (specialization) => {
+  const fetchAppointmentsBySpecializationAndDate = async (specialization, date) => {
     try {
-      // Make an API call to fetch doctor details based on specialization
-      // Replace this with your actual API call
-      const response = await fetch(`/api/doctors?specialization=${specialization}`);
+      console.log(`Fetching appointments by specialization: ${specialization} and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsBySpecializationAndDate/${specialization}/${date}`);
       const data = await response.json();
-  
-      if (response.ok) {
-        return data;
-      } else {
-        console.error('Error fetching doctor details by specialization:', data.error);
-        return null;
+      if (!response.ok) {
+        throw new Error(data.message);
       }
+      console.log("Fetched appointments by specialization and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
     } catch (error) {
-      console.error('Error fetching doctor details by specialization:', error);
-      return null;
+      console.error("Error fetching appointments by specialization and date:", error);
+    }
+  };
+  
+  const fetchAppointmentsByDoctorAndSpecializationAndDate = async (doctorId, specialization, date) => {
+    try {
+      console.log(`Fetching appointments by doctorId: ${doctorId}, specialization: ${specialization}, and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDoctorAndSpecializationAndDate/${doctorId}/${specialization}/${date}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched appointments by doctor, specialization, and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
+    } catch (error) {
+      console.error("Error fetching appointments by doctor, specialization, and date:", error);
     }
   };
 
@@ -221,76 +211,51 @@ const Index = () => {
       console.log("Selected specialization:", selectedSpecialization);
       console.log("Selected date:", date);
   
-      // Check if the selected date is in the past
-      const selectedDate = new Date(date);
-      const today = new Date();
-      if (selectedDate < today) {
-        console.error("Cannot search for past dates");
-        toast.error("Cannot search for past dates"); // Show a toast error
-        return;
+      // If no input is provided
+      if (!selectedDoctor && !selectedSpecialization && !date) {
+        console.log("No input provided, fetching all doctors...");
+        fetchDoctorDetails();
       }
-  
-      // If all values are selected, fetch appointment details
-      if (selectedDoctor && selectedSpecialization && date) {
-        console.log("Fetching appointment details...");
-        const appointmentDetails = await fetchAppointmentDetails();
-        if (!appointmentDetails) {
-          toast.error("No appointment details found"); // Show a toast error
-        }
+      // If only doctor is selected
+      else if (selectedDoctor && !selectedSpecialization && !date) {
+        console.log("Fetching details for the selected doctor...");
+        fetchDoctorDetailsById(selectedDoctor.value); // Pass the selected doctor ID
       }
-      // If doctor and date are selected (but not specialization), fetch doctor details
-      else if (selectedDoctor && date) {
-        console.log("Fetching doctor details based on doctor and date...");
-        const doctorDetails = await fetchDoctorDetailsByDoctorAndDate(selectedDoctor, date);
-        if (!doctorDetails) {
-          toast.error("No doctor details found for the selected doctor and date"); // Show a toast error
-        }
+      // If only specialization is selected
+      else if (!selectedDoctor && selectedSpecialization && !date) {
+        console.log("Fetching doctors with the selected specialization...");
+        fetchDoctorsBySpecialization(selectedSpecialization.value); // Pass the selected specialization value
       }
-      // If only specialization and date are selected (but not doctor), fetch doctor details
-      else if (selectedSpecialization && date) {
-        console.log("Fetching doctor details based on specialization and date...");
-        const doctorDetails = await fetchDoctorDetailsBySpecializationAndDate(selectedSpecialization, date);
-        if (!doctorDetails) {
-          toast.error("No doctor details found for the selected specialization and date"); // Show a toast error
-        }
+      // If only date is selected
+      else if (!selectedDoctor && !selectedSpecialization && date) {
+        console.log("Fetching appointments for the selected date...");
+        fetchAppointmentsByDate(date); // Pass the selected date
       }
-      // If only doctor and specialization are selected, fetch doctor details
-      else if (selectedDoctor && selectedSpecialization) {
-        console.log("Fetching doctor details based on doctor and specialization...");
-        const doctorDetails = await fetchDoctorDetailsByDoctorAndSpecialization(selectedDoctor, selectedSpecialization);
-        if (!doctorDetails) {
-          toast.error("No doctor details found for the selected doctor and specialization"); // Show a toast error
-        }
+      // If doctor and specialization are selected
+      else if (selectedDoctor && selectedSpecialization && !date) {
+        console.log("Fetching doctor details with the selected specialization...");
+        fetchDoctorsBySpecializationAndDoctor(selectedDoctor.value, selectedSpecialization.value);
       }
-      // If only doctor is selected, fetch doctor details
-      else if (selectedDoctor) {
-        console.log("Fetching doctor details based on doctor...");
-        const doctorDetails = await fetchDoctorDetailsByDoctor(selectedDoctor);
-        if (!doctorDetails) {
-          toast.error("No doctor details found for the selected doctor"); // Show a toast error
-        }
+      // If doctor and date are selected
+      else if (selectedDoctor && !selectedSpecialization && date) {
+        console.log("Fetching appointments for the selected doctor and date...");
+        fetchAppointmentsByDoctorAndDate(selectedDoctor.value, date);
       }
-      // If only specialization is selected, fetch doctor details
-      else if (selectedSpecialization) {
-        console.log("Fetching doctor details based on specialization...");
-        const doctorDetails = await fetchDoctorDetailsBySpecialization(selectedSpecialization);
-        if (!doctorDetails) {
-          toast.error("No doctor details found for the selected specialization"); // Show a toast error
-        }
+      // If specialization and date are selected
+      else if (!selectedDoctor && selectedSpecialization && date) {
+        console.log("Fetching appointments with the selected specialization and date...");
+        fetchAppointmentsBySpecializationAndDate(selectedSpecialization.value, date);
       }
-      // If no doctor is selected, fetch the list of doctors
-      else {
-        console.log("Fetching doctors...");
-        const doctorDetails = await fetchDoctorDetails();
-        if (!doctorDetails) {
-          toast.error("No doctor details found"); // Show a toast error
-        }
+      // If all inputs are selected
+      else if (selectedDoctor && selectedSpecialization && date) {
+        console.log("Fetching appointments with all selected inputs...");
+        fetchAppointmentsByDoctorAndSpecializationAndDate(selectedDoctor.value, selectedSpecialization.value, date);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("An error occurred while fetching data"); // Show a toast error
     }
   };
+  
 
   const handleClear = () => {
     console.log("Clearing form values"); // Add this line if needed
@@ -348,29 +313,21 @@ const Index = () => {
             placeholder="dd/mm/yyyy"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            min={new Date().toISOString().split("T")[0]} // Prevent selection of past dates
+            min={new Date().toISOString().split("T")[0]}
             styles={{
               control: (provided) => ({
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                minWidth: "200px",
+                minWidth: "200px", // Set minimum width
               }),
             }}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto" // Apply full width on small screens
           />
-          <Button
-            color="white"
-            onClick={handleSearch}
-            className="w-full sm:w-auto"
-          >
+          <Button color="white" onClick={handleSearch} className="w-full sm:w-auto">
             Search
           </Button>
-          <Button
-            color="white"
-            onClick={handleClear}
-            className="w-full sm:w-auto"
-          >
+          <Button color="white" onClick={handleClear} className="w-full sm:w-auto">
             Clear
           </Button>
         </div>
@@ -380,15 +337,9 @@ const Index = () => {
       <div className="w-full max-w-4xl">
         <div className="p-4 rounded">
           {showDoctorList ? (
-            <DoctorsList
-              doctorDetails={doctorDetails}
-              onViewProfile={handleViewProfile}
-            />
+            <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} />
           ) : (
-            <DoctorProfile
-              doctor={selectedDoctorProfile}
-              onBack={handleBackToList}
-            />
+            <DoctorProfile doctor={selectedDoctorProfile} onBack={handleBackToList} />
           )}
         </div>
       </div>
