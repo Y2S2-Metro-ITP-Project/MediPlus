@@ -88,8 +88,7 @@ const patientSchema = new mongoose.Schema(
     },
     patientType: {
       type: String,
-      enum: ["Inpatient", "Outpatient"],
-      default: "Default",
+      enum: ["inpatient", "outpatient"],
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
