@@ -95,5 +95,6 @@ export default function Dashboard() {
       {/** <DashDoctorInpatient/> */}
       {tab==="DoctorInpatient" && <DashDoctorInpatient/>}
     </div>
+
   );
-}
+};
