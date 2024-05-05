@@ -22,7 +22,6 @@ import { GiHospital } from "react-icons/gi";
 import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
 import { FaHeartbeat } from "react-icons/fa";
-import { IoReceiptOutline } from "react-icons/io5";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -102,8 +101,6 @@ export default function DashSideBar() {
                   ? "OutPatient"
                   : currentUser.isInPatient
                   ? "InPatient"
-                  : currentUser.isCashier
-                  ? "Cashier"
                   : "User"
               }
               labelColor="dark"
@@ -218,29 +215,6 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
-          {currentUser.isCashier && (
-            <>
-              <Link to="/dashboard?tab=OutPatientBilling">
-                <Sidebar.Item
-                  active={tab === "OutPatientBilling"}
-                  icon={IoReceiptOutline}
-                  as="div"
-                >
-                  Out Patient Billing
-                </Sidebar.Item>
-              </Link>
-
-              <Link to="/dashboard?tab=EMPleave">
-                <Sidebar.Item
-                  active={tab === "EMPleave"}
-                  icon={FaRegCalendarTimes}
-                  as="div"
-                >
-                  Leave
-                </Sidebar.Item>
-              </Link>
-            </>
-          )}
           {currentUser.isPharmacist && (
             <>
               <Link to="/dashboard?tab=orderPrescritions">
@@ -259,16 +233,6 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Inventory
-                </Sidebar.Item>
-              </Link>
-
-              <Link to="/dashboard?tab=EMPleave">
-                <Sidebar.Item
-                  active={tab === "EMPleave"}
-                  icon={FaRegCalendarTimes}
-                  as="div"
-                >
-                  Leave
                 </Sidebar.Item>
               </Link>
             </>

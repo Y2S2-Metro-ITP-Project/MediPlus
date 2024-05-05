@@ -157,13 +157,11 @@ export const getPatients = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const patients = await Patient.find({ patientType: "Outpatient" })
+    const patients = await Patient.find({patientType: "Outpatient"})
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
-    const totalUser = await Patient.countDocuments({
-      patientType: "Outpatient",
-    });
+    const totalUser = await Patient.countDocuments({patientType: "Outpatient"});
     const now = new Date();
     const oneMonthAgo = new Date(
       now.getFullYear(),
@@ -172,7 +170,7 @@ export const getPatients = async (req, res, next) => {
     );
     const lastMonthUser = await Patient.countDocuments({
       createdAt: { $gte: oneMonthAgo },
-      patientType: "Outpatient",
+      patientType: "Outpatient"
     });
     res.status(200).json({ patients, totalUser, lastMonthUser });
   } catch (error) {
@@ -190,7 +188,6 @@ export const deletePatient = async (req, res) => {
   try {
     const patientId = req.params.patientId;
     const patient = await Patient.findById(patientId);
-    const patientName = patient.name;
 
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
@@ -198,7 +195,6 @@ export const deletePatient = async (req, res) => {
 
     const userId = patient.user;
     const user = await User.findById(userId);
-    const contactEmail = user.email;
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -210,22 +206,6 @@ export const deletePatient = async (req, res) => {
     res
       .status(200)
       .json({ message: "Patient and user accounts deleted successfully" });
-
-    try {
-      await sendEmail({
-        to: contactEmail,
-        subject: "Welcome to Ismails Pvt Hospital!",
-        html: `
-          <p>Dear ${patientName},</p>
-          <p>Your account has been deleted successfully</p>
-          <p>Best regards,<br>The MediPlus Team</p>
-          <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
-          <P>This is an auto-generated email. Please do not reply to this email.</p>
-        `,
-      });
-    } catch (error) {
-      console.log(error);
-    }
   } catch (error) {
     next(error);
   }
@@ -244,16 +224,9 @@ export const searchPateint = async (req, res, next) => {
   try {
     const searchTerm = req.body.search;
     const patients = await Patient.find({
-      $and: [
+      $or: [
         {
-          $or: [
-            {
-              name: { $regex: new RegExp(searchTerm, "i") },
-            },
-          ],
-        },
-        {
-          patientType: "Outpatient",
+          name: { $regex: new RegExp(searchTerm, "i") },
         },
       ],
     });
@@ -281,12 +254,6 @@ export const filterPatients = async (req, res, next) => {
       case "today":
         startDate = new Date(currentDate);
         startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(currentDate);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case "lastweek":
-        startDate = new Date(currentDate);
-        startDate.setDate(startDate.getDate() - 7);
         endDate = new Date(currentDate);
         endDate.setHours(23, 59, 59, 999);
         break;
@@ -318,23 +285,18 @@ export const filterPatients = async (req, res, next) => {
           999
         );
         break;
-      case "latest":
-        query.createdAt = { $exists: true };
-        break;
-      case "oldest":
-        query.createdAt = { $exists: true };
+      case "Bydate":
+        startDate = new Date(req.body.startDate);
+        endDate = new Date(req.body.endDate);
         break;
       default:
         break;
     }
-
     if (startDate && endDate) {
       query.admissionDate = { $gte: startDate, $lte: endDate };
     }
-    query.patientType = "Outpatient";
 
     const patients = await Patient.find(query);
-
     res.status(200).json(patients);
   } catch (error) {
     next(error);

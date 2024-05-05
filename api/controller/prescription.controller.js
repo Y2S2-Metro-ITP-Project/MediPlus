@@ -679,7 +679,7 @@ export const getPrescriptionOrdersInventoryData = async (req, res) => {
   }
 };
 
-export const updatePrescription = async (req, res, next) => {
+export const updatePrescription = async (req, res,next) => {
   if (
     !req.user.isPharmacist &&
     !req.user.isDoctor &&
@@ -743,6 +743,7 @@ export const updatePrescription = async (req, res, next) => {
   }
 };
 
+
 export const downloadDoctorPrescription = async (req, res) => {
   if (
     !req.user.isAdmin &&
@@ -759,12 +760,12 @@ export const downloadDoctorPrescription = async (req, res) => {
       .json({ message: "You are not allowed to access these resources" });
   }
   const userId = req.body.patientId;
-  const doctorID = req.body.selectedDoctor.value;
+  const doctorID=req.body.selectedDoctor.value;
   const prescriptions = await Prescription.find({
     patientId: userId,
     doctorId: doctorID,
   }).populate("doctorId", "username");
-  console.log(prescriptions);
+  console.log(prescriptions)
   try {
     let htmlContent = `
       <!DOCTYPE html>
@@ -885,110 +886,4 @@ export const downloadDoctorPrescription = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-export const getFilterStatusPrescriptionData = async (req, res) => {
-  if (
-    req.user.isPharmacist ||
-    req.user.isReceptionist ||
-    req.user.isHeadNurse ||
-    req.user.isNurse ||
-    req.user.isDoctor ||
-    req.user.isAdmin
-  ) {
-    try {
-      const patientID = req.params.id;
-      const status = req.body.selectedOption;
-      const prescriptions = await Prescription.find({
-        patientId: patientID,
-        status: status,
-      }).populate("doctorId", "username");
-
-      res.status(200).json({ prescriptions });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  } else {
-    res.status(403).json({ message: "Unauthorized access" });
-  }
-};
-
-export const getFilterDatePrescriptionData = async (req, res) => {
-  if (
-    req.user.isPharmacist ||
-    req.user.isReceptionist ||
-    req.user.isHeadNurse ||
-    req.user.isNurse ||
-    req.user.isDoctor ||
-    req.user.isAdmin
-  ) {
-    const patientID = req.params.id;
-    try {
-      const patientID = req.params.id;
-      const selectedOption = req.body.selectedOption;
-      if (selectedOption === "today") {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
-        const Precriptions = await Prescription.find({
-          patientId: patientID,
-          date: { $gte: todayStart, $lte: todayEnd },
-        }).populate("doctorId","username").exec();
-        res.status(200).json({ Precriptions });
-      }
-      if (selectedOption === "yesterday") {
-        const yesterdayStart = new Date();
-        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-        yesterdayStart.setHours(0, 0, 0, 0);
-        const yesterdayEnd = new Date();
-        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
-        yesterdayEnd.setHours(23, 59, 59, 999);
-        const Precriptions = await Prescription.find({
-          patientId: patientID,
-          date: { $gte: yesterdayStart, $lte: yesterdayEnd },
-        }).populate("doctorId","username").exec();
-        res.status(200).json({ Precriptions });
-      }
-      if (selectedOption === "lastWeek") {
-        const lastWeekStart = new Date();
-        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-        lastWeekStart.setHours(0, 0, 0, 0);
-        const lastWeekEnd = new Date();
-        lastWeekEnd.setHours(23, 59, 59, 999);
-        const Precriptions = await Prescription.find({
-          patientId: patientID,
-          date: { $gte: lastWeekStart, $lte: lastWeekEnd },
-        }).populate("doctorId","username").exec();
-        res.status(200).json({ Precriptions });
-      }
-      if (selectedOption === "current") {
-        let currentDate = new Date();
-        currentDate.setDate(currentDate.getDate() - 1); // Subtract 1 day from the current date to ensure we include prescriptions created today
-
-        // Find prescriptions for the patient
-        const prescriptions = await Prescription.find({
-          patientId: patientID,
-        }).populate("doctorId","username").exec();
-
-        // Filter prescriptions based on their duration
-        const currentMedicationPrescriptions = prescriptions.filter(
-          (prescription) => {
-            const startDate = new Date(prescription.date); // Use the prescription's creation date as the start date
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + prescription.duration); // Add the duration to the start date
-
-            // Check if the prescription is within its duration
-            return startDate <= currentDate && endDate >= currentDate;
-          }
-        );
-
-        res.status(200).json({ Precriptions: currentMedicationPrescriptions });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  } else {
-    res.status(403).json({ message: "Unauthorized access" });
-  }
-};
+}
