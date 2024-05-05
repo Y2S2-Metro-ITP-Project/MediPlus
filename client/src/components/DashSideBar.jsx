@@ -8,6 +8,7 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { BiCalendarCheck } from "react-icons/bi";
 import { FaUsers } from "react-icons/fa";
 import { FaUserInjured } from "react-icons/fa";
 import { FaBox } from "react-icons/fa";
@@ -18,6 +19,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
 import { FaUserPlus } from "react-icons/fa";
 import { FaBed } from "react-icons/fa";
+import { TbBrandBooking } from "react-icons/tb";
+import { FaCheckToSlot } from "react-icons/fa6";
 import { GiHospital } from "react-icons/gi";
 import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
@@ -148,19 +151,19 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=booking">
                 <Sidebar.Item
                   active={tab === "booking"}
-                  icon={HiOutlineUserGroup}
+                  icon={BiCalendarCheck}
                   as="div"
                 >
-                  Book Appointment
+                  Appointments
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
-                  icon={HiOutlineUserGroup}
+                  icon={FaCheckToSlot}
                   as="div"
                 >
-                  Schedule Appointment
+                  Schedule Slots
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inquiries">
@@ -232,7 +235,7 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=booking">
                 <Sidebar.Item
                   active={tab === "booking"}
-                  icon={HiOutlineUserGroup}
+                  icon={BiCalendarCheck}
                   as="div"
                 >
                   Appointment
@@ -241,10 +244,10 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
-                  icon={HiOutlineUserGroup}
+                  icon={FaCheckToSlot}
                   as="div"
                 >
-                  Schedule Appointments
+                  Schedule Slots
                 </Sidebar.Item>
               </Link>
             </>
@@ -259,6 +262,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Out Patient Billing
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=ConsultationBilling">
+                <Sidebar.Item
+                  active={tab === "CounsultationBilling"}
+                  icon={TbBrandBooking}
+                  as="div"
+                >
+                  Consultation
                 </Sidebar.Item>
               </Link>
 
@@ -320,7 +332,7 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=booking">
                 <Sidebar.Item
                   active={tab === "booking"}
-                  icon={HiOutlineUserGroup}
+                  icon={BiCalendarCheck}
                   as="div"
                 >
                   Appointment
@@ -330,10 +342,10 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=schedule">
                 <Sidebar.Item
                   active={tab === "schedule"}
-                  icon={HiOutlineUserGroup}
+                  icon={FaCheckToSlot}
                   as="div"
                 >
-                  Schedule Appointments
+                  Schedule Slots
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inquiries">
@@ -403,13 +415,13 @@ export default function DashSideBar() {
             </>
           )}{(currentUser.isOutPatient) && (
             <>
-              <Link to="/dashboard?tab=booking">
+              <Link to="/dashboard?tab=bookings">
                 <Sidebar.Item
-                  active={tab === "booking"}
-                  icon={HiOutlineUserGroup}
+                  active={tab === "bookings"}
+                  icon={BiCalendarCheck}
                   as="div"
                 >
-                  Appointment
+                  Your Appointments
                 </Sidebar.Item>
               </Link>
             </>

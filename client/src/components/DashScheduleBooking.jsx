@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FaTimes, FaCheck } from "react-icons/fa";
+import { BsBookmarkFill, BsBookmarkCheckFill, BsBookmarkDashFill, BsBookmarkXFill } from "react-icons/bs";
 import { Link } from "react-router-dom";
 
 export default function ScheduleAppointment() {
@@ -23,6 +24,62 @@ export default function ScheduleAppointment() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [doctorOptions, setDoctorOptions] = useState([]);
   const [formData, setFormData] = useState({ selectedDoctorId: "" });
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+
+  const getSessionStatus = (bookedSlots, totalSlots) => {
+    if (bookedSlots === 0) {
+      return "Not Booked";
+    } else if (bookedSlots === totalSlots) {
+      return "Fully Booked";
+    } else if (bookedSlots > 0 && bookedSlots < totalSlots) {
+      return "Filling";
+    } else {
+      return "Session Cancelled";
+    }
+  };
+
+  const renderStatusIcon = (status) => {
+    switch (status) {
+      case "Not Booked":
+        return <BsBookmarkDashFill className="text-gray-400" />;
+      case "Fully Booked":
+        return <BsBookmarkFill className="text-green-500" />;
+      case "Filling":
+        return <BsBookmarkCheckFill className="text-yellow-500" />;
+      case "Session Cancelled":
+        return <BsBookmarkXFill className="text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleViewSession = (session) => {
+    setSelectedSession(session);
+    setShowSessionModal(true);
+  };
+
+  const closeSessionModal = () => {
+    setShowSessionModal(false);
+    setSelectedSession(null);
+  };
+
+
+  const formaTtime = (time) => {
+    const [hours, minutes] = time.split(":");
+    return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+  };
+
+  const getEndTime = (startTime) => {
+    const [hours, minutes] = startTime.split(":");
+    const date = new Date(0, 0, 0, parseInt(hours), parseInt(minutes), 0);
+    date.setMinutes(date.getMinutes() + 15);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   const fetchBookings = async () => {
     try {
@@ -231,11 +288,11 @@ export default function ScheduleAppointment() {
     setShowUpdateModal(true);
   };
 
-
   const handleAddBooking = async (e) => {
     e.preventDefault();
     try {
-      const { type, date, roomNo, selectedDoctorId, startTime, endTime } = formData;
+      const { type, date, roomNo, selectedDoctorId, startTime, endTime } =
+        formData;
       // Validation for required fields
       if (!type) {
         toast.error("Type is required");
@@ -262,19 +319,21 @@ export default function ScheduleAppointment() {
         toast.error("Please select at least one time slot");
         return;
       }
-  
+
       // Sort the timeSlots array in ascending order
       const sortedTimeSlots = timeSlots.sort();
-  
+
       const formattedStartTime = formatTime(sortedTimeSlots[0]);
-      const formattedEndTime = formatTime(sortedTimeSlots[sortedTimeSlots.length - 1]);
-  
+      const formattedEndTime = formatTime(
+        sortedTimeSlots[sortedTimeSlots.length - 1]
+      );
+
       // Validation to check if end time is after start time
       if (formattedEndTime <= formattedStartTime) {
         toast.error("End time must be after start time");
         return;
       }
-  
+
       for (const time of timeSlots) {
         const newBooking = {
           type,
@@ -305,7 +364,7 @@ export default function ScheduleAppointment() {
       console.error(error);
     }
   };
-  
+
   const toggleSelectAll = () => {
     setSelectAll(!selectAll);
     if (selectAll) {
@@ -523,16 +582,19 @@ export default function ScheduleAppointment() {
       bookings.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
-            <Table.Head>
-              <Table.HeadCell>Date</Table.HeadCell>
-              <Table.HeadCell>Start Time</Table.HeadCell>
-              <Table.HeadCell>Doctor</Table.HeadCell>
-              <Table.HeadCell>Room</Table.HeadCell>
-              <Table.HeadCell>Total Slots</Table.HeadCell>
-              <Table.HeadCell>Booked Slots</Table.HeadCell>
-              <Table.HeadCell>Update</Table.HeadCell>
-              <Table.HeadCell>Delete</Table.HeadCell>
-            </Table.Head>
+          <Table.Head>
+          <Table.HeadCell>Date</Table.HeadCell>
+          <Table.HeadCell>Start Time</Table.HeadCell>
+          <Table.HeadCell>Doctor</Table.HeadCell>
+          <Table.HeadCell>Type</Table.HeadCell>
+          <Table.HeadCell>Room</Table.HeadCell>
+          <Table.HeadCell>Total Slots</Table.HeadCell>
+          <Table.HeadCell>Booked Slots</Table.HeadCell>
+          <Table.HeadCell>Status</Table.HeadCell>
+          <Table.HeadCell>View</Table.HeadCell>
+          <Table.HeadCell>Update</Table.HeadCell>
+          <Table.HeadCell>Delete</Table.HeadCell>
+        </Table.Head>
             <Table.Body className="divide-y">
               {Object.entries(
                 bookings.reduce((acc, booking) => {
@@ -575,12 +637,13 @@ export default function ScheduleAppointment() {
                     (
                       {
                         date,
-                        startTime,
-                        endTime,
-                        totalSlots,
-                        bookedSlots,
-                        _id,
-                        roomNo,
+                    startTime,
+                    endTime,
+                    totalSlots,
+                    bookedSlots,
+                    _id,
+                    roomNo,
+                    type,
                       },
                       index
                     ) => (
@@ -593,6 +656,7 @@ export default function ScheduleAppointment() {
                         </Table.Cell>
                         <Table.Cell>{startTime}</Table.Cell>
                         <Table.Cell>{doctorName}</Table.Cell>
+                        <Table.Cell>{type}</Table.Cell>
                         <Table.Cell>
                           {roomNo == "1"
                             ? "Consultation Room"
@@ -600,10 +664,31 @@ export default function ScheduleAppointment() {
                             ? "OPD"
                             : roomNo == "3"
                             ? "Emergency Room"
-                            : ""}
+                            : "Online Appointment"}
                         </Table.Cell>
                         <Table.Cell>{totalSlots}</Table.Cell>
                         <Table.Cell>{bookedSlots}</Table.Cell>
+                        <Table.Cell>
+                      {renderStatusIcon(getSessionStatus(bookedSlots, totalSlots))}
+                    </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            color="purple"
+                            onClick={() =>
+                              handleViewSession({
+                                date,
+                                startTime,
+                                endTime: getEndTime(endTime),
+                                totalSlots,
+                                bookedSlots,
+                                roomNo,
+                                type: booking.type,
+                              })
+                            }
+                          >
+                            View
+                          </Button>
+                        </Table.Cell>
                         <Table.Cell>
                           <Link className="text-teal-500 hover:underline">
                             <span
@@ -686,150 +771,155 @@ export default function ScheduleAppointment() {
         </Modal.Body>
       </Modal>
       <Modal
-  show={showAddModal}
-  onClose={() => {
-    setShowAddModal(false);
-    setFormData({});
-    setSelectedTimeSlots([]);
-  }}
-  popup
-  size="xl"
->
-  <Modal.Header />
-  <Modal.Body>
-    <div className="text-center">
-      <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-        Schedule Appointment
-      </h3>
-    </div>
-    <form onSubmit={handleAddBooking}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <Label htmlFor="type">Type</Label>
-          <Select
-            id="type"
-            onChange={onChange}
-            className="input-field"
-            value={formData.type || ""}
-          >
-            <option value="">Select Type</option>
-            <option value="MACS">MACS</option>
-            <option value="Online Appointment">Online Appointment</option>
-            <option value="Hospital Booking">Hospital Booking</option>
-          </Select>
-        </div>
-        <div className="mb-4">
-          <Label>Doctor</Label>
-          {currentUser.isDoctor ? (
-            <TextInput
-              type="text"
-              id="selectedDoctorId"
-              value={currentUser._id}
-              readOnly
-              className="mt-1 bg-gray-100"
-            />
-          ) : (
-            <Select
-              id="selectedDoctorId"
-              className="mt-1"
-              onChange={onChange}
-              required
-            >
-              <option value="">Select Doctor</option>
-              {doctorOptions.map((doctor) => (
-                <option key={doctor.value} value={doctor.value}>
-                  {doctor.label}
-                </option>
-              ))}
-            </Select>
-          )}
-        </div>
-        {formData.type === "Hospital Booking" && (
-          <div>
-            <Label htmlFor="roomNo">Room</Label>
-            <Select
-              id="roomNo"
-              onChange={onChange}
-              className="input-field"
-              value={formData.roomNo || ""}
-            >
-              <option value="">Select Room Type</option>
-              <option value="1">Consultation Room</option>
-              <option value="2">OPD</option>
-              <option value="3">Emergency Room</option>
-            </Select>
+        show={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setFormData({});
+          setSelectedTimeSlots([]);
+        }}
+        popup
+        size="xl"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+              Schedule Appointment
+            </h3>
           </div>
-        )}
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <TextInput
-            type="date"
-            id="date"
-            onChange={onChange}
-            className="input-field"
-            value={formData.date || ""}
-          />
-        </div>
-        <div>
-          <Label htmlFor="amPm">AM/PM</Label>
-          <Select
-            id="amPm"
-            onChange={onChange}
-            className="input-field"
-            value={formData.amPm || ""}
-          >
-            <option value="">Select AM/PM</option>
-            <option value="AM">AM</option>
-            <option value="PM">PM</option>
-          </Select>
-        </div>
-      </div>
-      {formData.amPm && (
-        <div className="mt-4">
-          <Label>Time Slots</Label>
-          <div className="flex justify-between items-center mb-2">
-            <Button color="purple" onClick={toggleSelectAll}>
-              {selectAll ? "Deselect All" : "Select All"}
-            </Button>
-          </div>
-          <div className="grid grid-cols-6 gap-2">
-            {generateTimeSlots(formData.amPm).map((timeSlot, index) => (
-              <div key={index} className="flex items-center">
-                <input
-                  type="checkbox"
-                  id={`timeSlot-${index}`}
-                  value={timeSlot}
-                  checked={selectedTimeSlots.includes(timeSlot)}
-                  onChange={() => handleTimeSlotSelection(timeSlot, index)}
-                  className="form-checkbox h-5 w-5 text-blue-600"
-                />
-                <label htmlFor={`timeSlot-${index}`} className="ml-2 text-gray-700">
-                  {timeSlot}
-                </label>
+          <form onSubmit={handleAddBooking}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  id="type"
+                  onChange={onChange}
+                  className="input-field"
+                  value={formData.type || ""}
+                >
+                  <option value="">Select Type</option>
+                  <option value="MACS">MACS</option>
+                  <option value="Online Appointment">Online Appointment</option>
+                  <option value="Hospital Booking">Hospital Booking</option>
+                </Select>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="flex justify-center mt-3">
-        <Button color="blue" type="submit" outline>
-          Submit
-        </Button>
-        <Button
-          className="ml-4"
-          color="red"
-          onClick={() => {
-            setShowAddModal(false);
-            setFormData({});
-            setSelectedTimeSlots([]);
-          }}
-        >
-          Cancel
-        </Button>
-      </div>
-    </form>
-  </Modal.Body>
-</Modal>
+              <div className="mb-4">
+                <Label>Doctor</Label>
+                {currentUser.isDoctor ? (
+                  <TextInput
+                    type="text"
+                    id="selectedDoctorId"
+                    value={currentUser._id}
+                    readOnly
+                    className="mt-1 bg-gray-100"
+                  />
+                ) : (
+                  <Select
+                    id="selectedDoctorId"
+                    className="mt-1"
+                    onChange={onChange}
+                    required
+                  >
+                    <option value="">Select Doctor</option>
+                    {doctorOptions.map((doctor) => (
+                      <option key={doctor.value} value={doctor.value}>
+                        {doctor.label}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+              {formData.type === "Hospital Booking" && (
+                <div>
+                  <Label htmlFor="roomNo">Room</Label>
+                  <Select
+                    id="roomNo"
+                    onChange={onChange}
+                    className="input-field"
+                    value={formData.roomNo || ""}
+                  >
+                    <option value="">Select Room Type</option>
+                    <option value="1">Consultation Room</option>
+                    <option value="2">OPD</option>
+                    <option value="3">Emergency Room</option>
+                  </Select>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <TextInput
+                  type="date"
+                  id="date"
+                  onChange={onChange}
+                  className="input-field"
+                  value={formData.date || ""}
+                />
+              </div>
+              <div>
+                <Label htmlFor="amPm">AM/PM</Label>
+                <Select
+                  id="amPm"
+                  onChange={onChange}
+                  className="input-field"
+                  value={formData.amPm || ""}
+                >
+                  <option value="">Select AM/PM</option>
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </Select>
+              </div>
+            </div>
+            {formData.amPm && (
+              <div className="mt-4">
+                <Label>Time Slots</Label>
+                <div className="flex justify-between items-center mb-2">
+                  <Button color="purple" onClick={toggleSelectAll}>
+                    {selectAll ? "Deselect All" : "Select All"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-6 gap-2">
+                  {generateTimeSlots(formData.amPm).map((timeSlot, index) => (
+                    <div key={index} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`timeSlot-${index}`}
+                        value={timeSlot}
+                        checked={selectedTimeSlots.includes(timeSlot)}
+                        onChange={() =>
+                          handleTimeSlotSelection(timeSlot, index)
+                        }
+                        className="form-checkbox h-5 w-5 text-blue-600"
+                      />
+                      <label
+                        htmlFor={`timeSlot-${index}`}
+                        className="ml-2 text-gray-700"
+                      >
+                        {timeSlot}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-center mt-3">
+              <Button color="blue" type="submit" outline>
+                Submit
+              </Button>
+              <Button
+                className="ml-4"
+                color="red"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setFormData({});
+                  setSelectedTimeSlots([]);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
       <Modal
         show={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
@@ -910,6 +1000,33 @@ export default function ScheduleAppointment() {
               </Button>
             </div>
           </form>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showSessionModal} onClose={closeSessionModal} popup size="xl">
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+              Session Details
+            </h3>
+          </div>
+          {selectedSession && (
+            <div>
+              <p>Date: {new Date(selectedSession.date).toLocaleDateString()}</p>
+              <p>Start Time: {selectedSession.startTime}</p>
+              <p>End Time: {selectedSession.endTime}</p>
+              <p>Room: {selectedSession.roomNo}</p>
+              <p>Type: {selectedSession.type}</p>
+              <p>Total Slots: {selectedSession.totalSlots}</p>
+              <p>Booked Slots: {selectedSession.bookedSlots}</p>
+              {/* Add table for slots here */}
+            </div>
+          )}
+          <div className="flex justify-center mt-3">
+            <Button color="red" onClick={closeSessionModal}>
+              Close
+            </Button>
+          </div>
         </Modal.Body>
       </Modal>
     </div>

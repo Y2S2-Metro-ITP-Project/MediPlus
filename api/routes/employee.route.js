@@ -1,5 +1,5 @@
 import express from "express";
-import { getemployee, getUser, addEMP, updateEmp, deleteEmp, getEMPById, createEmployeeDetails, DownloadPDFEmployee, updateUserDetails, getDoctorDetailsById } from "../controller/employee.controller.js";
+import { getemployee, getUser, addEMP, updateEmp, deleteEmp, getEMPById, createEmployeeDetails, DownloadPDFEmployee, updateUserDetails, getDoctorDetailsById, getDoctorsBySpecialization, getDoctorBySpecializationAndId } from "../controller/employee.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
@@ -14,5 +14,6 @@ router.post("/createEmployeeDetails", createEmployeeDetails);
 router.post("/DownloadPDFEmployee/:userId", DownloadPDFEmployee);
 router.get('/:userId', getUser);
 router.get('/getDoctorDetails/:doctorId', getDoctorDetailsById);
-
+router.get('/getDoctorsBySpecialization/:specialization', getDoctorsBySpecialization);
+router.get('/getDoctorBySpecializationAndId/:specialization/:doctorId', getDoctorBySpecializationAndId);
 export default router;
