@@ -27,8 +27,7 @@ router.post("/filterPatient", verifyToken, filterPatients);
 router.put("/update/:patientID", verifyToken, updateOutPatient);
 router.post("/DownloadPDFPatient/:patientID", verifyToken, downloadPDFPatient);
 router.post("/searchPatient", verifyToken, searchPateint);
-router.post("/filterPatient", verifyToken, filterPatients);
-router.post("/DownloadPDFPatient/:patientID", verifyToken, downloadPDFPatient);
+/** InPatient */
 router.post("/admit", admitPatient);
 router.get("/get", getAllPatients); // Get all patients
 router.get("/:name", getPatientByName); // Get a single patient by name
