@@ -9,6 +9,7 @@ import inventoryRoutes from "./routes/inventory.route.js";
 import cookieParser from "cookie-parser";
 import empleaveRoutes from "./routes/empleave.route.js"
 import bedRoutes from "./routes/bed.route.js";
+import employeeRoutes from "./routes/employee.route.js";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use("/api/patient", patientRoutes);
 app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use('/api/bed', bedRoutes);
+app.use("/api/employee", employeeRoutes);
 
 
 app.use((err, req, res, next) => {

@@ -1,5 +1,7 @@
 import Bed from "../models/bed.model.js";
 import Patient from "../models/patient.model.js";
+import User from "../models/user.model.js";
+import EmployeeDetails from "../models/empdata.model.js";
 import { errorHandler } from "../utils/error.js";
 import moment from "moment";
 import generatePdfFromHtml from "../utils/BedPDF.js";
@@ -239,7 +241,18 @@ export const getAllBeds = async (req, res, next) => {
     next(errorHandler(500, "Server Error"));
   }
 };
+  export const getbedwithDoctor = async (req, res, next) => {
+    try {
+      // Fetch all beds from the database
+      const beds = await Bed.find().populate(assignedDoctor);
   
+      // Send the array of beds as JSON response
+      res.status(200).json({ beds });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
 
 // Controller function to get bed by number
 export const getBedByNumber = async (req, res, next) => {
@@ -317,7 +330,13 @@ export const createBed = async (req, res, next) => {
     });
 
     // Save the new bed to the database
-    await newBed.save();
+  const bed=await newBed.save();
+  console.log(bed._id);
+
+  
+
+    
+
 
     // Send success response
     res
@@ -372,5 +391,112 @@ export const transferPatientToBed = async (req, res, next) => {
     });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
+  }
+};
+
+
+
+// Assign staff to a bed
+export const assignStaffToBed = async (req, res) => {
+  try {
+    const { bedNumber, staffId } = req.body;
+
+    // Find the bed by its number
+    const bed = await Bed.findOne({ number: bedNumber });
+
+    if (!bed) {
+      return res.status(404).json({ message: 'Bed not found' });
+    }
+
+    // Find the staff member by their ID
+    const staff = await EmployeeDetails.findById(staffId);
+
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff member not found' });
+    }
+
+    // Update the bed with the assigned staff member
+    bed.assignedStaff = staff._id;
+    await bed.save();
+
+    res.status(200).json({ message: 'Staff member assigned to bed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+    console.error(error);
+  }
+};
+
+// Remove staff assignment from a bed
+export const removeStaffFromBed = async (req, res) => {
+  try {
+    const { bedNumber } = req.params;
+
+    // Find the bed by its number
+    const bed = await Bed.findOne({ number: bedNumber });
+
+    if (!bed) {
+      return res.status(404).json({ message: 'Bed not found' });
+    }
+
+    // Remove the assigned staff member from the bed
+    bed.assignedStaff = null;
+    await bed.save();
+
+    res.status(200).json({ message: 'Staff member removed from bed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+    console.error(error);
+  }
+};
+
+
+
+// Assign a doctor to a bed
+export const assignDoctor = async (req, res) => {
+  try {
+    const { bedNumber, doctorId } = req.body;
+
+    // Find the bed by its number
+    const bed = await Bed.findOne({ number: bedNumber });
+    if (!bed) {
+      return res.status(404).json({ message: 'Bed not found' });
+    }
+
+    // Find the doctor by their ID
+    const doctor = await User.findById(doctorId);
+    if (!doctor || !doctor.isDoctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    // Assign the doctor to the bed
+    bed.assignedDoctor = doctorId;
+    await bed.save();
+
+    res.status(200).json({ message: 'Doctor assigned successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Controller function to remove the assigned doctor from a bed
+export const removeDoctor = async (req, res) => {
+  try {
+    const { bedNumber } = req.params;
+
+    // Find the bed by its number
+    const bed = await Bed.findOne({ number: bedNumber });
+    if (!bed) {
+      return res.status(404).json({ message: 'Bed not found' });
+    }
+
+    // Remove the assigned doctor from the bed
+    bed.assignedDoctor = null;
+    await bed.save();
+
+    res.status(200).json({ message: 'Doctor removed successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

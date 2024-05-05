@@ -50,7 +50,12 @@ export const submit = async (req, res, next) => {
 };
 
 export const getInquiries = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -83,24 +88,27 @@ export const getInquiries = async (req, res, next) => {
       createdAt: { $gte: oneMonthAgo },
     });
     const totalNotAnswered = await Inquiry.countDocuments({ isAnswer: false });
-    res
-      .status(200)
-      .json({
-        inquiries,
-        totalInquiries,
-        lastMonthInquiries,
-        totalAnswered,
-        totalNotAnswered,
-        totalAnsweredOneMonth,
-        totalNotAnsweredOneMonth,
-      });
+    res.status(200).json({
+      inquiries,
+      totalInquiries,
+      lastMonthInquiries,
+      totalAnswered,
+      totalNotAnswered,
+      totalAnsweredOneMonth,
+      totalNotAnsweredOneMonth,
+    });
   } catch (error) {
     next(error);
   }
 };
 
 export const deleteInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse
+  ) {
     return next(
       errorHandler(403, "You are not allowed to delete these resources")
     );
@@ -141,7 +149,14 @@ export const updateInquiry = async (req, res, next) => {
 };
 
 export const searchInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -161,7 +176,12 @@ export const searchInquiry = async (req, res, next) => {
 };
 
 export const filterInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -187,7 +207,15 @@ export const filterInquiry = async (req, res, next) => {
 };
 
 export const getUserInquiry = async (req, res, next) => {
-  if (!req.user) {
+  if (
+    !req.user &&
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -234,24 +262,29 @@ export const getUserInquiry = async (req, res, next) => {
       isAnswer: false,
     });
 
-    res
-      .status(200)
-      .json({
-        inquiries,
-        totalInquiries,
-        lastMonthInquiries,
-        totalAnswered,
-        totalNotAnswered,
-        totalAnsweredOneMonth,
-        totalNotAnsweredOneMonth,
-      });
+    res.status(200).json({
+      inquiries,
+      totalInquiries,
+      lastMonthInquiries,
+      totalAnswered,
+      totalNotAnswered,
+      totalAnsweredOneMonth,
+      totalNotAnsweredOneMonth,
+    });
   } catch (error) {
     next(error);
   }
 };
 
 export const filterUserInquiry = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isUser) {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -263,7 +296,7 @@ export const filterUserInquiry = async (req, res, next) => {
     if (filterOption === "answer") {
       query = { isAnswer: true, userId };
     } else if (filterOption === "notanswer") {
-      query = { isAnswer: false,userId };
+      query = { isAnswer: false, userId };
     } else {
       query = {};
     }
@@ -277,3 +310,33 @@ export const filterUserInquiry = async (req, res, next) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
+const searchUserInquiries = async (req, res, next) => {
+  if (
+    !req.user.isAdmin &&
+    !req.user.isReceptionist &&
+    !req.user.isUser &&
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient &&
+    !req.user.isInPatient
+  ) {
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
+  }
+  try {
+    const userId = req.params.userId;
+    const searchTerm = req.body.searchTerm;
+    console.log(req.body);
+    const inquiries = await Inquiry.find({
+      userId,
+      $or: [{ name: { $regex: new RegExp(searchTerm, "i") } }],
+    });
+    if (!inquiries || inquiries.length === 0) {
+      return next(errorHandler(404, "Inquiry not found"));
+    }
+    res.status(200).json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+}

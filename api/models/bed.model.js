@@ -23,7 +23,14 @@ const bedSchema = new mongoose.Schema(
     ward: { type: String, 
        enum: ['General', 'Emergency'] 
       },
-  
+      assignedStaff: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'EmployeeDetails' },
+
+        assignedDoctor: { 
+          type: mongoose.Schema.Types.ObjectId, ref: 'User'
+         },
+
   },
   { timestamps: true }
 );
