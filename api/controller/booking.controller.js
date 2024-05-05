@@ -2,37 +2,68 @@ import Booking from "../models/booking.model.js";
 import { errorHandler } from "../utils/error.js";
 import Payment from "../models/payment.model.js";
 import PaymentOrder from "../models/paymentOrder.model.js";
+import { google } from 'googleapis';
+import { JWT } from 'google-auth-library';
+import credentials from './credentials.json' assert { type: 'json' };
 
+const jwtClient = new JWT({
+  email: credentials.client_email,
+  key: credentials.private_key,
+  scopes: ['https://www.googleapis.com/auth/calendar'], // You can add more scopes as needed
+});
 export const createBooking = async (req, res, next) => {
-  const {
-    type,
-    doctorId,
-    patientId,
-    date,
-    time,
-    roomNo,
-    reason,
-  } = req.body;
+  const { type, doctorId, patientId, date, time, roomNo, reason } = req.body;
 
   // Check if all required fields are present
   if (!type || !doctorId || !date || !time) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
-  // Create a new booking instance
-  const newBooking = new Booking({
-    type,
-    doctorId,
-    patientId,
-    date,
-    time,
-    roomNo,
-    reason,
-  });
-
   try {
+    let meetLink = '';
+    if (type == 'Online Appointment') {
+      await jwtClient.authorize();
+
+      const meet = google.meet({ version: 'v1', auth: jwtClient });
+      const response = await meet.events.insert({
+        requestBody: {
+          conferenceData: {
+            createRequest: {
+              requestId: `${doctorId}-${Date.now()}`,
+              conferenceSolutionKey: {
+                type: 'hangoutsMeet',
+              },
+            },
+          },
+          start: {
+            dateTime: date.toISOString(),
+            timeZone: 'UTC',
+          },
+          end: {
+            dateTime: new Date(date.getTime() + 30 * 60000).toISOString(), // 30 minutes duration
+            timeZone: 'UTC',
+          },
+        },
+      });
+
+      meetLink = response.data.hangoutLink;
+    }
+
+    // Create a new booking instance
+    const newBooking = new Booking({
+      type,
+      doctorId,
+      patientId,
+      date,
+      time,
+      roomNo,
+      reason,
+      meetLink,
+    });
+
     // Save the new booking to the database
     await newBooking.save();
+
     // Respond with the newly created booking
     res.status(201).json(newBooking);
   } catch (error) {
