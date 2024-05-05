@@ -149,11 +149,11 @@ export const getPatients = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const patients = await Patient.find()
+    const patients = await Patient.find({patientType: "Outpatient"})
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
-    const totalUser = await Patient.countDocuments();
+    const totalUser = await Patient.countDocuments({patientType: "Outpatient"});
     const now = new Date();
     const oneMonthAgo = new Date(
       now.getFullYear(),
@@ -162,6 +162,7 @@ export const getPatients = async (req, res, next) => {
     );
     const lastMonthUser = await Patient.countDocuments({
       createdAt: { $gte: oneMonthAgo },
+      patientType: "Outpatient"
     });
     res.status(200).json({ patients, totalUser, lastMonthUser });
   } catch (error) {
