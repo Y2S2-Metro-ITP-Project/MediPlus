@@ -251,7 +251,8 @@ export const downloadPDFVitals = async (req, res) => {
     !req.user.isNurse &&
     !req.user.isPharmacist &&
     !req.user.isReceptionist &&
-    !req.user.isHeadNurse
+    !req.user.isHeadNurse &&
+    !req.user.isOutPatient
   ) {
     return res
       .status(403)
@@ -653,7 +654,7 @@ export const getUserpatientVitals = async (req, res) => {
   const patientId = await Patient.find({ user: UserId }).select("_id");
   const ID = patientId[0]._id;
   try {
-    const vitals = await Vitals.find({ patientId: ID });
+    const vitals = await Vitals.find({ patientId: ID }).populate("doctorId").populate("patientId");
     const latestVitals = await Vitals.findOne({ patientId: ID }).sort({
       date: -1,
     });

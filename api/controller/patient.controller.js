@@ -3,8 +3,8 @@ import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
-import pdf from "html-pdf";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import generatePDFFromHtml from "../utils/BedPDF.js";
 function generateRandomPassword(length) {
   const charset =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[{]}|;:,<.>/?";
@@ -149,11 +149,13 @@ export const getPatients = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const patients = await Patient.find({patientType: "Outpatient"})
+    const patients = await Patient.find({ patientType: "Outpatient" })
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
-    const totalUser = await Patient.countDocuments({patientType: "Outpatient"});
+    const totalUser = await Patient.countDocuments({
+      patientType: "Outpatient",
+    });
     const now = new Date();
     const oneMonthAgo = new Date(
       now.getFullYear(),
@@ -162,7 +164,7 @@ export const getPatients = async (req, res, next) => {
     );
     const lastMonthUser = await Patient.countDocuments({
       createdAt: { $gte: oneMonthAgo },
-      patientType: "Outpatient"
+      patientType: "Outpatient",
     });
     res.status(200).json({ patients, totalUser, lastMonthUser });
   } catch (error) {
@@ -180,6 +182,7 @@ export const deletePatient = async (req, res) => {
   try {
     const patientId = req.params.patientId;
     const patient = await Patient.findById(patientId);
+    const patientName = patient.name;
 
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
@@ -188,6 +191,7 @@ export const deletePatient = async (req, res) => {
 
     const userId = patient.user;
     const user = await User.findById(userId);
+    const contactEmail = user.email;
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -199,6 +203,22 @@ export const deletePatient = async (req, res) => {
     res
       .status(200)
       .json({ message: "Patient and user accounts deleted successfully" });
+
+    try {
+      await sendEmail({
+        to: contactEmail,
+        subject: "Welcome to Ismails Pvt Hospital!",
+        html: `
+          <p>Dear ${patientName},</p>
+          <p>Your account has been deleted successfully</p>
+          <p>Best regards,<br>The MediPlus Team</p>
+          <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
+          <P>This is an auto-generated email. Please do not reply to this email.</p>
+        `,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   } catch (error) {
     next(error);
   }
@@ -217,9 +237,16 @@ export const searchPateint = async (req, res, next) => {
   try {
     const searchTerm = req.body.search;
     const patients = await Patient.find({
-      $or: [
+      $and: [
         {
-          name: { $regex: new RegExp(searchTerm, "i") },
+          $or: [
+            {
+              name: { $regex: new RegExp(searchTerm, "i") },
+            },
+          ],
+        },
+        {
+          patientType: "Outpatient",
         },
       ],
     });
@@ -247,6 +274,12 @@ export const filterPatients = async (req, res, next) => {
       case "today":
         startDate = new Date(currentDate);
         startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(currentDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case "lastweek":
+        startDate = new Date(currentDate);
+        startDate.setDate(startDate.getDate() - 7);
         endDate = new Date(currentDate);
         endDate.setHours(23, 59, 59, 999);
         break;
@@ -278,18 +311,23 @@ export const filterPatients = async (req, res, next) => {
           999
         );
         break;
-      case "Bydate":
-        startDate = new Date(req.body.startDate);
-        endDate = new Date(req.body.endDate);
+      case "latest":
+        query.createdAt = { $exists: true };
+        break;
+      case "oldest":
+        query.createdAt = { $exists: true };
         break;
       default:
         break;
     }
+
     if (startDate && endDate) {
       query.admissionDate = { $gte: startDate, $lte: endDate };
     }
+    query.patientType = "Outpatient";
 
     const patients = await Patient.find(query);
+
     res.status(200).json(patients);
   } catch (error) {
     next(error);
@@ -513,3 +551,286 @@ export const getPatient = async (req, res, next) => {
     next(error);
   }
 };
+export const admitPatient = async (req, res, next) => {
+  console.log(req.body);
+  const {
+    name,
+    admissionDate,
+    illness,
+    dateOfBirth,
+    gender,
+    address,
+    contactPhone,
+    contactEmail,
+    identification,
+    medicalHistory,
+    reasonForAdmission,
+    insuranceInformation,
+    emergencyContact,
+    roomPreferences,
+  } = req.body;
+
+  try {
+    // Validate required fields
+    if (
+      !name ||
+      !admissionDate ||
+      !illness ||
+      !dateOfBirth ||
+      !gender ||
+      !address ||
+      !contactPhone ||
+      !contactEmail ||
+      !roomPreferences
+    ) {
+      return next(errorHandler(400, "All fields are required"));
+    }
+
+    // Create a new patient instance
+    const newPatient = new Patient({
+      name,
+      admissionDate,
+      illness,
+      dateOfBirth,
+      gender,
+      address,
+      contactPhone,
+      contactEmail,
+      identification,
+      medicalHistory,
+      reasonForAdmission,
+      insuranceInformation,
+      emergencyContact,
+      roomPreferences,
+    });
+
+    // Save the new patient to the database
+    await newPatient.save();
+
+    // Send response
+    res
+      .status(201)
+      .json({ message: "Patient admitted successfully", patient: newPatient });
+  } catch (error) {
+    // Handle errors
+    next(error);
+  }
+};
+
+export const getAllPatients = async (req, res, next) => {
+  try {
+    const patients = await Patient.find({ roomPreferences: { $exists: true, $ne: "" } });
+    res.status(200).json({ success: true, patients });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
+
+
+// Controller function to fetch a single patient by ID
+export const getPatientByName = async (req, res, next) => {
+  const { name } = req.params;
+  try {
+    const patient = await Patient.findOne({ name });
+    if (!patient) {
+      return next(errorHandler(404, "Patient not found"));
+    }
+    res.status(200).json({ success: true, patient });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
+
+// Controller function to update a patient by ID
+export const updatePatientById = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const updatedPatient = await Patient.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+    if (!updatedPatient) {
+      return next(errorHandler(404, "Patient not found"));
+    }
+    res.status(200).json({ success: true, patient: updatedPatient });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
+
+// Controller function to delete a patient by ID
+export const deletePatientById = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const deletedPatient = await Patient.findByIdAndDelete(id);
+    if (!deletedPatient) {
+      return next(errorHandler(404, "Patient not found"));
+    }
+    res
+      .status(200)
+      .json({ success: true, message: "Patient deleted successfully" });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
+
+export const downloadPDF = async (req, res, next) => {
+  const patientID = req.body.patientIDPDF;
+
+  try {
+    const patient = await Patient.findById(patientID);
+    if (!patient) {
+      return next(errorHandler(404, "Patient not found"));
+    }
+    const Patientbed = await Patient.findOne({ _id: patientID }).populate(
+      'bed',
+      'number'
+    );
+
+    if (Patientbed.bed) {
+      console.log("Patient Bed Number:", Patientbed.bed.number);
+    } else {
+      console.log("Patient has no assigned bed.");
+    }
+    const name = patient.name;
+    const gender = patient.gender;
+    const contactEmail = patient.contactEmail;
+    const contactPhone = patient.contactPhone;
+    const createdAt = patient.createdAt;
+    const dateOfBirth = patient.dateOfBirth;
+    const address = patient.address;
+    const identification = patient.identification;
+    const emergencyName = patient.emergencyContact.name;
+    const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
+    const ward = patient.roomPreferences;
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Patient Registration Report</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            h1, h2 {
+                margin-bottom: 10px;
+                color: #333;
+            }
+            p {
+                margin-bottom: 5px;
+                color: #666;
+            }
+            .section {
+                margin-bottom: 20px;
+            }
+            .patient-picture {
+                width: 200px;
+                height: auto;
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Patient Medical Report</h1>
+        </div>
+        <div class="section">
+            <h2>Personal Information</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Gender:</strong> ${gender}</p>
+            <p><strong>Date of Birth:</strong> ${dateOfBirth}</p>
+            <p><strong>Contact Email:</strong> ${contactEmail}</p>
+            <p><strong>Contact Phone:</strong> ${contactPhone}</p>
+            <p><strong>Address:</strong> ${address}</p>
+            <p><strong>Identification:</strong> ${identification}</p>
+        </div>
+        <div class="section">
+            <h2>Emergency Contact Information</h2>
+            <p><strong>Name:</strong> ${emergencyName}</p>
+            <p><strong>Phone Number:</strong> ${emergencyPhoneNumber}</p>
+        </div>
+        <div class="section">
+            <h2>Ward Information</h2>
+            <p><strong>Room Preference:</strong> ${ward}</p>
+        </div>
+    </body>
+    </html>
+    
+`;
+
+    const pdfBuffer = await generatePDFFromHtml(htmlContent);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
+  } catch (error) {
+    next(errorHandler(500, error.message));
+  }
+};
+
+export const getPatientsforBooking = async (req, res, next) => {
+  try {
+    const patients = await Patient.find(); // Retrieve all patients from the database
+    res.status(200).json(patients); // Send the retrieved patients as JSON response
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const getPatientByUser = async (req, res, next) => {
+  const userId = req.params.userId;
+  console.log(userId);
+  try {
+    const patient = await Patient.findOne({ user: userId });
+    console.log(patient);
+    if (!patient) {
+      return next(errorHandler(404, "No patient found for this user"));
+    }
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePatientDetails = async (req, res, next) => {
+  // Validate the request body
+  const { patientId, name, contactEmail, contactPhone, address } = req.body;
+
+  if (!patientId || !name || !contactEmail || !contactPhone || !address) {
+    return next(errorHandler(400, "All fields are required"));
+  }
+
+  try {
+    // Find the patient by ID and update the specified fields
+    const patient = await Patient.findByIdAndUpdate(
+      patientId,
+      {
+        $set: {
+          name,
+          contactEmail,
+          contactPhone,
+          address,
+        },
+      },
+      { new: true } // Return the updated patient document
+    );
+
+    // If patient is not found, return a 404 error
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+
+    // Return the updated patient details
+    res.status(200).json(patient);
+  } catch (error) {
+    // Handle any errors that occur during the update process
+    next(error);
+  }
+};
+
+
+
+
