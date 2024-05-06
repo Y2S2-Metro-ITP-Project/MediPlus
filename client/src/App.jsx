@@ -6,7 +6,6 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
 import Appointemnt from "./pages/Appointment/Index";
-import Appoint from "./pages/Appointment/dummy";
 import ContactUs from "./pages/ContactUs";
 import Header from "./components/Header";
 import FooterComp from "./components/Footer";
@@ -24,7 +23,6 @@ export default function App() {
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/appointment" element={<Appointemnt />} />
-        <Route path="/appoint" element={<Appoint />} />
         <Route element={<PrivateRoute/>}>
         <Route path="/dashboard" element={<Dashboard />} />
         </Route>
