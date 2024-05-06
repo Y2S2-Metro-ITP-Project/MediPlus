@@ -1,4 +1,5 @@
 import express from "express";
+import { admitPatient } from "../controller/patient.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import {
   getPatients,
@@ -7,8 +8,13 @@ import {
   searchPateint,
   filterPatients,
   downloadPDFPatient,
-  updateOutPatient,
+  getAllPatients,
+  getPatientByName,
+  updatePatientById,
+  deletePatientById,
+  downloadPDF,
   getPatient,
+  updateOutPatient,
   getPatientsforBooking,
   getPatientByUser,
   updatePatientDetails,
@@ -26,4 +32,13 @@ router.post("/filterPatient", verifyToken, filterPatients);
 router.put("/update/:patientID", verifyToken, updateOutPatient);
 router.post("/DownloadPDFPatient/:patientID", verifyToken, downloadPDFPatient);
 router.put("/updatePatientDetails", updatePatientDetails);
+router.post("/searchPatient", verifyToken, searchPateint);
+/** InPatient */
+router.post("/admit", admitPatient);
+router.get("/get", getAllPatients); // Get all patients
+router.get("/:name", getPatientByName); // Get a single patient by name
+router.put("/:id", updatePatientById); // Update a patient by ID
+router.delete("/:id", deletePatientById); // Delete a patient by ID
+router.post("/downloadPDF", downloadPDF); // Download a PDF
+
 export default router;
