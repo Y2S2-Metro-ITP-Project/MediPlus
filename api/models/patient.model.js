@@ -90,6 +90,10 @@ const patientSchema = new mongoose.Schema(
       type: String,
       enum: ["inpatient", "outpatient"],
     },
+    dicharged: {
+      type: Boolean,
+      default: false,
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

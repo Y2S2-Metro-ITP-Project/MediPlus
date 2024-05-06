@@ -7,7 +7,8 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
-
+import ReactSelect from "react-select";
+import { set } from "mongoose";
 const DashBedManagement = () => {
   const [beds, setBeds] = useState([]);
   const [selectedBed, setSelectedBed] = useState(null);
@@ -26,21 +27,34 @@ const DashBedManagement = () => {
   const [bedPDFID, setBedPDFID] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [totalbeds, setTotalbeds] = useState(0);
-
+  const [wards, setWards] = useState([]);
+  const [selectedWard, setSelectedWard] = useState(null); 
   useEffect(() => {
     fetchBeds();
+    fetchWards();
   }, []);
 
+
+  const fetchWards = async () => {
+    try {
+      const response = await fetch("/api/ward/getward");
+      const data = await response.json();
+      setWards(data);
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+    }
+  }
   const fetchBeds = async () => {
     try {
-      const response = await axios.get("/api/bed/getbed");
-      console.log("Fetched beds :", response.data.beds);
-      setBeds(response.data.beds);
-      setTotalbeds(response.data.totalbeds)
+      const response = await fetch("/api/bed/getbed");
+      const data = await response.json();
+      setBeds(data.beds);
+      setTotalbeds(data.totalbeds)
     } catch (error) {
       console.error("Error fetching beds:", error);
     }
   };
+  console.log(beds);
 
   const handleBedClick = async (bed) => {
     try {
@@ -87,6 +101,7 @@ const DashBedManagement = () => {
     try {
       const response = await axios.post("/api/bed/create", {
         number: newBedNumber,
+        ward: selectedWard,
       });
       setSuccessMessage(response.data.message);
       setNewBedNumber("");
@@ -173,6 +188,7 @@ const DashBedManagement = () => {
 
       if (data.success === false) {
         setErrorMessage(data.message);
+        setLoading(false);
         return;
       }
 
@@ -229,7 +245,6 @@ const DashBedManagement = () => {
               </h3>
               <p className="text-2xl">{totalbeds}</p>
             </div>
-            <HiAnnotation className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
           </div>
 
       <div className="flex justify-between items-center mb-4">
@@ -249,7 +264,7 @@ const DashBedManagement = () => {
               <AiOutlineSearch />
             </Button>
           </form>
-          <div className="flex items-center">
+          <div className="flex items-center ml-4">
           <TextInput
             type="text"
             placeholder="Enter bed number"
@@ -257,8 +272,18 @@ const DashBedManagement = () => {
             onChange={(e) => setNewBedNumber(e.target.value)}
             className="mr-2"
           />
-          
-          
+          <ReactSelect
+          options={wards.map((ward) => ({
+            value: ward._id,
+            label: ward.WardName,
+          }))}
+          isSearchable
+          placeholder="Select Ward"
+          onChange={(selectedOption) => {
+            setSelectedWard(selectedOption.value);
+          }}  
+          />
+
         </div>
         <Button
             gradientDuoTone="purpleToPink"
@@ -284,6 +309,7 @@ const DashBedManagement = () => {
             <Table.Head>
               <Table.HeadCell>Bed Number</Table.HeadCell>
               <Table.HeadCell>Availability</Table.HeadCell>
+              <Table.HeadCell>Ward</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Actions</Table.HeadCell>
               <Table.HeadCell>Download PDF</Table.HeadCell>
@@ -303,6 +329,7 @@ const DashBedManagement = () => {
                   >
                     {bed.isAvailable ? "Bed is not occupied" : "Bed occupied with the patient"}
                   </Table.Cell>
+                  <Table.Cell>{bed.ward.WardName}</Table.Cell>
                   <Table.Cell>
                     <Button
                       size="xs"
@@ -330,7 +357,7 @@ const DashBedManagement = () => {
                         onClick={() => {
                           setBedNumberPDF(bed.number);
                           setBedPDFID(bed._id);
-                          handleDownloadPdf(bed.number);
+                          handleDownloadPDF(bed.number);
                         }}
                         className="font-medium text-green-700 hover:underline cursor-pointer"
                       >

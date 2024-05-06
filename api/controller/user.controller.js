@@ -85,7 +85,7 @@ export const deleteUser = async (req, res, next) => {
 
 
 export const getusers = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isHRM) {
+  if (!req.user.isAdmin && !req.user.isHRM && !req.user.isReceptionist && !req.user.isDoctor && !req.user.isNurse && !req.user.isPharmacist && !req.user.isLabTech && !req.user.isHeadNurse) {
     return next(
       errorHandler(
         403,
@@ -393,6 +393,26 @@ export const searchUsers = async (req, res, next) => {
       return next(errorHandler(404, "User not found"));
     }
     res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const getDoctors = async (req, res, next) => {
+  try {
+    const doctors = await User.find({ isDoctor: true });
+    res.status(200).json(doctors);
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+    next(error);
+  }
+}
+
+
+export const getNurses = async (req, res, next) => {
+  try {
+    const nurses = await User.find({ isNurse: true});
+    res.status(200).json(nurses);
   } catch (error) {
     next(error);
   }

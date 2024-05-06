@@ -442,7 +442,7 @@ export const updateOutPatient = async (req, res, next) => {
 };
 
 export const downloadPDFPatient = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -614,6 +614,7 @@ export const admitPatient = async (req, res, next) => {
       insuranceInformation,
       emergencyContact,
       roomPreferences,
+      patientType: "inpatient",
     });
 
     // Save the new patient to the database

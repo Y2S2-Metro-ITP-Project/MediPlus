@@ -15,7 +15,7 @@ import diagnosisRoutes from "./routes/diagnosis.route.js";
 import PrescriptionOrderRoutes from "./routes/PrecriptionOrder.route.js";
 import paymentOrderRoutes from "./routes/paymentOrder.route.js";
 import bedRoutes from "./routes/bed.route.js";
-
+import wardRoutes from "./routes/ward.route.js";
 dotenv.config();
 
 mongoose
@@ -47,7 +47,7 @@ app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api/prescriptionOrder", PrescriptionOrderRoutes);
 app.use("/api/paymentOrder", paymentOrderRoutes);
 app.use('/api/bed', bedRoutes);
-
+app.use('/api/ward', wardRoutes);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
