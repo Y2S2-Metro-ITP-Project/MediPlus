@@ -1,55 +1,35 @@
-import Booking from "../models/booking.model.js";
 import { errorHandler } from "../utils/error.js";
-import Payment from "../models/payment.model.js";
-import PaymentOrder from "../models/paymentOrder.model.js";
-import { google } from 'googleapis';
-import { JWT } from 'google-auth-library';
-import credentials from './credentials.json' assert { type: 'json' };
+import Booking from "../models/booking.model.js";
+import { authorize, createSpace } from "../utils/googleMeet.js";
 
-const jwtClient = new JWT({
-  email: credentials.client_email,
-  key: credentials.private_key,
-  scopes: ['https://www.googleapis.com/auth/calendar'], // You can add more scopes as needed
-});
 export const createBooking = async (req, res, next) => {
   const { type, doctorId, patientId, date, time, roomNo, reason } = req.body;
+  console.log("Booking request received with data:", {
+    type,
+    doctorId,
+    patientId,
+    date,
+    time,
+    roomNo,
+    reason,
+  });
 
-  // Check if all required fields are present
   if (!type || !doctorId || !date || !time) {
+    console.log("Required fields missing in the booking request");
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
-    let meetLink = '';
-    if (type == 'Online Appointment') {
-      await jwtClient.authorize();
+    let meetLink = "";
+    console.log("Booking request type:", type);
 
-      const meet = google.meet({ version: 'v1', auth: jwtClient });
-      const response = await meet.events.insert({
-        requestBody: {
-          conferenceData: {
-            createRequest: {
-              requestId: `${doctorId}-${Date.now()}`,
-              conferenceSolutionKey: {
-                type: 'hangoutsMeet',
-              },
-            },
-          },
-          start: {
-            dateTime: date.toISOString(),
-            timeZone: 'UTC',
-          },
-          end: {
-            dateTime: new Date(date.getTime() + 30 * 60000).toISOString(), // 30 minutes duration
-            timeZone: 'UTC',
-          },
-        },
-      });
-
-      meetLink = response.data.hangoutLink;
+    if (type == "Hospital Booking") {
+      const authClient = await authorize();
+      const response = await createSpace(authClient);
+      meetLink = response[0].meetingUri;
+      console.log("Meet link generated:", meetLink);
     }
 
-    // Create a new booking instance
     const newBooking = new Booking({
       type,
       doctorId,
@@ -60,22 +40,23 @@ export const createBooking = async (req, res, next) => {
       reason,
       meetLink,
     });
+    console.log("New booking instance created:", newBooking);
 
-    // Save the new booking to the database
     await newBooking.save();
+    console.log("Booking saved to the database");
 
-    // Respond with the newly created booking
     res.status(201).json(newBooking);
+    console.log("Booking created successfully");
   } catch (error) {
-    // Pass any errors to the error handling middleware
+    console.error("Error creating booking:", error);
     next(error);
   }
 };
-
-
 export const getBookings = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-    return next(errorHandler(403, "You are not allowed to view all the bookings"));
+    return next(
+      errorHandler(403, "You are not allowed to view all the bookings")
+    );
   }
 
   try {
@@ -92,7 +73,9 @@ export const getBookings = async (req, res, next) => {
 
 export const getBookingsForScheduling = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-    return next(errorHandler(403, "You are not allowed to view all the bookings"));
+    return next(
+      errorHandler(403, "You are not allowed to view all the bookings")
+    );
   }
 
   try {
@@ -119,7 +102,9 @@ export const getBookingsForDoctor = async (req, res) => {
 
 export const deleteBooking = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isReceptionist) {
-    return next(errorHandler(403, "You are not allowed to delete this booking"));
+    return next(
+      errorHandler(403, "You are not allowed to delete this booking")
+    );
   }
 
   try {
@@ -150,7 +135,9 @@ export const searchBookings = async (req, res, next) => {
 
 export const filterBookings = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-    return next(errorHandler(403, "You are not allowed to access these resources"));
+    return next(
+      errorHandler(403, "You are not allowed to access these resources")
+    );
   }
 
   try {
@@ -158,7 +145,7 @@ export const filterBookings = async (req, res, next) => {
     const filterOption = req.body.filterOption;
     const currentDate = new Date();
     let startDate, endDate;
-  
+
     switch (filterOption) {
       case "today":
         startDate = new Date(currentDate);
@@ -227,11 +214,11 @@ export const filterBookings = async (req, res, next) => {
       default:
         break;
     }
-  
+
     if (startDate && endDate) {
       query.date = { $gte: startDate, $lte: endDate };
     }
-  
+
     const bookings = await Booking.find(query);
     res.status(200).json(bookings);
   } catch (error) {
@@ -254,24 +241,26 @@ export const searchAppointments = async (req, res, next) => {
 
 export const updateBooking = async (req, res) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-      return res.status(403).json({ message: "You are not allowed to update bookings" });
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to update bookings" });
   }
-  
-  try {
-      const updatedBooking = await Booking.findByIdAndUpdate(
-          req.params.bookingId,
-          {
-              $set: req.body,
-          },
-          { new: true } 
-      );
-      if (!updatedBooking) {
-          return res.status(404).json({ message: "Booking not found" });
-      }
 
-      res.status(200).json({message: "Booked successfully"});
+  try {
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      req.params.bookingId,
+      {
+        $set: req.body,
+      },
+      { new: true }
+    );
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.status(200).json({ message: "Booked successfully" });
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -280,19 +269,21 @@ export const bookAppointment = async (req, res) => {
 
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
     console.log("User not authorized to book appointments:", req.user);
-    return res.status(403).json({ message: "You are not allowed to book appointments" });
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to book appointments" });
   }
-  
+
   try {
     const booking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
-        $set: { patientId: req.body.patientId, status: "Pending Payment" }, 
+        $set: { patientId: req.body.patientId, status: "Pending Payment" },
       },
       { new: true }
     );
     console.log("Booking updated:", booking);
-    
+
     // if (!booking) {
     //   console.log("Booking not found for ID:", req.params.bookingId);
     //   return res.status(404).json({ message: "Booking not found" });
@@ -329,7 +320,6 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
-
 export const cancelSelectedBookings = async (req, res) => {
   try {
     // Extract the array of booking IDs from the request body
@@ -337,20 +327,22 @@ export const cancelSelectedBookings = async (req, res) => {
 
     // Check if bookingIds array is provided and not empty
     if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
-      return res.status(400).json({ error: 'Invalid or empty booking IDs array' });
+      return res
+        .status(400)
+        .json({ error: "Invalid or empty booking IDs array" });
     }
 
     // Update the status of selected bookings to "Cancelled"
     await Booking.updateMany(
       { _id: { $in: bookingIds } }, // Find bookings by their IDs
-      { $set: { status: 'Cancelled' } } // Set the status to "Cancelled"
+      { $set: { status: "Cancelled" } } // Set the status to "Cancelled"
     );
 
     // Respond with success message
-    res.json({ message: 'Selected bookings cancelled successfully' });
+    res.json({ message: "Selected bookings cancelled successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to cancel selected bookings' });
+    res.status(500).json({ error: "Failed to cancel selected bookings" });
   }
 };
 
@@ -367,16 +359,15 @@ export const updateStatus = async (req, res) => {
     );
 
     if (!updatedBooking) {
-      return res.status(404).json({ error: 'Booking not found' });
+      return res.status(404).json({ error: "Booking not found" });
     }
 
     res.json(updatedBooking);
   } catch (error) {
-    console.error('Error updating booking status:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
-
 
 // const createOrUpdatePaymentOrder = async (
 
