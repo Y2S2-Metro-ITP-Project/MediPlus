@@ -1591,7 +1591,7 @@ export default function DashOutPatientProfile() {
           className="ml-8"
           onClick={() => {
             handlePdfDownload(patient.name);
-            setPatientIdPDF(patient._id);
+            setPatientIdPDF(id);
           }}
         >
           Download Report

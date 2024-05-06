@@ -4,6 +4,8 @@ import { Button, TextInput } from "flowbite-react";
 import Select from "react-select";
 import DoctorsList from "../../components/DoctorList";
 import DoctorProfile from "../../components/DoctorProfile";
+import { ToastContainer, toast } from "react-toastify";
+import specializations from './specializations';
 
 const Index = () => {
   const [doctorOptions, setDoctorOptions] = useState([]);
@@ -41,13 +43,7 @@ const Index = () => {
 
   const fetchSpecializations = async () => {
     try {
-      const options = [
-        { value: "", label: "" },
-        { value: "Cardiology", label: "Cardiology" },
-        { value: "Dermatology", label: "Dermatology" },
-        { value: "Neurology", label: "Neurology" },
-      ];
-      setSpecializationOptions(options);
+      setSpecializationOptions(specializations);
     } catch (error) {
       console.error("Error fetching Specializations:", error);
     }
@@ -86,32 +82,177 @@ const Index = () => {
     }
   };
 
+  const fetchDoctorDetailsById = async (doctorId) => {
+    try {
+      console.log(`Fetching doctor details for doctorId: ${doctorId}`);
+      const response = await fetch(`/api/employee/getDoctorDetails/${doctorId}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched doctor details:", data);
+      // Update the state with the fetched doctor details
+      setDoctorDetails([data]);
+    } catch (error) {
+      console.error("Error fetching doctor details:", error);
+    }
+  };
+  
+  const fetchDoctorsBySpecialization = async (specialization) => {
+  try {
+    const response = await fetch(`/api/employee/getDoctorsBySpecialization/${specialization}`);
+    const data = await response.json();
+    console.log("Fetched doctors by specialization:", data);
+    if (!response.ok) {
+      throw new Error(data.message);
+    }
+
+    console.log("Fetched doctors by specialization:", data);
+
+    setDoctorDetails(data); // Ensure this is updating the state correctly
+  } catch (error) {
+    console.error("Error fetching doctors by specialization:", error);
+  }
+};
+
+  
+  const fetchAppointmentsByDate = async (date) => {
+    try {
+      console.log(`Fetching appointments by date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDate/${date}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched appointments by date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
+    } catch (error) {
+      console.error("Error fetching appointments by date:", error);
+    }
+  };
+  
+  const fetchDoctorsBySpecializationAndDoctor = async (doctorId, specialization) => {
+    try {
+      // console.log(`Fetching doctor by specialization: ${specialization} and doctorId: ${doctorId}`);
+      const response = await fetch(`/api/employee/getDoctorBySpecializationAndId/${specialization}/${doctorId}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched doctor by specialization and ID:", data);
+      // Update the state with the fetched doctor details
+      setDoctorDetails([data]);
+    } catch (error) {
+      console.error("Error fetching doctor by specialization and ID:", error);
+    }
+  };
+  
+  const fetchAppointmentsByDoctorAndDate = async (doctorId, date) => {
+    try {
+      console.log(`Fetching appointments by doctorId: ${doctorId} and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDoctorAndDate/${doctorId}/${date}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched appointments by doctor and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
+    } catch (error) {
+      console.error("Error fetching appointments by doctor and date:", error);
+    }
+  };
+  
+  const fetchAppointmentsBySpecializationAndDate = async (specialization, date) => {
+    try {
+      console.log(`Fetching appointments by specialization: ${specialization} and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsBySpecializationAndDate/${specialization}/${date}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched appointments by specialization and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
+    } catch (error) {
+      console.error("Error fetching appointments by specialization and date:", error);
+    }
+  };
+  
+  const fetchAppointmentsByDoctorAndSpecializationAndDate = async (doctorId, specialization, date) => {
+    try {
+      console.log(`Fetching appointments by doctorId: ${doctorId}, specialization: ${specialization}, and date: ${date}`);
+      const response = await fetch(`/api/appointment/getAppointmentsByDoctorAndSpecializationAndDate/${doctorId}/${specialization}/${date}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+      console.log("Fetched appointments by doctor, specialization, and date:", data);
+      // Update the state with the fetched appointments
+      setAppointmentDetails(data);
+    } catch (error) {
+      console.error("Error fetching appointments by doctor, specialization, and date:", error);
+    }
+  };
+
   const handleViewProfile = (doctor) => {
-    setSelectedDoctorProfile(doctor); // Set the selected doctor's details
-    setShowDoctorList(false); // Hide the DoctorsList component
+    console.log("Selected doctor:", doctor); // Add this line
+    setSelectedDoctorProfile(doctor);
+    setShowDoctorList(false);
   };
 
   const handleBackToList = () => {
-    setShowDoctorList(true); // Show the DoctorsList component
+    console.log("Going back to doctor list"); // Add this line if needed
+    setShowDoctorList(true);
   };
 
   const handleSearch = async () => {
     try {
-      // If no doctor is selected, fetch the list of doctors
-      if (!selectedDoctor) {
-        console.log("Fetching doctors...");
+      console.log("Selected doctor:", selectedDoctor);
+      console.log("Selected specialization:", selectedSpecialization);
+      console.log("Selected date:", date);
+  
+      // If no input is provided
+      if (!selectedDoctor && !selectedSpecialization && !date) {
+        console.log("No input provided, fetching all doctors...");
         fetchDoctorDetails();
-        return;
       }
-  
-      // If doctor is selected, fetch doctor details
-      console.log("Fetching doctor details...");
-      
-  
-      // If specialization is selected and date is selected, fetch appointment details
-      if (selectedSpecialization && date) {
-        console.log("Fetching appointment details...");
-        fetchAppointmentDetails();
+      // If only doctor is selected
+      else if (selectedDoctor && !selectedSpecialization && !date) {
+        console.log("Fetching details for the selected doctor...");
+        fetchDoctorDetailsById(selectedDoctor.value); // Pass the selected doctor ID
+      }
+      // If only specialization is selected
+      else if (!selectedDoctor && selectedSpecialization && !date) {
+        console.log("Fetching doctors with the selected specialization...");
+        console.log("Selected specialization:", selectedSpecialization.value);
+        fetchDoctorsBySpecialization(selectedSpecialization.value); // Pass the selected specialization value
+      }
+      // If only date is selected
+      else if (!selectedDoctor && !selectedSpecialization && date) {
+        console.log("Fetching appointments for the selected date...");
+        fetchAppointmentsByDate(date); // Pass the selected date
+      }
+      // If doctor and specialization are selected
+      else if (selectedDoctor && selectedSpecialization && !date) {
+        console.log("Fetching doctor details with the selected specialization...");
+        fetchDoctorsBySpecializationAndDoctor(selectedDoctor.value, selectedSpecialization.value);
+      }
+      // If doctor and date are selected
+      else if (selectedDoctor && !selectedSpecialization && date) {
+        console.log("Fetching appointments for the selected doctor and date...");
+        fetchAppointmentsByDoctorAndDate(selectedDoctor.value, date);
+      }
+      // If specialization and date are selected
+      else if (!selectedDoctor && selectedSpecialization && date) {
+        console.log("Fetching appointments with the selected specialization and date...");
+        fetchAppointmentsBySpecializationAndDate(selectedSpecialization.value, date);
+      }
+      // If all inputs are selected
+      else if (selectedDoctor && selectedSpecialization && date) {
+        console.log("Fetching appointments with all selected inputs...");
+        fetchAppointmentsByDoctorAndSpecializationAndDate(selectedDoctor.value, selectedSpecialization.value, date);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -120,6 +261,7 @@ const Index = () => {
   
 
   const handleClear = () => {
+    console.log("Clearing form values"); // Add this line if needed
     setSelectedDoctor(null);
     setSelectedSpecialization(null);
     setDate("");
@@ -128,10 +270,10 @@ const Index = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100vh" }}>
+    <div className="flex flex-col items-center min-h-screen p-4">
       {/* Form Container */}
-      <div style={{ width: "850px", backgroundColor: "#0077b6", padding: "20px", borderRadius: "5px", marginBottom: "20px", marginTop: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div className="w-full max-w-3xl bg-blue-600 p-4 rounded mb-4 sm:p-6">
+        <div className="flex flex-wrap justify-center items-center gap-4">
           <Select
             id="doctor"
             value={selectedDoctor}
@@ -143,15 +285,16 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                width: "300px", // Set fixed width
+                minWidth: "200px", // Set minimum width
               }),
               input: (provided) => ({
                 ...provided,
                 boxShadow: "none",
                 outline: "none",
-                border: "none", // Removing border
+                border: "none",
               }),
             }}
+            className="w-full sm:w-auto" // Apply full width on small screens
           />
           <Select
             placeholder="Select specialization"
@@ -163,9 +306,10 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                width: "200px", // Set fixed width
+                minWidth: "200px", // Set minimum width
               }),
             }}
+            className="w-full sm:w-auto" // Apply full width on small screens
           />
           <TextInput
             type="date"
@@ -178,22 +322,23 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                width: "200px", // Set fixed width
+                minWidth: "200px", // Set minimum width
               }),
             }}
+            className="w-full sm:w-auto" // Apply full width on small screens
           />
-          <Button color="white" onClick={handleSearch}>
+          <Button color="white" onClick={handleSearch} className="w-full sm:w-auto">
             Search
           </Button>
-          <Button color="white" onClick={handleClear}>
+          <Button color="white" onClick={handleClear} className="w-full sm:w-auto">
             Clear
           </Button>
         </div>
       </div>
-  
+
       {/* Doctor Profile Container */}
-      <div style={{ width: "100%" }}>
-        <div style={{ padding: "20px", borderRadius: "5px"}}>
+      <div className="w-full max-w-4xl">
+        <div className="p-4 rounded">
           {showDoctorList ? (
             <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} />
           ) : (
@@ -203,9 +348,6 @@ const Index = () => {
       </div>
     </div>
   );
-  
-  
-  
-}; 
+};
 
 export default Index;

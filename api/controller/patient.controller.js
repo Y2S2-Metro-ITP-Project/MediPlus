@@ -3,7 +3,6 @@ import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
-import pdf from "html-pdf";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
 import generatePDFFromHtml from "../utils/BedPDF.js";
 function generateRandomPassword(length) {
@@ -792,3 +791,57 @@ export const getPatientsforBooking = async (req, res, next) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+export const getPatientByUser = async (req, res, next) => {
+  const userId = req.params.userId;
+  console.log(userId);
+  try {
+    const patient = await Patient.findOne({ user: userId });
+    console.log(patient);
+    if (!patient) {
+      return next(errorHandler(404, "No patient found for this user"));
+    }
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePatientDetails = async (req, res, next) => {
+  // Validate the request body
+  const { patientId, name, contactEmail, contactPhone, address } = req.body;
+
+  if (!patientId || !name || !contactEmail || !contactPhone || !address) {
+    return next(errorHandler(400, "All fields are required"));
+  }
+
+  try {
+    // Find the patient by ID and update the specified fields
+    const patient = await Patient.findByIdAndUpdate(
+      patientId,
+      {
+        $set: {
+          name,
+          contactEmail,
+          contactPhone,
+          address,
+        },
+      },
+      { new: true } // Return the updated patient document
+    );
+
+    // If patient is not found, return a 404 error
+    if (!patient) {
+      return next(errorHandler(404, "No patient found with this ID"));
+    }
+
+    // Return the updated patient details
+    res.status(200).json(patient);
+  } catch (error) {
+    // Handle any errors that occur during the update process
+    next(error);
+  }
+};
+
+
+
+

@@ -28,7 +28,9 @@ import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashInPateintProfile from "../components/DashInPateintProfile";
 import DashDoctorInpatient from "../components/DashDoctorInpatient";
 import DoctorsList from "../components/DoctorList";
+import PatientDashboard from "../components/PatientDashBoard";
 import DoctorProfile from "../components/DoctorProfile";
+import PatientBooking  from "../components/PatientBooking";
 
 
 
@@ -54,12 +56,16 @@ export default function Dashboard() {
       {tab === "users" && <DashUserProfiles />}
       {/** <DashBooking /> */}
       {tab === "booking" && <DashBooking />}
+      {/** <PatientBooking /> */}
+      {tab === "bookings" && <PatientBooking />}
       {/** <DoctorsList /> */}
       {tab === "doctorList" && <DoctorsList />}
       {/** <DoctorProfile /> */}
       {tab === "doctorProfile" && <DoctorProfile />}
       {/** <DashScheduleBooking /> */}
       {tab === "schedule" && <DashScheduleBooking />}
+      {/** <PatientDashBoard /> */}
+      {tab === "patientDashboard" && <PatientDashboard />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
@@ -109,4 +115,4 @@ export default function Dashboard() {
     </div>
 
   );
-};
+}

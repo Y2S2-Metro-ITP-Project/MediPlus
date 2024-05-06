@@ -1,27 +1,35 @@
 import React from 'react';
 
 const DoctorsList = ({ doctorDetails, onViewProfile }) => {
-  console.log('DoctorsList props:', doctorDetails); // Log props
+  console.log('DoctorsList props:', doctorDetails);
 
   const handleViewProfile = (doctor) => {
-    onViewProfile(doctor); // Pass the selected doctor's details to the parent component
+    onViewProfile(doctor);
   };
 
   return (
-    <div style={styles.container}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {doctorDetails ? (
         doctorDetails.map((doctor, index) => (
-          <div key={index} style={styles.cardContainer}>
-            <div style={styles.avatarContainer}>
-              <span style={styles.avatar}>
-                {doctor.doctorDetails.gender === 'Male' ? '🧔' : '👩'}
+          <div
+            key={index}
+            className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center"
+          >
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-4">
+              <span className="text-2xl">
+                {doctor.doctorDetails.gender == 'Male' ? '🧔' : '👩'}
               </span>
             </div>
-            <div style={styles.infoContainer}>
-              <h3 style={styles.name}>{doctor.doctorDetails.Name}</h3>
-              <p style={styles.specialization}>{doctor.doctorDetails.specialization}</p>
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-semibold">Dr {doctor.doctorDetails.Name}</h3>
+              <p className="text-gray-600">{doctor.doctorDetails.specialization}</p>
             </div>
-            <button style={styles.button} onClick={() => handleViewProfile(doctor)}>View Profile</button> {/* Pass the selected doctor to handleViewProfile */}
+            <button
+              className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-300"
+              onClick={() => handleViewProfile(doctor)}
+            >
+              View Profile
+            </button>
           </div>
         ))
       ) : (
@@ -29,49 +37,6 @@ const DoctorsList = ({ doctorDetails, onViewProfile }) => {
       )}
     </div>
   );
-};
-
-const styles = {
-  cardContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '16px',
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-  },
-  avatarContainer: {
-    marginRight: '16px',
-  },
-  avatar: {
-    fontSize: '32px',
-  },
-  infoContainer: {
-    flex: '1',
-  },
-  name: {
-    margin: '0',
-    fontSize: '18px',
-    fontWeight: 'bold',
-  },
-  specialization: {
-    margin: '4px 0 0 0',
-    fontSize: '14px',
-    color: '#666',
-  },
-  button: {
-    backgroundColor: '#0077b6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    padding: '8px 16px',
-    cursor: 'pointer',
-  },
-  container: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-    gap: '24px',
-  },
 };
 
 export default DoctorsList;
