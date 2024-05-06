@@ -262,6 +262,11 @@ export default function DashSideBar() {
                   Leave
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=supplier">
+                <Sidebar.Item className="cursor-pointer" icon={FaUsers}>
+                  Supplier
+                </Sidebar.Item>
+              </Link>
             </>
           )}
 
@@ -391,8 +396,6 @@ export default function DashSideBar() {
                   Inpatients
                 </Sidebar.Item>
               </Link>
-
-              
 
               <Link to="/dashboard?tab=beds">
                 <Sidebar.Item active={tab === "beds"} icon={FaBed} as="div">

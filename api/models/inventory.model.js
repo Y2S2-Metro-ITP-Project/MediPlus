@@ -4,7 +4,8 @@ const inventorySchema= new mongoose.Schema({
 
     itemName: {
         type:String,
-        required:true
+        required:true,
+        unique:true
     },
     itemCategory: {
         type:String,
@@ -39,7 +40,8 @@ const inventorySchema= new mongoose.Schema({
     },
     supplierEmail: {
         type:String,
-        required:true
+        required:true,
+        unique:true
     },
 },{timestamps:true})
 

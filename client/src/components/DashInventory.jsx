@@ -732,7 +732,7 @@ export default function DashOutPatients() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -766,7 +766,7 @@ export default function DashOutPatients() {
                 <h3 className="text-gray-500 text-md uppercase">
                   Low Stock Items
                 </h3>
-                <p className="text-2xl">{inventoryItemsInStock}</p>
+                <p className="text-2xl">{inventoryItemsLowStock}</p>
               </div>
               <FaBox className="bg-yellow-600 text-white  text-5xl p-3 shadow-lg" />
             </div>
