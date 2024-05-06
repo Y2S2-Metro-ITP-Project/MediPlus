@@ -9,6 +9,7 @@ import {
   HiChartPie,
 } from "react-icons/hi";
 import { BiCalendarCheck } from "react-icons/bi";
+import { MdDashboard } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { FaUserInjured } from "react-icons/fa";
 import { FaBox } from "react-icons/fa";
@@ -385,6 +386,15 @@ export default function DashSideBar() {
           )}
           {(currentUser.isOutPatient || currentUser.isInPatient) && (
             <>
+            <Link to="/dashboard?tab=patientDashboard">
+                <Sidebar.Item
+                  active={tab === "patientDashboard"}
+                  icon={MdDashboard}
+                  as="div"
+                >
+                  Dashboard
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=PatientPrescriptions">
                 <Sidebar.Item
                   active={tab === "PatientPrescriptions"}
