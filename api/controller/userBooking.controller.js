@@ -11,3 +11,22 @@ export const getBookingsForUser = async (req, res) => {
     errorHandler(res, error);
   }
 }
+
+export const getUpcomingBookingsForUser = async (req, res) => {
+  try {
+    const patientId = req.params.patientId;
+    const currentDate = new Date();
+    console.log("Patient ID:", patientId);
+    const upcomingBookings = await Booking.find({
+      patientId,
+      date: { $gte: currentDate },
+      status: "Booked", // Exclude cancelled bookings
+    }).populate("doctorId");
+
+    console.log(upcomingBookings);
+
+    res.status(200).json({ success: true, upcomingBookings });
+  } catch (error) {
+    errorHandler(res, error);
+  }
+};
