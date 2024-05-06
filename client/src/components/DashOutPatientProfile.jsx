@@ -13,7 +13,7 @@ import {
   Textarea,
   ModalHeader,
   ModalBody,
-  Checkbox
+  Checkbox,
 } from "flowbite-react";
 import { ToastContainer, toast } from "react-toastify";
 import { format } from "date-fns";
@@ -129,7 +129,12 @@ export default function DashOutPatientProfile() {
   const [selectedVitalsTime, setSelectedVitalsTime] = useState(null);
   const [vitalsDoctor, setVitalsDoctor] = useState([]);
   const [selectedVitalsDoctor, setSelectedVitalsDoctor] = useState(null);
- 
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [teststoSubmit, setTeststoSubmit] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [priority, setPriority] = useState(true);
+
   {
     /** Searching for vitals */
   }
@@ -144,8 +149,6 @@ export default function DashOutPatientProfile() {
     foodRelation: "",
     instructions: "",
   });
-
-
 
   {
     /** Handle precription update */
@@ -177,6 +180,7 @@ export default function DashOutPatientProfile() {
       fetchPatientVital();
       fetchDieseases();
       fetchDiagnosticData();
+      fetchTests();
     } catch (error) {
       toast.error("Failed to update prescription");
       console.log(error);
@@ -258,7 +262,7 @@ export default function DashOutPatientProfile() {
       console.error("Error fetching diagnosis:", error);
     }
   };
- 
+
   const fetchPrescriptions = async () => {
     try {
       const response = await fetch(`/api/prescription/getPrescriptions/${id}`);
@@ -302,51 +306,152 @@ export default function DashOutPatientProfile() {
     }
   };
 
+  // ====================================================
+  //FETCHING TEST ORDERS FOR RELEVANT PATIENT
 
-    // ====================================================
-    //FETCHING TEST ORDERS FOR RELEVANT PATIENT
+  const fetchTestOrders = async () => {
+    try {
+      const res = await fetch(`/api/labOrder/getPatientTests/${id}`);
+      const data = await res.json();
 
-    const fetchTestOrders = async() => {
+      if (res.ok) {
+        setLabOrders(data);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  if (currentUser.isAdmin || currentUser.isDoctor || currentUser.isLabTech) {
+    fetchTestOrders();
+  }
+
+  useEffect(() => {
+    const fetchTestOrders = async () => {
       try {
         const res = await fetch(`/api/labOrder/getPatientTests/${id}`);
         const data = await res.json();
 
-        if (res.ok){
+        if (res.ok) {
           setLabOrders(data);
         }
       } catch (error) {
-        console.log(error.message)
+        console.log(error.message);
       }
-    }
+    };
 
-    if(currentUser.isAdmin || currentUser.isDoctor || currentUser.isLabTech){
-        fetchTestOrders();
+    if (currentUser.isAdmin || currentUser.isDoctor || currentUser.isLabTech) {
+      fetchTestOrders();
     }
-    
-   useEffect ( ()=> {
-    const fetchTestOrders = async() => {
+  }, [currentUser._id]);
+
+  //=====================================================
+
+  useEffect(() => {
+    const fetchTests = async () => {
       try {
-        const res = await fetch(`/api/labOrder/getPatientTests/${id}`);
+        const res = await fetch(`/api/labTest/getTests`);
         const data = await res.json();
 
-        if (res.ok){
-          setLabOrders(data);
+        // console.log("tests that are called " + data)
+        if (res.ok) {
+          setTests(data.labtests);
         }
       } catch (error) {
-        console.log(error.message)
+        console.error(error.message);
       }
+    };
+    if (currentUser.isAdmin || currentUser.isLabTech || currentUser.isDoctor) {
+      fetchTests();
     }
+  }, [currentUser._id]);
 
-    if(currentUser.isAdmin || currentUser.isDoctor || currentUser.isLabTech){
-        fetchTestOrders();
+  const fetchTests = async () => {
+    try {
+      const res = await fetch(`/api/labTest/getTests`);
+      const data = await res.json();
+
+      // console.log("tests that are called " + data)
+      if (res.ok) {
+        setTests(data.labtests);
+      }
+    } catch (error) {
+      console.error(error.message);
     }
-   },[currentUser._id]);
-      
-  
-   
+  };
+  if (currentUser.isAdmin || currentUser.isLabTech || currentUser.isDoctor) {
+    fetchTests();
+  }
+
+  const testOptions = tests.map((test) => ({
+    value: test._id,
+    label: test.name,
+  }));
+
+  const handleTestSelectChange = (selectedOptions) => {
+    // console.log("handleChange", selectedOptions);
+    const tests = selectedOptions.map((test) => test.value);
+    //console.log("value from tests:", tests);
+    setTeststoSubmit(tests);
+    setSelectedTests(selectedOptions);
+    setFormData({
+      ...formData,
+      testId: tests,
+      patientId: id, //ugly patch fix
+    });
+  };
+
+  const handlePriorityChange = (e) => {
+    setPriority(e.target.checked);
+    setFormData({
+      ...formData,
+      highPriority: priority,
+    });
+  };
+
+  const handleAdviceChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleTestOrderSubmit = async (e) => {
+    e.preventDefault();
 
 
-    //=================================================
+    // console.log("tseting testing formdata:", formData)
+
+    try {
+      const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formData,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message);
+      } else {
+        toast.success("Test order placed");
+      }
+
+      setFormData([]);
+      fetchPatient();
+      fetchPrescriptions();
+      fetchPatientVital();
+      fetchDieseases();
+      fetchDiagnosticData();
+      fetchTests();
+      fetchTestOrders();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //=================================================
 
   console.log(prescriptions);
 
@@ -449,10 +554,10 @@ export default function DashOutPatientProfile() {
         console.log(data.message);
       } else {
         const filteredVitals = data.vitals.filter((vitals) =>
-        vitals.doctorId.username
-          .toLowerCase()
-          .includes(searchTerm3.toLowerCase())
-      );
+          vitals.doctorId.username
+            .toLowerCase()
+            .includes(searchTerm3.toLowerCase())
+        );
         const uniqueDates = [
           ...new Set(
             data.vitals.map((vitals) =>
@@ -517,6 +622,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
       fetchTestOrders();
+      fetchTests();
     }
   }, [currentUser._id, searchTerm1, searchTerm2, searchTerm3]);
   const formatDateOfBirth = (dateOfBirth) => {
@@ -620,8 +726,8 @@ export default function DashOutPatientProfile() {
     fetchTestOrders();
     fetchDieseases();
     fetchDiagnosticData();
+    fetchTests();
   };
-  
 
   {
     /** Handle vitals delete */
@@ -646,6 +752,7 @@ export default function DashOutPatientProfile() {
       fetchPrescriptions();
       fetchDieseases();
       fetchDiagnosticData();
+      fetchTests();
     } catch (error) {
       console.log(error);
     }
@@ -734,6 +841,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
       fetchTestOrders();
+      fetchTests();
     } catch (error) {
       console.log(error);
     }
@@ -789,6 +897,7 @@ export default function DashOutPatientProfile() {
     fetchDieseases();
     fetchDiagnosticData();
     fetchTestOrders();
+    fetchTests();
   };
 
   {
@@ -887,6 +996,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
       fetchTestOrders();
+      fetchTests();
     } catch (error) {
       console.log(error);
     }
@@ -927,6 +1037,7 @@ export default function DashOutPatientProfile() {
       fetchDieseases();
       fetchDiagnosticData();
       fetchTestOrders();
+      fetchTests();
     } catch (error) {
       console.log(error);
     }
@@ -1685,7 +1796,7 @@ export default function DashOutPatientProfile() {
                   Severe
                 </span>
               </div>
-             {/* <Select
+              {/* <Select
                 id="filter"
                 className="ml-4 mb-2"
                 onChange={handleDiagnosisDateChange}
@@ -2128,10 +2239,12 @@ export default function DashOutPatientProfile() {
 
       {/* ======================================================================================================= */}
       {/* LAB PRESCRIPTIONS */}
-            {/** Patient Precriptions */}
+      {/** Patient Precriptions */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex mb-2">
-          <h1 className="text-3xl font-bold mb-4 ">Patient Lab Prescriptions</h1>
+          <h1 className="text-3xl font-bold mb-4 ">
+            Patient Lab Prescriptions
+          </h1>
         </div>
         <div className="">
           <div className="mb-4">
@@ -2140,7 +2253,9 @@ export default function DashOutPatientProfile() {
                 outline
                 gradientDuoTone="greenToBlue"
                 className="mb-2"
-                onClick={() => {setAddTestModal(true)}}
+                onClick={() => {
+                  setAddTestModal(true);
+                }}
               >
                 Add New Test Order
               </Button>
@@ -2151,7 +2266,7 @@ export default function DashOutPatientProfile() {
                 className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
               />
 
-<Select
+              <Select
                 id="filter"
                 className="ml-4 mb-2"
                 onChange={handleDateChange}
@@ -2176,64 +2291,61 @@ export default function DashOutPatientProfile() {
                   label: date,
                 }))}
               />
-              
 
               <Button
                 outline
                 gradientDuoTone="greenToBlue"
                 className="mb-2 ml-4"
-                onClick={ ""}
+                onClick={""}
               >
                 Download Test Result
               </Button>
               <div className="flex ml-4"></div>
             </div>
-            {
-      ( labOrders.length > 0) ? (
+            {labOrders.length > 0 ? (
               <>
-              <Table hoverable className="shadow-md">
-                <Table.Head>
-                  <Table.HeadCell>Test/s Ordered</Table.HeadCell>
-                  <Table.HeadCell>Prescribed by</Table.HeadCell>
-                  <Table.HeadCell>Priority</Table.HeadCell>
-                  <Table.HeadCell>Stage</Table.HeadCell>
-                  <Table.HeadCell>Edit</Table.HeadCell>
-                  <Table.HeadCell>Delete</Table.HeadCell>
-                  <Table.HeadCell>Results</Table.HeadCell>
-                </Table.Head>
+                <Table hoverable className="shadow-md">
+                  <Table.Head>
+                    <Table.HeadCell>Test/s Ordered</Table.HeadCell>
+                    <Table.HeadCell>Prescribed by</Table.HeadCell>
+                    <Table.HeadCell>Priority</Table.HeadCell>
+                    <Table.HeadCell>Stage</Table.HeadCell>
+                    <Table.HeadCell>Result</Table.HeadCell>
+                    <Table.HeadCell>Delete</Table.HeadCell>
+                  </Table.Head>
 
-                {labOrders.map((orders) => (
-              <Table.Body className=" divide-y text-center ">
-                <Table.Row>
-                  
-                  <TableCell>
-                    {orders.testId.map((test) => test.name).join("/")}
-                  </TableCell>
-                  <TableCell>{orders.DoctorId.username} </TableCell>
-                 
-                  <TableCell>
-                    {orders.highPriority ? "high priority" : "low priority"}
-                  </TableCell>
+                  {labOrders.map((orders) => (
+                    <Table.Body className=" divide-y text-center ">
+                      <Table.Row>
+                        <TableCell>
+                          {orders.testId.map((test) => test.name).join("/")}
+                        </TableCell>
+                        <TableCell>{orders.DoctorId.username} </TableCell>
 
-                  <TableCell>
-                    {orders.orderStages}
-                  </TableCell>
-                  <TableCell>
-                    Edit
-                  </TableCell>
-                  <TableCell>
-                   Delete
-                  </TableCell>
-                  <TableCell>
-                    Result
-                  </TableCell>
-                </Table.Row>
-              </Table.Body>
-            ))}
-    
-                
-              </Table>
-            </>
+                        <TableCell>
+                          {orders.highPriority
+                            ? "high priority"
+                            : "low priority"}
+                        </TableCell>
+
+                        <TableCell>{orders.orderStages}</TableCell>
+                        <TableCell>Result</TableCell>
+                        <TableCell>
+                          <span
+                            onClick={() => {
+                              setShowDeleteModal(true);
+                              setTestOrderIdToDelete(orders._id);
+                            }}
+                            className="text-red-500 hover: cursor-pointer "
+                          >
+                            Delete
+                          </span>
+                        </TableCell>
+                      </Table.Row>
+                    </Table.Body>
+                  ))}
+                </Table>
+              </>
             ) : (
               <p>Patient Has No recorded lab orders</p>
             )}
@@ -2241,8 +2353,6 @@ export default function DashOutPatientProfile() {
           </div>
         </div>
       </div>
-
-
 
       {/* ======================================================================================================= */}
       {/** Vitals Modal */}
@@ -2623,22 +2733,29 @@ export default function DashOutPatientProfile() {
         </Modal.Body>
       </Modal>
 
-      {/* LAB TESTS MODAL */}
-      <Modal show={addTestModal} onClose={() => setAddTestModal(false)} popup size="lg">
+      {/* ADD LAB TESTS MODAL */}
+      <Modal
+        show={addTestModal}
+        onClose={() => setAddTestModal(false)}
+        popup
+        size="lg"
+      >
         <ModalHeader />
         <ModalBody>
-          <form className="flex flex-col gap-5" onSubmit={""}>
+          <form
+            className="flex flex-col gap-5"
+            onSubmit={handleTestOrderSubmit}
+          >
             <div>
               <Label>Select Lab Tests:</Label>
               <Select
                 isMulti
                 id="labTests"
-                // value={selectedTests}
-                // options={options}
-                // onChange={handleTestSelectChange}
+                value={selectedTests}
+                options={testOptions}
+                onChange={handleTestSelectChange}
               />
             </div>
-
 
             <div>
               <Label> Test order placed by: </Label>
@@ -2651,15 +2768,45 @@ export default function DashOutPatientProfile() {
 
             <div>
               <Label value="High priority?  " />
-              <Checkbox id="priority" onChange={""} />
+              <Checkbox id="priority" onChange={handlePriorityChange} />
             </div>
 
+            <div>
+              <Label value="Special Note:" />
+              <Textarea id="advice" onChange={handleAdviceChange} />
+            </div>
 
             <Button gradientDuoTone="purpleToPink" outline type="submit">
               Create Order
             </Button>
           </form>
         </ModalBody>
+      </Modal>
+
+      {/* DELETE TEST ORDER MODAL */}
+      <Modal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-red-500 dark:text-red-700 mb-4 mx-auto" />
+            <h3 className="mb-5 text-lg text-gray-500 dark:text-gray-400">
+              Are you sure you want to delete this Order?
+            </h3>
+          </div>
+          <div className="flex justify-center gap-4">
+            <Button color="failure" onClick={""}>
+              Yes, I'm sure
+            </Button>
+            <Button color="grey" onClick={() => setShowDeleteModal(false)}>
+              No, Cancel
+            </Button>
+          </div>
+        </Modal.Body>
       </Modal>
     </div>
   );

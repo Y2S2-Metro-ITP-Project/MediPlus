@@ -5,7 +5,7 @@ import { errorHandler } from "../utils/error.js";
 // CREATE A LAB ORDER
 
 export const createTestOrder = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isLabTech && !req.user.isReceptionist) {
+  if (!req.user.isAdmin && !req.user.isLabTech && !req.user.isReceptionist && !req.user.isDoctor) {
     return next(
       errorHandler(403, "user is not authorized to create lab orders")
     );
@@ -16,12 +16,14 @@ export const createTestOrder = async (req, res, next) => {
     const testId = req.body.formData.testId;
     const patientId = req.body.formData.patientId;
     const highPriority = req.body.formData.highPriority;
+    const advice = req.body.formData.advice;
 
     const newOrder = new TestOrder({
       testId,
       patientId,
       DoctorId,
       highPriority,
+      advice,
     });
 
     await newOrder.save();

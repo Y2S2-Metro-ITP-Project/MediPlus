@@ -3,11 +3,11 @@ import { errorHandler } from "../utils/error.js";
 
 //GET ALL LAB TEST TYPES
 export const getLabTests = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isLabTech) {
-    return next(
-      errorHandler(403, "you are not allowed to access all lab tests")
-    );
-  }
+  // if (!req.user.isAdmin && !req.user.isLabTech && !req.user.isDoctor && !req.user.isOutPatient) {
+  //   return next(
+  //     errorHandler(403, "you are not allowed to access all lab tests")
+  //   );
+  // }
   try {
     const labtests = await LabTest.find();
 

@@ -52,6 +52,11 @@ const orderedTestSchema = new mongoose.Schema(
     totalPrice: {
       type: String,
     },
+
+    advice:{
+      type:String,
+      default:"no special advice assigned",
+    },
   },
   { timestamps: true }
 );
