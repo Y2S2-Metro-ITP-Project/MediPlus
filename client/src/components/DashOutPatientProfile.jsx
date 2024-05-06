@@ -11,6 +11,9 @@ import {
   TableCell,
   TextInput,
   Textarea,
+  ModalHeader,
+  ModalBody,
+  Checkbox
 } from "flowbite-react";
 import { ToastContainer, toast } from "react-toastify";
 import { format } from "date-fns";
@@ -1165,7 +1168,7 @@ export default function DashOutPatientProfile() {
                   Severe
                 </span>
               </div>
-              <Select
+             {/* <Select
                 id="filter"
                 className="ml-4 mb-2"
                 onChange={handleDiagnosisDateChange}
@@ -1185,13 +1188,13 @@ export default function DashOutPatientProfile() {
                     color: "black",
                   }),
                 }}
-                options={diagnosisdate.map((date) => ({
+                options={diagnosticData.map((date) => ({
                   value: date,
                   label: date,
                 }))}
                 isClearable
-              />
-              <Select
+              />*/}
+              {/* <Select
                 id="filter"
                 className="ml-4 mb-2"
                 onChange={handleDiagnosisDoctorChange}
@@ -1216,7 +1219,7 @@ export default function DashOutPatientProfile() {
                   label: doctor.username,
                 }))}
                 isClearable
-              />
+              /> */}
 
               <Button
                 outline
@@ -1345,7 +1348,7 @@ export default function DashOutPatientProfile() {
                 rightIcon={AiOutlineSearch}
                 className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
               />
-              <Select
+              {/* <Select
                 id="filter"
                 className="ml-4 mb-2"
                 onChange={handleVitalsDateChange}
@@ -1438,7 +1441,7 @@ export default function DashOutPatientProfile() {
                 }
               >
                 Download Vitals Report
-              </Button>
+              </Button> */}
             </div>
             {vitals.length > 0 ? (
               <>
@@ -1746,7 +1749,7 @@ export default function DashOutPatientProfile() {
                 outline
                 gradientDuoTone="greenToBlue"
                 className="mb-2 ml-4"
-                onClick={""}
+                onClick={ ""}
               >
                 Download Test Result
               </Button>
@@ -2164,6 +2167,45 @@ export default function DashOutPatientProfile() {
             </div>
           </form>
         </Modal.Body>
+      </Modal>
+
+      {/* LAB TESTS MODAL */}
+      <Modal show={addTestModal} onClose={() => setAddTestModal(false)} popup size="lg">
+        <ModalHeader />
+        <ModalBody>
+          <form className="flex flex-col gap-5" onSubmit={""}>
+            <div>
+              <Label>Select Lab Tests:</Label>
+              <Select
+                isMulti
+                id="labTests"
+                // value={selectedTests}
+                // options={options}
+                // onChange={handleTestSelectChange}
+              />
+            </div>
+
+
+            <div>
+              <Label> Test order placed by: </Label>
+              <TextInput
+                id="test order employe name"
+                value={currentUser.username}
+                readOnly={true}
+              />
+            </div>
+
+            <div>
+              <Label value="High priority?  " />
+              <Checkbox id="priority" onChange={""} />
+            </div>
+
+
+            <Button gradientDuoTone="purpleToPink" outline type="submit">
+              Create Order
+            </Button>
+          </form>
+        </ModalBody>
       </Modal>
     </div>
   );
