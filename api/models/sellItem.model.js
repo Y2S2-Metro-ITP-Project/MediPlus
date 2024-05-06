@@ -17,7 +17,7 @@ const sellItemSchema = new mongoose.Schema({
     },
     totalAmount:{
         type:Number,
-
+        required:true
     }
 },{timestamps:true})
 
