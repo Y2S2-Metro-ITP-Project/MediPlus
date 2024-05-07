@@ -31,7 +31,8 @@ import DoctorsList from "../components/DoctorList";
 import PatientDashboard from "../components/PatientDashBoard";
 import DoctorProfile from "../components/DoctorProfile";
 import PatientBooking  from "../components/PatientBooking";
-
+import DashRoom from "../components/DashRoom";
+import DashSlots from "../components/DashSlots";
 
 
 export default function Dashboard() {
@@ -66,6 +67,10 @@ export default function Dashboard() {
       {tab === "schedule" && <DashScheduleBooking />}
       {/** <PatientDashBoard /> */}
       {tab === "patientDashboard" && <PatientDashboard />}
+      {/** <DashRoom /> */}
+      {tab === "rooms" && <DashRoom />}
+      {/** <DashSlots /> */}
+      {tab === "slots" && <DashSlots />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
