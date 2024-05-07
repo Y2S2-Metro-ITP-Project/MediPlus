@@ -781,41 +781,22 @@ export const getFilteredOrderByPaymentStatusData = async (req, res) => {
   }
   try {
     const filterOption = req.body.filterValue;
-    console.log(req.body);
-    if (filterOption === "Pending" || filterOption === "Completed" || filterOption === "Rejected" ) {
+    if (
+      filterOption === "Pending" ||
+      filterOption === "Completed" ||
+      filterOption === "Rejected"
+    ) {
       try {
-        const prescriptionOrders = await PrescriptionOrder.aggregate([
-          {
-            $lookup: {
-              from: "payments",
-              localField: "payment",
-              foreignField: "_id",
-              as: "payment"
-            }
-          },
-          {
-            $match: { "payment.status": filterOption }
-          },
-          {
-            $unwind: "$payment"
-          },
-          {
-            $lookup: {
-              from: "doctors",
-              localField: "doctorId",
-              foreignField: "_id",
-              as: "doctor"
-            }
-          },
-          {
-            $lookup: {
-              from: "patients",
-              localField: "patientId",
-              foreignField: "_id",
-              as: "patient"
-            }
-          }
-        ]);
+        const prescriptionOrders1 = await PrescriptionOrder.find()
+          .populate("doctorId")
+          .populate("patientId")
+          .populate("payment");
+
+        const prescriptionOrders = prescriptionOrders1.filter((order) => {
+          // Ensure that the order has a payment and its status matches the filterOption
+          return order.payment && order.payment.status === filterOption;
+        });
+
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
         res.status(500).json({ message: error.message });

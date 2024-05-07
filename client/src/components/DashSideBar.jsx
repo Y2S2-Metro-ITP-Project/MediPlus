@@ -23,6 +23,7 @@ import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
 import { FaHeartbeat } from "react-icons/fa";
 import { IoReceiptOutline } from "react-icons/io5";
+import { FaMedkit } from 'react-icons/fa';
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -130,6 +131,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                   InPatients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=disease">
+                <Sidebar.Item
+                  active={tab === "disease"}
+                  icon={FaMedkit}
+                  as="div"
+                >
+                  Add Disease
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=EMPleave">
