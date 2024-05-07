@@ -14,6 +14,8 @@ import { ToastContainer, toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
+import ReactPaginate from "react-paginate";
+import ReactSelect from "react-select";
 export default function DashInquiries() {
   const { currentUser } = useSelector((state) => state.user);
   const [inquiries, setInquirires] = useState([]);
@@ -49,9 +51,6 @@ export default function DashInquiries() {
         setTotalUnAnsweredInquiries(data.totalNotAnswered);
         setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
         setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
-        if (data.inquiries.length < 9) {
-          setShowMore(false);
-        }
       }
     } catch (error) {
       console.log(error);
@@ -70,9 +69,6 @@ export default function DashInquiries() {
           setTotalUnAnsweredInquiries(data.totalNotAnswered);
           setTotalAnsweredOneMonth(data.totalAnsweredOneMonth);
           setTotalUnAnsweredOneMonth(data.totalNotAnsweredOneMonth);
-          if (data.inquiries.length < 9) {
-            setShowMore(false);
-          }
         }
       } catch (error) {
         console.log(error);
@@ -108,12 +104,9 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if (res.ok) {
-        setInquirires((prev) =>
-          prev.filter((inquiry) => inquiry._id !== inquiryIdToDelete)
-        );
+        fetchInquires();
         setShowModal(false);
         toast.success(data.message);
-        fetchInquires();
       } else {
         console.log(data.message);
       }
@@ -146,7 +139,6 @@ export default function DashInquiries() {
       const data = await res.json();
       if (res.ok) {
         setInquirires(data);
-        setShowMore(data.length >= 9);
       } else {
         setInquirires([]);
       }
@@ -167,9 +159,6 @@ export default function DashInquiries() {
       });
       const data = await res.json();
       if (res.ok) {
-        setInquirires((prev) =>
-          prev.filter((inquiry) => inquiry._id !== inquiryIdToReply)
-        );
         fetchInquires();
         setShowReplyModal(false);
         toast.success("Reply Submitted Successfully");
@@ -210,10 +199,111 @@ export default function DashInquiries() {
     const data = await res.json();
     if (res.ok) {
       setInquirires(data.inquiries);
-      setShowMore(data.inquiries.length >= 9);
     }
   };
 
+  {
+    /** Pagination implementation */
+  }
+  const [pageNumber, setPageNumber] = useState(0);
+  const InquiriesPerPage = 5;
+
+  const pageCount = Math.ceil(inquiries.length / InquiriesPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+
+  const displayInquires = inquiries
+    .slice(pageNumber * InquiriesPerPage, (pageNumber + 1) * InquiriesPerPage)
+    .map((inquiry) => (
+      <Table.Body className="divide-y" key={inquiry._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>
+            {new Date(inquiry.createdAt).toLocaleDateString()}
+          </Table.Cell>
+          <Table.Cell>{inquiry.name}</Table.Cell>
+          <Table.Cell>{inquiry.email}</Table.Cell>
+          <Table.Cell>{inquiry.phone}</Table.Cell>
+          <Table.Cell>
+            <HiEye
+              className="text-blue-500 cursor-pointer"
+              onClick={() => handleViewMessage(inquiry.message)}
+            />
+          </Table.Cell>
+          <Table.Cell>
+            {inquiry.isAnswer ? (
+              <FaCheck className="text-green-500" />
+            ) : (
+              <FaTimes className="text-red-500" />
+            )}
+          </Table.Cell>
+          <Table.Cell>
+            {inquiry.isAnswer ? (
+              <HiEye
+                className="text-blue-500 cursor-pointer"
+                onClick={() => handleViewReplyMessage(inquiry.reply)}
+              />
+            ) : (
+              <p className="text-red-500">{inquiry.reply}</p>
+            )}
+          </Table.Cell>
+          <Table.Cell>
+            <Link className="text-teal-500 hover:underline">
+              <span
+                onClick={() => {
+                  setShowReplyModal(true);
+                  setInquiryIdToReply(inquiry._id);
+                }}
+              >
+                Reply
+              </span>
+            </Link>
+          </Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                setShowModal(true);
+                setInquiryIdToDelete(inquiry._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+  {
+    /** Report generation */
+  }
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const handleStatusChange = (selectedOption) => {
+    setSelectedStatus(selectedOption);
+  };
+  const handleReportGeneration = async () => {
+    try {
+      const res = await fetch(`/api/inquiry/generateReport`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: selectedStatus.value }),
+      });
+      const pdfBlob = await res.blob();
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `InquiryReport.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <div className="p-3 md:mx-auto">
@@ -291,25 +381,63 @@ export default function DashInquiries() {
               <AiOutlineSearch />
             </Button>
           </form>
+          <select
+            id="filter"
+            onChange={handleFilterChange}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a filter option
+            </option>
+            <option value="answer">Answered</option>
+            <option value="notanswer">UnAnswered</option>
+          </select>
+          <Button
+            className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
+            color="gray"
+            onClick={() => handleReset()}
+          >
+            Reset
+          </Button>
+          <ReactSelect
+            id="filter"
+            className="ml-4"
+            onChange={handleStatusChange}
+            placeholder="Select a criteria..."
+            value={selectedStatus}
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                width: "200px",
+              }),
+              option: (provided) => ({
+                ...provided,
+                color: "black",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "black",
+              }),
+            }}
+            options={[
+              { value: "unaswered", label: "Not Answered" },
+              { value: "answered", label: "Answered" },
+            ]}
+            isClearable
+            isSearchable
+          />
+          <Button
+            gradientDuoTone="greenToBlue"
+            outline
+            onClick={() => {
+              handleReportGeneration();
+            }}
+            className="ml-4"
+            disabled={!selectedStatus}
+          >
+            Download Report
+          </Button>
         </div>
-        <Button
-          className="w-200 h-10 ml-4 lg:ml-0 lg:w-32"
-          color="gray"
-          onClick={() => handleReset()}
-        >
-          Reset
-        </Button>
-        <select
-          id="filter"
-          onChange={handleFilterChange}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue" disabled selected>
-            Choose a filter option
-          </option>
-          <option value="answer">Answered</option>
-          <option value="notanswer">UnAnswered</option>
-        </select>
       </div>
       {(currentUser.isAdmin || currentUser.isReceptionist) &&
       inquiries.length > 0 ? (
@@ -326,73 +454,25 @@ export default function DashInquiries() {
               <Table.HeadCell>Submit</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
-            {inquiries.map((inquiry) => (
-              <Table.Body className="divide-y" key={inquiry._id}>
-                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                  <Table.Cell>
-                    {new Date(inquiry.createdAt).toLocaleDateString()}
-                  </Table.Cell>
-                  <Table.Cell>{inquiry.name}</Table.Cell>
-                  <Table.Cell>{inquiry.email}</Table.Cell>
-                  <Table.Cell>{inquiry.phone}</Table.Cell>
-                  <Table.Cell>
-                    <HiEye
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() => handleViewMessage(inquiry.message)}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    {inquiry.isAnswer ? (
-                      <FaCheck className="text-green-500" />
-                    ) : (
-                      <FaTimes className="text-red-500" />
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {inquiry.isAnswer ? (
-                      <HiEye
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleViewReplyMessage(inquiry.reply)}
-                      />
-                    ) : (
-                      <p className="text-red-500">{inquiry.reply}</p>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      <span
-                        onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
-                        }}
-                      >
-                        Reply
-                      </span>
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        setShowModal(true);
-                        setInquiryIdToDelete(inquiry._id);
-                      }}
-                      className="font-medium text-red-500 hover:underline cursor-pointer"
-                    >
-                      Delete
-                    </span>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            ))}
+            {displayInquires}
           </Table>
-          {showMore && (
-            <button
-              onClick={handleShowMore}
-              className="w-full text-teal-500 self-center text-sm py-7"
-            >
-              Show More
-            </button>
-          )}
+          <div className="mt-9 center">
+            <ReactPaginate
+              previousLabel={"Previous"}
+              nextLabel={"Next"}
+              pageCount={pageCount}
+              onPageChange={handlePageChange}
+              containerClassName={"pagination flex justify-center"}
+              previousLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              nextLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              disabledClassName={"opacity-50 cursor-not-allowed"}
+              activeClassName={"bg-indigo-500 text-white"}
+            />
+          </div>
         </>
       ) : (
         <p>You have no Inquiries</p>

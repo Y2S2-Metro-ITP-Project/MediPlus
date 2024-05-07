@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Prescription from "./prescription.model.js";
 const prescriptionOrderSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -37,3 +36,5 @@ const PrescriptionOrder = mongoose.model(
   prescriptionOrderSchema
 );
 export default PrescriptionOrder;
+
+import Prescription from "./prescription.model.js";

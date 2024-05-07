@@ -14,6 +14,8 @@ import DashEMPLeave from "../components/DashEMPLeave";
 import { DashaddEmp } from "../components/DashaddEmp";
 import DashBedManagement from "../components/DashBedManagement";
 import DashWards from "../components/DashWards";
+import DashBooking from "../components/DashBooking";
+import DashScheduleBooking from "../components/DashScheduleBooking";
 import ReceptionistDashBoard from "../components/ReceptionistDashBoard";
 import DashOutPatientProfile from "../components/DashOutPatientProfile";
 import PatientPrescriptions from "../components/PatientPrescriptions";
@@ -23,6 +25,16 @@ import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecri
 import DashMedicineDispence from "../components/DashMedicineDispence";
 import Dashstaff_dashboard from "../components/Dashstaff_dashboard";
 import DashEmpsalary from "../components/DashEmpsalary";
+import DashOutPatientBilling from "../components/DashOutPatientBilling";
+import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
+import DashInPateintProfile from "../components/DashInPateintProfile";
+import DashDoctorInpatient from "../components/DashDoctorInpatient";
+import DoctorsList from "../components/DoctorList";
+import PatientDashboard from "../components/PatientDashBoard";
+import DoctorProfile from "../components/DoctorProfile";
+import PatientBooking  from "../components/PatientBooking";
+
+
 
 export default function Dashboard() {
   const location = useLocation();
@@ -44,6 +56,18 @@ export default function Dashboard() {
       {tab === "profile" && <DashProfile />}
       {/** <DashUserProfiles /> */}
       {tab === "users" && <DashUserProfiles />}
+      {/** <DashBooking /> */}
+      {tab === "booking" && <DashBooking />}
+      {/** <PatientBooking /> */}
+      {tab === "bookings" && <PatientBooking />}
+      {/** <DoctorsList /> */}
+      {tab === "doctorList" && <DoctorsList />}
+      {/** <DoctorProfile /> */}
+      {tab === "doctorProfile" && <DoctorProfile />}
+      {/** <DashScheduleBooking /> */}
+      {tab === "schedule" && <DashScheduleBooking />}
+      {/** <PatientDashBoard /> */}
+      {tab === "patientDashboard" && <PatientDashboard />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
@@ -90,6 +114,15 @@ export default function Dashboard() {
       {tab==="orderPrescritions" && <DashDoctorsOrdersPrecriptions/>}
       {/** <DashMedicineDispence/> */}
       {tab==="Dispence" && <DashMedicineDispence/>}
+      {/** <DashOutPatientBilling/> */}
+      {tab==="OutPatientBilling" && <DashOutPatientBilling/>}
+      {/** <DashOutPatientPaymentProfile/> */}
+      {tab==="OutPatientPaymentProfile" && <OutPatientPaymentProfile/>}
+      {/** <DashInpatientProfile/> */}
+      {tab==="InpatientProfile" && <DashInPateintProfile/>}
+      {/** <DashDoctorInpatient/> */}
+      {tab==="DoctorInpatient" && <DashDoctorInpatient/>}
     </div>
+
   );
 }
