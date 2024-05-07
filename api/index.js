@@ -19,6 +19,9 @@ import paymentOrderRoutes from "./routes/paymentOrder.route.js";
 import userBookingRoutes from "./routes/userBooking.route.js";
 import "./utils/jobs/booking.job.js";
 import bedRoutes from "./routes/bed.route.js";
+import roomRoutes from "./routes/room.route.js";
+import slotRoutes from "./routes/slot.route.js";
+
 
 dotenv.config();
 
@@ -40,6 +43,7 @@ app.listen(3000, () => {
 
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomRoutes);
 app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/leaves", empleaveRoutes);
@@ -54,6 +58,7 @@ app.use("/api/prescriptionOrder", PrescriptionOrderRoutes);
 app.use("/api/paymentOrder", paymentOrderRoutes);
 app.use("/api/userBooking", userBookingRoutes);
 app.use('/api/bed', bedRoutes);
+app.use('/api/slot', slotRoutes);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
