@@ -3,6 +3,7 @@ import Leave from "../models/empleave.model.js";
 import User from "../models/user.model.js";
 import mongoose from 'mongoose';
 import { errorHandler } from "../utils/error.js";
+import generatePdfFromHtml from "../utils/PatientPDF.js";
 
 
 
@@ -34,15 +35,12 @@ export const createLeave = async (req, res, next) => {
 };
 
 
-
-
-
 const getAllLeaves = async (req, res) => {
   try {
     const leaves = await Leave.find()
       .populate({
         path: 'user',
-        select: 'username isAdmin isDoctor isNurse isPharmacist isReceptionist isHeadNurse isHRM',
+        select: 'username isAdmin isDoctor isNurse isPharmacist isReceptionist isHeadNurse isHRM isCashier',
         options: {
           strict: false
         }
@@ -53,10 +51,7 @@ const getAllLeaves = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 }
-
 export { getAllLeaves };
-
-
 
 
 // Function to update leave status
@@ -88,8 +83,6 @@ async function approveRejectLeave(req, res) {
 }
 
 export { approveRejectLeave };
-
-
 
 // Controller function to delete a leave by ID
 const deleteLeave = async (req, res) => {
@@ -132,8 +125,6 @@ export const getUserLeaves = async (req, res) => {
 };
 
 
-
-
 export const getTodaysTotalLeave = async (req, res) => {
   try {
     const today = new Date();
@@ -141,14 +132,18 @@ export const getTodaysTotalLeave = async (req, res) => {
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
     const todaysTotalLeave = await Leave.countDocuments({
-      $or: [
-        { startDate: { $gte: startOfDay, $lt: endOfDay } }, // Leave starts today
-        { endDate: { $gte: startOfDay, $lt: endOfDay } },   // Leave ends today
-        { $and: [
-            { startDate: { $lt: startOfDay } },            // Leave starts before today
-            { endDate: { $gte: endOfDay } }                // Leave ends after today
+      $and: [
+        { $or: [
+            { startDate: { $gte: startOfDay, $lt: endOfDay } }, // Leave starts today
+            { endDate: { $gte: startOfDay, $lt: endOfDay } },   // Leave ends today
+            { $and: [
+                { startDate: { $lt: startOfDay } },            // Leave starts before today
+                { endDate: { $gte: endOfDay } }                // Leave ends after today
+              ]
+            }
           ]
-        }
+        },
+        { status: 'approved' } // Condition for leave status being 'approved'
       ]
     });
 
@@ -157,8 +152,8 @@ export const getTodaysTotalLeave = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-  
 
+  
 export const getTotalPendingLeave = async (req, res) => {
   try {
     const totalPendingLeave = await Leave.countDocuments({ status: "pending" });
@@ -168,7 +163,6 @@ export const getTotalPendingLeave = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 export const getEmployeesSummary = async (req, res, next) => {
   try {
@@ -206,6 +200,156 @@ export const getEmployeesSummary = async (req, res, next) => {
 
     // Send response with employees summary
     res.status(200).json(employeesSummary);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Define getUserRole function
+const getUserRole = (user) => {
+  if (!user) return "Unknown";
+
+  if (user.isPatient || user.isUser) {
+    if (user.isAdmin) return "Admin";
+  } else {
+    if (user.isDoctor) return "Doctor";
+    if (user.isNurse) return "Nurse";
+    if (user.isPharmacist) return "Pharmacist";
+    if (user.isReceptionist) return "Receptionist";
+    if (user.isHeadNurse) return "Head Nurse";
+    if (user.isHRM) return "HRM";
+    if (user.isAdmin) return "Admin";
+    if (user.isCashier) return "Cashier"
+    if (user.isLabTech) return "Lab Tech";
+  }
+  return "Employee";
+};
+
+export const deleteOldLeaves = async (req, res, next) => {
+  try {
+    // Calculate the date 3 months ago
+    const currentDate = new Date();
+    const threeMonthsAgo = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
+
+    // Delete leave records whose end date is before 3 months ago
+    const result = await Leave.deleteMany({ endDate: { $lt: threeMonthsAgo } });
+
+    // Send a response indicating the number of deleted records
+    res.json({ message: `${result.deletedCount} old leave records deleted successfully` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const PDFEmployeeLeave = async (req, res, next) => {
+  try {
+    const { leaves, selectedMonth } = req.body;
+    if (!leaves || !Array.isArray(leaves)) {
+      throw new Error("Invalid data received");
+    }
+
+    let filteredLeaves = leaves;
+    if (selectedMonth !== "") {
+      // Filter leaves based on selected month
+      filteredLeaves = leaves.filter(leave => {
+        const leaveStartDate = new Date(leave.startDate);
+        const leaveEndDate = new Date(leave.endDate);
+        const startMonth = leaveStartDate.getMonth();
+        const endMonth = leaveEndDate.getMonth();
+        return startMonth == selectedMonth || endMonth == selectedMonth;
+      });
+    }
+
+    // Group leaves by role
+    const leavesByRole = {};
+    filteredLeaves.forEach(leave => {
+      const userRole = getUserRole(leave.user);
+      if (!leavesByRole[userRole]) {
+        leavesByRole[userRole] = {};
+      }
+      const employeeId = leave.user ? leave.user._id : 'Unknown';
+      if (!leavesByRole[userRole][employeeId]) {
+        leavesByRole[userRole][employeeId] = [];
+      }
+      leavesByRole[userRole][employeeId].push(leave);
+    });
+
+    // Generate HTML content for each role and employee
+    const htmlContent = Object.keys(leavesByRole).map(role => {
+      const roleLeaves = leavesByRole[role];
+      const roleHtmlContent = Object.keys(roleLeaves).map(employeeId => {
+        const employeeLeaves = roleLeaves[employeeId];
+        const tableRows = employeeLeaves.map(leave => `
+          <tr>
+            <td>${leave.user ? leave.user.username : 'Unknown User'}</td>
+            <td>${new Date(leave.startDate).toLocaleDateString()}</td>
+            <td>${new Date(leave.endDate).toLocaleDateString()}</td>
+            <td>${leave.reason}</td>
+            <td>${leave.status}</td>
+          </tr>
+        `).join('');
+
+        return `
+          <h3>Employee: ${employeeLeaves[0].user ? employeeLeaves[0].user.username : 'Unknown Employee'}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        `;
+      }).join('');
+
+      return `
+        <h2>Role: ${role}</h2>
+        ${roleHtmlContent}
+      `;
+    }).join('');
+
+    // Combine HTML content for all roles
+    const fullHtmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Employee Leave Details</title>
+        <style>
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+      </html>
+    `;
+
+    // Generate PDF from HTML content
+    const pdfBuffer = await generatePdfFromHtml(fullHtmlContent);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
   } catch (error) {
     next(error);
   }

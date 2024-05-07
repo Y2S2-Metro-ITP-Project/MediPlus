@@ -9,9 +9,14 @@ import generatePdfFromHtml from "../utils/PatientPDF.js";
 
 // Controller function to add a new employee
 export const addEMP = async (req, res, next) => {
+  if (!(req.user.isAdmin || req.user.isHRM) && req.user.id !== req.params.userId) {
+    return next(
+      errorHandler(403, "You are not allowed to Add Employee")
+    );
+  }
   try {
     // Extract data from the request body
-    const { username, email, password, role, dateOfBirth, salary, gender, address, contactPhone, specialization, experience, qualifications, consultationFee, bio, Name, employeeImage } = req.body;
+    const { username, email, password, role, dateOfBirth, salary, gender, address, contactPhone, specialization, experience, qualifications, consultationFee, bio, Name, employeeImage,doctortype } = req.body;
 
     // Hash the password using bcrypt.js
     const hashedPassword = await bcryptjs.hash(password, 10);
@@ -39,6 +44,7 @@ export const addEMP = async (req, res, next) => {
       consultationFee,
       bio,
       Name,
+      doctortype,
       employeeImage, // Save image URL to employeeImage
     });
 
@@ -110,7 +116,7 @@ export const getUser = async (req, res, next) => {
 export const getemployee = async (req, res, next) => {
   try {
     // Check if the user is an admin or HR manager
-    if (!req.user.isAdmin && !req.user.isHRM) {
+    if (!req.user.isAdmin && !req.user.isHRM && !req.user.isHeadNurse) {
       return next(
         errorHandler(
           403,
@@ -339,6 +345,8 @@ export const createEmployeeDetails = async (req, res, next) => {
       experience,
       qualifications,
       consultationFee,
+      employeeImage,
+      doctortype,
       bio, } = req.body;
 
     // Check if employee details already exist for the given userId
@@ -352,6 +360,9 @@ export const createEmployeeDetails = async (req, res, next) => {
         qualifications,
         consultationFee,
         bio,
+        employeeImage,
+        doctortype,
+        doctortype,
       });
       return res.status(200).json({ message: "Employee details updated successfully" });
     }
@@ -370,7 +381,8 @@ export const createEmployeeDetails = async (req, res, next) => {
       qualifications,
       consultationFee,
       bio,
-      employeeImage
+      employeeImage,
+      doctortype,
     });
 
     // Send a success response to the client

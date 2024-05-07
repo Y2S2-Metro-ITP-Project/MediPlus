@@ -21,8 +21,8 @@ import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
 import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
 import DashMedicineDispence from "../components/DashMedicineDispence";
-import Dashstaff_dashboard from "../components/Dashstaff_dashboard"
-
+import Dashstaff_dashboard from "../components/Dashstaff_dashboard";
+import DashEmpsalary from "../components/DashEmpsalary";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -66,7 +66,9 @@ export default function Dashboard() {
       {/**<Dashstaff_dashboard/> */}
       {tab==="staff_dashbord" && <Dashstaff_dashboard/>}
 
-
+      {/**<DashEmpsalary/> */}
+      {tab==="Empsalary" && <DashEmpsalary/>}
+  
 
       {/** <DashBedManagement/> */}
       {tab === "beds" && <DashBedManagement />}

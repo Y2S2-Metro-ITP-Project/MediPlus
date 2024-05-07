@@ -4,11 +4,10 @@ import { FaEye, FaTimes, FaCheck } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { AiOutlineSearch } from "react-icons/ai";
 
-import { HiOutlineSun, HiOutlineCalendar } from "react-icons/hi";
-
 
 export default function DashLeave() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showModal0, setShowModal0] = useState(false);
   const [showModal1, setShowModal1] = useState(false);
   const [showModal2, setShowModal2] = useState(false);
   const [showModal3, setShowModal3] = useState(false);
@@ -18,36 +17,37 @@ export default function DashLeave() {
   const [leaveStatus, setLeaveStatus] = useState("");
   const [leaves, setLeaves] = useState([]);
   const [deletingLeaveId, setDeletingLeaveId] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState('');
 
-  const [totalPendingLeaves, setTotalPendingLeaves] = useState(0);
-  const [todaysTotalLeave, setTodaysTotalLeave] = useState(0);
+
+
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch leaves
-        const leavesResponse = await fetch(`/api/leaves/getAllLeaves`);
-        if (!leavesResponse.ok) {
+        // Fetch all leaves (including the ones that were not deleted)
+        const response = await fetch(`/api/leaves/getAllLeaves`);
+        if (!response.ok) {
           throw new Error('Failed to fetch leaves');
         }
-        const leavesData = await leavesResponse.json();
-        setLeaves(leavesData);
+        const leavesData = await response.json();
   
-        // Fetch total pending leaves
-        const pendingLeavesResponse = await fetch(`/api/leaves/getTotalPendingLeave`);
-        if (!pendingLeavesResponse.ok) {
-          throw new Error('Failed to fetch total pending leaves');
+        // Check for leaves whose end date is more than 3 months ago
+        const currentDate = new Date();
+        const threeMonthsAgo = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
+        const oldLeaves = leavesData.filter(leave => new Date(leave.endDate) < threeMonthsAgo);
+       
+  
+        // Delete old leave records
+        await Promise.all(oldLeaves.map(leave => deleteLeave(leave._id)));
+  
+        // Refetch all leaves after deleting old records
+        const updatedResponse = await fetch(`/api/leaves/getAllLeaves`);
+        if (!updatedResponse.ok) {
+          throw new Error('Failed to fetch leaves');
         }
-        const pendingLeavesData = await pendingLeavesResponse.json();
-        setTotalPendingLeaves(pendingLeavesData.totalPendingLeave);
-
-        // Fetch today's total leave
-        const todaysLeaveResponse = await fetch(`/api/leaves/getTodaysTotalLeave`);
-        if (!todaysLeaveResponse.ok) {
-          throw new Error('Failed to fetch today\'s total leave');
-        }
-        const todaysLeaveData = await todaysLeaveResponse.json();
-        setTodaysTotalLeave(todaysLeaveData.todaysTotalLeave);
+        const updatedLeavesData = await updatedResponse.json();
+        setLeaves(updatedLeavesData);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -55,11 +55,31 @@ export default function DashLeave() {
   
     fetchData();
   }, []);
+  
+  
 
   const handleViewReason = (reason) => {
     setSelectedLeaveReason(reason);
     setShowModal1(true);
   };
+
+  async function deleteLeave(leaveId) {
+    try {
+      const response = await fetch(`/api/leaves/delete/${leaveId}`, {
+        method: "DELETE",
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to delete leave");
+      }
+      
+      console.log(`Leave with ID ${leaveId} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting leave:", error);
+      // Handle error
+    }
+  }
+
 
   const handleUpdateLeaveStatus = async (status) => {
     try {
@@ -70,14 +90,14 @@ export default function DashLeave() {
         },
         body: JSON.stringify({ status }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to update leave status");
       }
-  
+
       const data = await response.json();
       toast.success(data.message);
-  
+
       setLeaves((prevLeaves) =>
         prevLeaves.map((leave) =>
           leave._id === selectedLeaveId ? { ...leave, status } : leave
@@ -116,8 +136,8 @@ export default function DashLeave() {
   };
 
   const getUserRole = (user) => {
-    if (!user) return "Unknown"; 
-    
+    if (!user) return "Unknown";
+
     if (user.isPatient || user.isUser) {
       if (user.isAdmin) return "Admin";
     } else {
@@ -127,16 +147,92 @@ export default function DashLeave() {
       if (user.isReceptionist) return "Receptionist";
       if (user.isHeadNurse) return "Head Nurse";
       if (user.isHRM) return "HRM";
-      if (user.isAdmin) return "Admin";
+      if (user.isAdmin) return "Admin"
+      if (user.isCashier) return "Cashier"
+      if (user.isLabTech) return "Lab Tech";
     }
     return "Employee";
   };
 
+
+  const handleDownloadPdf = async () => {
+    try {
+      const monthName = generateMonthName(selectedMonth);
+      const fileName = `Employee-Leave-${monthName}.pdf`;
+
+      const res = await fetch(
+        `/api/leaves/PDFEmployeeLeave`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selectedMonth, leaves }), // Pass leaves data and selected month
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+      const pdfBlob = await res.blob();
+
+      // Create blob URL
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      // Create temporary link element
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName ; // Set download attribute
+      document.body.appendChild(a);
+
+      // Click link to initiate download
+      a.click();
+
+      // Remove link from DOM
+      document.body.removeChild(a);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const generateMonthName = (monthIndex) => {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return monthNames[parseInt(monthIndex)];
+  };
+
+  const handleMonthChange = (event) => {
+    setSelectedMonth(event.target.value);
+  };
+  const generateMonthOptions = () => {
+    const currentDate = new Date();
+     const currentMonth = currentDate.getMonth();
+   // console.log(currentMonth)
+  
+    // Generate options for the current month and the two previous months
+    const monthOptions = [];
+    for (let i = 0; i < 3; i++) {
+      const monthIndex = (currentMonth - i + 12) % 12; // Handle wrapping for previous years
+      const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(currentDate.getFullYear(), monthIndex, 1));
+      monthOptions.push({ value: monthIndex.toString(), label: monthName });
+    }
+  
+    // Render the options
+    return monthOptions.map(month => (
+      <option key={month.value} value={month.value}>
+        {month.label}
+      </option>
+    ));
+  };
+  
+  
+
   const filteredLeaves = leaves.filter(leave => {
     if (filterStatus === "") {
-      return true; 
+      return true;
     } else {
-      return leave.status === filterStatus; 
+      return leave.status === filterStatus;
     }
   });
 
@@ -149,56 +245,38 @@ export default function DashLeave() {
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
       <div className="flex justify-between">
-      <div className="mr-4">
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
-      <div>
-        <TextInput
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by name"
-          rightIcon={AiOutlineSearch}
-          className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        />
-      </div>
-    </div>
-    <br />
-    <div className="flex-wrap flex gap-4 justify-center">
-      <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-        <div className="flex justify-between">
-          <div>
-            <h3 className="text-gray-500 text-md uppercase">
-              Total Pending Leaves
-            </h3>
-            <p className="text-2xl">{totalPendingLeaves}</p>
-          </div>
-          <HiOutlineCalendar className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+        <div className="mr-4">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <TextInput
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name"
+            rightIcon={AiOutlineSearch}
+            className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
+        <div className="mb-4">
+          <Button
+            gradientDuoTone="purpleToPink"
+            onClick={() => setShowModal0(true)}
+            className="text-left inline-block"
+          >
+            Report
+          </Button>
         </div>
       </div>
-      <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-        <div className="flex justify-between">
-          <div>
-            <h3 className="text-gray-500 text-md uppercase">
-              Today's Leaves
-            </h3>
-            <p className="text-2xl">{todaysTotalLeave}</p>
-          </div>
-          <HiOutlineSun className="bg-yellow-500 text-white rounded-full text-5xl p-3 shadow-lg" />
-        </div>
-      </div>
-    </div> 
-    <br />
-    <br />
       <br />
       <Table hoverable className="shadow-md">
         <Table.Head>
@@ -304,6 +382,15 @@ export default function DashLeave() {
               >
                 Reject
               </Button>
+              <Button
+                color="yellow"
+                onClick={() => {
+                  setLeaveStatus("pending");
+                  handleUpdateLeaveStatus("pending");
+                }}
+              >
+                Pending
+              </Button>
             </div>
           </div>
         </Modal.Body>
@@ -327,6 +414,33 @@ export default function DashLeave() {
               <Button onClick={() => setShowModal2(false)}>Cancel</Button>
             </div>
           </div>
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showModal0} onClose={() => setShowModal0(false)} size="md">
+        <Modal.Header>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generate Report</h3>
+          </div>
+        </Modal.Header>
+        <Modal.Body className="flex flex-col items-center">
+          <div className="text-center">
+            <p className="text-base text-gray-600 dark:text-gray-400 mb-4">Select a month to generate the report:</p>
+            <select
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">All leave </option>
+              {generateMonthOptions()}
+            </select>
+          </div>
+          <Button
+            onClick={handleDownloadPdf}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out"
+          >
+            Download PDF
+          </Button>
         </Modal.Body>
       </Modal>
     </div>

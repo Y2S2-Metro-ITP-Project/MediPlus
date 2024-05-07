@@ -41,6 +41,7 @@ export default function DashStaffManagement() {
     consultationFee: '',
     bio: '',
     employeeImage: '',
+    doctortype: '',
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -120,6 +121,7 @@ export default function DashStaffManagement() {
           consultationFee: data.employeeDetails.consultationFee || "",
           bio: data.employeeDetails.bio || "",
           employeeImage: data.employeeDetails.employeeImage || "",
+          doctortype: data.employeeDetails.doctortype || "",
 
         });
       } else {
@@ -683,53 +685,54 @@ export default function DashStaffManagement() {
       >
         <Modal.Header />
         <Modal.Body>
-  {selectedUserDetails && (
-    <div className="profile-container">
-      <div className="profile-header">
-        <h1 className="text-3xl font-bold">{selectedUserDetails.username}</h1> {/* Bigger and bold username */}
-        <p className="font-bold">Email: {selectedUserDetails.email}</p>
-        <p className="font-bold">Role: {getSelectedRole(selectedUserDetails)}</p>
-      </div>
-      {selectedUserDetails.employeeDetails && (
-        <div className="image-container">
-          <div className="image-wrapper">
-            <img
-              src={selectedUserDetails.employeeDetails.employeeImage}
-              alt="Employee"
-              width="250" // Example width
-              height="250" // Example height
-            />
-          </div>
-          <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
-          <h3 className="text-xl font-bold">Employee Details</h3>
-          <div className="details-row">
-            <p><strong>Name:</strong> {selectedUserDetails.employeeDetails.Name}</p>
-            <p><strong>Gender:</strong> {selectedUserDetails.employeeDetails.gender}</p>
-            <p><strong>Date of Birth:</strong> {selectedUserDetails.employeeDetails.dateOfBirth}</p>
-            <p><strong>Salary:</strong> {selectedUserDetails.employeeDetails.salary}</p>
-          </div>
-          <div className="details-row">
-            <p><strong>Address:</strong> {selectedUserDetails.employeeDetails.address}</p>
-            <p><strong>Contact Number:</strong> {selectedUserDetails.employeeDetails.contactPhone}</p>
-          </div>
-          {getSelectedRole(selectedUserDetails) === "Doctor" && (
-            <>
-              <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
-              <div className="details-row">
-                <h3 className="text-xl font-bold">Doctor Details</h3>
-                <p><strong>Specialization:</strong> {selectedUserDetails.employeeDetails.specialization}</p>
-                <p><strong>Experience:</strong> {selectedUserDetails.employeeDetails.experience}</p>
-                <p><strong>Qualifications:</strong> {selectedUserDetails.employeeDetails.qualifications}</p>
-                <p><strong>Consultation Fee:</strong> {selectedUserDetails.employeeDetails.consultationFee}</p>
-                <p><strong>Bio:</strong> {selectedUserDetails.employeeDetails.bio}</p>
+          {selectedUserDetails && (
+            <div className="profile-container">
+              <div className="profile-header">
+                <h1 className="text-3xl font-bold">{selectedUserDetails.username}</h1> {/* Bigger and bold username */}
+                <p className="font-bold">Email: {selectedUserDetails.email}</p>
+                <p className="font-bold">Role: {getSelectedRole(selectedUserDetails)}</p>
               </div>
-            </>
+              {selectedUserDetails.employeeDetails && (
+                <div className="image-container">
+                  <div className="image-wrapper">
+                    <img
+                      src={selectedUserDetails.employeeDetails.employeeImage}
+                      alt="Employee"
+                      width="250" // Example width
+                      height="250" // Example height
+                    />
+                  </div>
+                  <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
+                  <h3 className="text-xl font-bold">Employee Details</h3>
+                  <div className="details-row">
+                    <p><strong>Name:</strong> {selectedUserDetails.username}</p>
+                    <p><strong>Gender:</strong> {selectedUserDetails.employeeDetails.gender}</p>
+                    <p><strong>Date of Birth:</strong> {selectedUserDetails.employeeDetails.dateOfBirth}</p>
+                    <p><strong>Salary:</strong> {selectedUserDetails.employeeDetails.salary}</p>
+                  </div>
+                  <div className="details-row">
+                    <p><strong>Address:</strong> {selectedUserDetails.employeeDetails.address}</p>
+                    <p><strong>Contact Number:</strong> {selectedUserDetails.employeeDetails.contactPhone}</p>
+                  </div>
+                  {getSelectedRole(selectedUserDetails) === "Doctor" && (
+                    <>
+                      <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
+                      <div className="details-row">
+                        <h3 className="text-xl font-bold">Doctor Details</h3>
+                        <p><strong>Doctor Type:</strong> {selectedUserDetails.employeeDetails.doctortype}</p>
+                        <p><strong>Specialization:</strong> {selectedUserDetails.employeeDetails.specialization}</p>
+                        <p><strong>Experience:</strong> {selectedUserDetails.employeeDetails.experience}</p>
+                        <p><strong>Qualifications:</strong> {selectedUserDetails.employeeDetails.qualifications}</p>
+                        <p><strong>Consultation Fee:</strong> {selectedUserDetails.employeeDetails.consultationFee}</p>
+                        <p><strong>Bio:</strong> {selectedUserDetails.employeeDetails.bio}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      )}
-    </div>
-  )}
-</Modal.Body>
+        </Modal.Body>
 
         <Modal.Footer />
       </Modal>
@@ -787,6 +790,21 @@ export default function DashStaffManagement() {
           </div>
           {updatedUserData.role === "Doctor" && (
             <>
+            <br />
+              <div className="flex flex-col">
+                <select
+                  id="doctortype"
+                  value={updatedEmployeeDetails.doctortype}
+                  onChange={(e) =>
+                    setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, doctortype: e.target.value })
+                  }
+                  className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                >
+                  <option value="">Select Doctor Type</option>
+                  <option value="Permenent">Permanent Doctor </option>
+                  <option value="Visiting">Visiting Doctor</option>
+                </select>
+              </div>
               <div className="mt-4">
                 <label className="block">Specialization</label>
                 <TextInput
@@ -870,8 +888,15 @@ export default function DashStaffManagement() {
               }
               className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder={userToUpdate?.employeeDetails?.dateOfBirth || "Select Date of Birth"}
+
             />
           </div>
+          {updatedUserData.role === "Doctor" && updatedEmployeeDetails.doctortype === "Visiting" && (
+            <>
+             <br />
+            <div className="mt-4 text-red-500">Please update the salary for Visiting Doctor</div>
+            </>
+          )}
           <div className="mt-4">
             <label className="block">Salary</label>
             <TextInput
