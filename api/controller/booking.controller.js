@@ -33,7 +33,7 @@ export const createBooking = async (req, res, next) => {
   try {
     let meetLink = "";
     console.log("Booking request type:", type);
-    if (type == "Online Appointment") {
+    if (type === "Online Appointment") {
       const authClient = await authorize();
       const response = await createSpace(authClient);
       meetLink = response[0].meetingUri;
