@@ -13,11 +13,21 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
+    slotId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Slot",
+      required: false,
+    
+    },
     status: { type: String, default: "Not Booked" },
     date: { type: Date, required: true },
     time: { type: String, required: true },
     reason: { type: String, required: false },
-    roomNo: { type: Number, required: false },
+    roomNo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+      required: false,
+    },
     isChanged: { type: Boolean, default: false },
     meetLink: { type: String, required: false }, // Added this line
   },

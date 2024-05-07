@@ -3,7 +3,17 @@ import Booking from "../models/booking.model.js";
 import { authorize, createSpace } from "../utils/googleMeet.js";
 
 export const createBooking = async (req, res, next) => {
-  const { type, doctorId, patientId, date, time, roomNo, reason } = req.body;
+  const {
+    type,
+    doctorId,
+    patientId,
+    date,
+    time,
+    roomNo,
+    reason,
+    slotId,
+  } = req.body;
+
   console.log("Booking request received with data:", {
     type,
     doctorId,
@@ -12,6 +22,7 @@ export const createBooking = async (req, res, next) => {
     time,
     roomNo,
     reason,
+    slotId,
   });
 
   if (!type || !doctorId || !date || !time) {
@@ -22,8 +33,7 @@ export const createBooking = async (req, res, next) => {
   try {
     let meetLink = "";
     console.log("Booking request type:", type);
-
-    if (type == "Hospital Booking") {
+    if (type == "Online Appointment") {
       const authClient = await authorize();
       const response = await createSpace(authClient);
       meetLink = response[0].meetingUri;
@@ -38,13 +48,12 @@ export const createBooking = async (req, res, next) => {
       time,
       roomNo,
       reason,
+      slotId,
       meetLink,
     });
-    console.log("New booking instance created:", newBooking);
 
     await newBooking.save();
     console.log("Booking saved to the database");
-
     res.status(201).json(newBooking);
     console.log("Booking created successfully");
   } catch (error) {
