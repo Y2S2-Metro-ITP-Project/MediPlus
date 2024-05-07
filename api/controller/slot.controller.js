@@ -1,4 +1,5 @@
 import Slot from "../models/slot.model.js";
+import Booking from "../models/booking.model.js";
 
 // Create a new slot
 export const createSlot = async (req, res) => {
@@ -19,7 +20,33 @@ export const createSlot = async (req, res) => {
 export const getAllSlots = async (req, res) => {
   try {
     const slots = await Slot.find().populate("room").populate("doctorId");
-    res.json(slots);
+    console.log(slots);
+
+    const slotsWithBookingInfo = await Promise.all(
+      slots.map(async (slot) => {
+        const bookings = await Booking.find({ slotId: slot._id });
+        const totalBookings = bookings.length;
+        const bookedCount = bookings.filter((booking) => booking.status === "Booked").length;
+
+        const status =
+          totalBookings === 0
+            ? "Not Booked"
+            : bookedCount === totalBookings
+            ? "Fully Booked"
+            : bookedCount > 0
+            ? "Filling"
+            : "Cancelled";
+
+        return {
+          ...slot.toObject(),
+          totalBookings,
+          bookedCount,
+          status,
+        };
+      })
+    );
+
+    res.json(slotsWithBookingInfo);
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve slots" });
   }
@@ -84,5 +111,38 @@ export const getSlotsByType = async (req, res) => {
     res.json(slots);
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve slots by type" });
+  }
+};
+
+
+// Cancel a slot and associated bookings
+export const cancelSlot = async (req, res) => {
+  try {
+    const slotId = req.params.id;
+
+    // Find the slot by ID
+    const slot = await Slot.findById(slotId);
+
+    if (!slot) {
+      return res.status(404).json({ error: 'Slot not found' });
+    }
+
+    // Update the slot status to 'Cancelled'
+    slot.status = 'Cancelled';
+
+    // Cancel all associated bookings
+    const bookings = await Booking.find({ slotId });
+    for (const booking of bookings) {
+      booking.status = 'Cancelled';
+      await booking.save();
+    }
+
+    // Save the updated slot
+    const updatedSlot = await slot.save();
+
+    res.json(updatedSlot);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
