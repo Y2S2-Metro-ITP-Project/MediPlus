@@ -1,3 +1,4 @@
+import TestOrder from "../models/orderedTest.model.js";
 import Patient from "../models/patient.model.js";
 import Payment from "../models/payment.model.js";
 import PaymentOrder from "../models/paymentOrder.model.js";
@@ -440,6 +441,24 @@ export const updatePaymentOrder = async (req, res) => {
 
     for (const paymentID of paymentOrder.Payment) {
       await Payment.findByIdAndUpdate(paymentID, { status: "Completed" });
+     
+     
+
+       const labPayment = await Payment.find({_id:paymentID, OrderType:"Laboratory"});
+       // lab payment is filtered and Received
+       const labOrderId = labPayment[0].labOrderId
+       await TestOrder.findByIdAndUpdate(labOrderId, {paymentComplete:true, orderStages:"sampleCollection"})
+       
+      //  if (!payTest) {
+      //   return res.status(404).json({ error: "Test Order Not Found" });
+      // }
+
+      // payTest[0].paymentComplete = true;
+      // payTest[0].orderStages = "sampleCollection";
+  
+      // await payTest.save();
+        
+      
     }
 
     res.status(200).json({ message: "Payment order updated successfully." });

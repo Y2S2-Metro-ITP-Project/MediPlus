@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 //create a payment model
 const paymentSchema = new mongoose.Schema(
@@ -21,6 +21,11 @@ const paymentSchema = new mongoose.Schema(
     OrderType: {
       type: String,
       enum: ["Laboratory", "Pharmacy", "Consultation", "Ward"],
+    },
+
+    labOrderId:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "labOrder",
     },
 
     totalPayment: {

@@ -134,7 +134,7 @@ const createOrUpdatePaymentOrder = async (
     throw new Error("Failed to create or update payment order");
   }
 };
-
+// ====================================necessary for payment lab =========
 export const confirmPrescriptionOrderData = async (req, res) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
     return res.status(401).json({ message: "Unauthorized" });

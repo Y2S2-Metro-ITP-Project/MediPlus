@@ -23,6 +23,11 @@ const orderedTestSchema = new mongoose.Schema(
     
     },
 
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "payment",
+    },
+
     highPriority: {
       type: Boolean,
       default: false,

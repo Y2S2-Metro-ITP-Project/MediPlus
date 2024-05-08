@@ -92,7 +92,7 @@ const DashSampleManager = () => {
             <Table.Body className=" divide-y text-center ">
               <Table.Row>
                 <Table.Cell className="text-left">
-                  {sample.testOrderId._id}
+                  {sample.testOrderId._id} 
                 </Table.Cell>
                 <Table.Cell>{sample.patientId.name}</Table.Cell>
                 <Table.Cell>{sample.sampleType.toLowerCase()}</Table.Cell>
