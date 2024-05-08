@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyToken } from "../utils/verifyUser.js";
+import Slot from "../models/slot.model.js";
 import {
   createSlot,
   getAllSlots,
@@ -10,6 +11,7 @@ import {
   cancelSlot,
   generateSlotReport,
   generateTotalReport,
+  getSlotsByRoom,
 } from "../controller/slot.controller.js";
 
 const router = express.Router();
@@ -40,5 +42,8 @@ router.get("/report/:id", verifyToken, generateSlotReport);
 
 // Generate report for all slots
 router.get("/report", verifyToken, generateTotalReport);
+
+router.get("/room/:roomId", verifyToken, getSlotsByRoom);
+
 
 export default router;

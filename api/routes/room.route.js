@@ -6,27 +6,20 @@ import {
   updateRoomById,
   deleteRoomById,
   checkRoomAvailability,
+  generateRoomReport,
+  generateTotalReport,
 } from "../controller/room.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
 
-// Create a new room
 router.post("/create", verifyToken, createRoom);
-
-// Get all rooms
 router.get("/", getAllRooms);
-
-// Get a room by ID
 router.get("/:id", getRoomById);
-
-// Update a room by ID
 router.put("/update/:id", verifyToken, updateRoomById);
-
-// Delete a room by ID
 router.delete("/delete/:id", verifyToken, deleteRoomById);
-
-// Check room availability
 router.post("/availability", checkRoomAvailability);
+router.get("/report/:id", verifyToken, generateRoomReport);
+router.get("/report", verifyToken, generateTotalReport);
 
 export default router;
