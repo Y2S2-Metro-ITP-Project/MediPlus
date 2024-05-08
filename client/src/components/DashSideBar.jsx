@@ -23,7 +23,7 @@ import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
 import { FaHeartbeat } from "react-icons/fa";
 import { IoReceiptOutline } from "react-icons/io5";
-import { FaMedkit } from 'react-icons/fa';
+import { FaMedkit } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -239,6 +239,15 @@ export default function DashSideBar() {
                   Out Patient Billing
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=InpatientPayment">
+                <Sidebar.Item
+                  active={tab === "InpatientPayment"}
+                  icon={IoReceiptOutline}
+                  as="div"
+                >
+                  In Patient Billing
+                </Sidebar.Item>
+              </Link>
 
               <Link to="/dashboard?tab=EMPleave">
                 <Sidebar.Item
@@ -259,9 +268,42 @@ export default function DashSideBar() {
                   icon={FaClipboardList}
                   as="div"
                 >
-                  Doctor Orders
+                  Doctor Orders{" "}
+                  <span
+                    style={{
+                      color: tab === "orderPrescritions" ? "green" : "red", // Adjust colors as needed
+                      fontWeight: "bold",
+                      marginLeft: "5px",
+                    }}
+                  >
+                    OUT
+                  </span>
+                  <span style={{ fontSize: "12px", color: "gray" }}>
+                  </span>
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=DoctorOrderIn">
+                <Sidebar.Item
+                  active={tab === "DoctorOrderIn"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Doctor Orders{" "}
+                  <span
+                    style={{
+                      color: tab === "DoctorOrderIn" ? "green" : "red", // Adjust colors as needed
+                      fontWeight: "bold",
+                      marginLeft: "5px",
+                    }}
+                  >
+                    IN
+                  </span>
+                  <span style={{ fontSize: "12px", color: "gray" }}>
+                  </span>
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=inventory">
                 <Sidebar.Item
                   active={tab === "inventory"}

@@ -8,20 +8,73 @@ import PaymentOrder from "../models/paymentOrder.model.js";
 import { set } from "mongoose";
 export const getPrescriptionOrderData = async (req, res, next) => {
   try {
-    const prescriptionOrders = await PrescriptionOrder.find()
+    const prescriptionOrders1 = await PrescriptionOrder.find()
       .populate({
         path: "doctorId",
         select: "username",
       })
       .populate({
         path: "patientId",
-        select: "name contactEmail contactPhone",
+        select: "name contactEmail contactPhone patientType",
       })
       .populate({
         path: "payment",
         select:
           "totalPayment status OrderType dateAndTime patientName patientEmail paymentType",
       });
+    const prescriptionOrders = prescriptionOrders1.filter(
+      (order) => order.patientId.patientType === "Outpatient"
+    );
+    console.log(prescriptionOrders);
+    const totalOrders = prescriptionOrders.length;
+    const totalCompletedOrders = prescriptionOrders.filter(
+      (order) => order.status === "Completed"
+    ).length;
+    const totalPendingOrders = prescriptionOrders.filter(
+      (order) => order.status === "Pending"
+    ).length;
+    const totalRejectedOrders = prescriptionOrders.filter(
+      (order) => order.status === "Rejected"
+    ).length;
+    res.status(200).json({
+      prescriptionOrders,
+      totalOrders,
+      totalCompletedOrders,
+      totalPendingOrders,
+      totalRejectedOrders,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getInPrescriptionOrderData = async (req, res, next) => {
+  try {
+    const prescriptionOrders1 = await PrescriptionOrder.find()
+      .populate({
+        path: "doctorId",
+        select: "username",
+      })
+      .populate({
+        path: "patientId",
+        populate: {
+          path: "bed",
+          populate: {
+            path: "ward",
+            model: "Ward", // Assuming the name of the ward model is "Ward"
+          },
+        },
+      })
+      .populate({
+        path: "payment",
+        select:
+          "totalPayment status OrderType dateAndTime patientName patientEmail paymentType",
+      });
+
+    // Filter prescriptionOrders based on patientType
+    const prescriptionOrders = prescriptionOrders1.filter(
+      (order) => order.patientId.patientType === "Inpatient"
+    );
     console.log(prescriptionOrders);
     const totalOrders = prescriptionOrders.length;
     const totalCompletedOrders = prescriptionOrders.filter(
@@ -733,12 +786,25 @@ export const getFilteredOrderData = async (req, res) => {
     const filterOption = req.body.filterValue;
     if (filterOption === "Pending") {
       try {
-        const prescriptionOrders = await PrescriptionOrder.find({
+        const prescriptionOrders1 = await PrescriptionOrder.find({
           status: "Pending",
         })
-          .populate("doctorId")
-          .populate("patientId")
-          .populate("payment");
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Outpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
         res.status(500).json({ message: error.message });
@@ -746,12 +812,25 @@ export const getFilteredOrderData = async (req, res) => {
     }
     if (filterOption === "Completed") {
       try {
-        const prescriptionOrders = await PrescriptionOrder.find({
+        const prescriptionOrders1 = await PrescriptionOrder.find({
           status: "Completed",
         })
-          .populate("doctorId")
-          .populate("patientId")
-          .populate("payment");
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Outpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
         res.status(500).json({ message: error.message });
@@ -759,12 +838,113 @@ export const getFilteredOrderData = async (req, res) => {
     }
     if (filterOption === "Rejected") {
       try {
-        const prescriptionOrders = await PrescriptionOrder.find({
+        const prescriptionOrders1 = await PrescriptionOrder.find({
           status: "Rejected",
         })
-          .populate("doctorId")
-          .populate("patientId")
-          .populate("payment");
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Outpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const getInFilteredOrderData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    if (filterOption === "Pending") {
+      try {
+        const prescriptionOrders1 = await PrescriptionOrder.find({
+          status: "Pending",
+        })
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Inpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Completed") {
+      try {
+        const prescriptionOrders1 = await PrescriptionOrder.find({
+          status: "Completed",
+        })
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Inpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (filterOption === "Rejected") {
+      try {
+        const prescriptionOrders1 = await PrescriptionOrder.find({
+          status: "Rejected",
+        })
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { patientType: "Inpatient" }, // Filtering based on patientType
+          })
+          .populate({
+            path: "payment",
+          })
+          .exec();
+
+        // Filter out prescriptions where patientId is null (not matched with patientType: "Outpatient")
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
         res.status(500).json({ message: error.message });
@@ -788,12 +968,57 @@ export const getFilteredOrderByPaymentStatusData = async (req, res) => {
     ) {
       try {
         const prescriptionOrders1 = await PrescriptionOrder.find()
-          .populate("doctorId")
-          .populate("patientId")
-          .populate("payment");
+        .populate({
+          path: "doctorId",
+        })
+        .populate({
+          path: "patientId",
+          match: { patientType: "Outpatient" },
+        })
+        .populate({
+          path: "payment",
+        })
 
         const prescriptionOrders = prescriptionOrders1.filter((order) => {
           // Ensure that the order has a payment and its status matches the filterOption
+          return order.payment && order.payment.status === filterOption;
+        });
+
+        res.status(200).json({ prescriptionOrders });
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getInFilteredOrderByPaymentStatusData = async (req, res) => {
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    if (
+      filterOption === "Pending" ||
+      filterOption === "Completed" ||
+      filterOption === "Rejected"
+    ) {
+      try {
+        const prescriptionOrders1 = await PrescriptionOrder.find()
+        .populate({
+          path: "doctorId",
+        })
+        .populate({
+          path: "patientId",
+          match: { patientType: "Inpatient" },
+        })
+        .populate({
+          path: "payment",
+        })
+
+        const prescriptionOrders = prescriptionOrders1.filter((order) => {
           return order.payment && order.payment.status === filterOption;
         });
 

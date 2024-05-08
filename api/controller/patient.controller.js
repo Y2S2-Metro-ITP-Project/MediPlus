@@ -615,7 +615,7 @@ export const admitPatient = async (req, res, next) => {
       insuranceInformation,
       emergencyContact,
       roomPreferences,
-      patientType: "inpatient",
+      patientType: "Inpatient",
     });
 
     // Save the new patient to the database

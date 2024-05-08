@@ -12,11 +12,15 @@ import {
   downloadPatientOrderDateData,
   downloadDoctorOrderReport,
   getFilteredOrderData,
-  getFilteredOrderByPaymentStatusData
+  getFilteredOrderByPaymentStatusData,
+  getInPrescriptionOrderData,
+  getInFilteredOrderData,
+  getInFilteredOrderByPaymentStatusData
 } from "../controller/PrescriptionOrder.controller.js";
 const router = express.Router();
 
 router.get("/getPrescriptionOrder", verifyToken, getPrescriptionOrderData);
+router.get("/getInpatientPrescriptionOrder", verifyToken, getInPrescriptionOrderData);
 router.delete(
   "/deletePrescriptionOrder/:id",
   verifyToken,
@@ -43,4 +47,6 @@ router.post("/downloadPatientOrderDate/:id",verifyToken,downloadPatientOrderDate
 router.post("/downloadDoctorOrderReport/:id",verifyToken,downloadDoctorOrderReport)
 router.post("/getprescriptionOrderByDispense/:id",verifyToken,getFilteredOrderData)
 router.post("/getprescriptionOrderByPayment/:id",verifyToken,getFilteredOrderByPaymentStatusData)
+router.post("/getInprescriptionOrderByDispense/:id",verifyToken,getInFilteredOrderData)
+router.post("/getInprescriptionOrderByPayment/:id",verifyToken,getInFilteredOrderByPaymentStatusData)
 export default router;
