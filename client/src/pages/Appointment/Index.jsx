@@ -272,7 +272,7 @@ const Index = () => {
   return (
     <div className="flex flex-col items-center min-h-screen p-4">
       {/* Form Container */}
-      <div className="w-full max-w-3xl bg-blue-600 p-4 rounded mb-4 sm:p-6">
+      <div className="w-full max-w-3xl bg-white p-4 rounded-lg shadow-md mb-4">
         <div className="flex flex-wrap justify-center items-center gap-4">
           <Select
             id="doctor"
@@ -285,7 +285,12 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                minWidth: "200px", // Set minimum width
+                minWidth: "200px",
+                border: "1px solid #d1d5db",
+                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                "&:hover": {
+                  borderColor: "#6b7280",
+                },
               }),
               input: (provided) => ({
                 ...provided,
@@ -294,7 +299,7 @@ const Index = () => {
                 border: "none",
               }),
             }}
-            className="w-full sm:w-auto" // Apply full width on small screens
+            className="w-full sm:w-auto rounded-lg"
           />
           <Select
             placeholder="Select specialization"
@@ -306,10 +311,15 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                minWidth: "200px", // Set minimum width
+                minWidth: "200px",
+                border: "1px solid #d1d5db",
+                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                "&:hover": {
+                  borderColor: "#6b7280",
+                },
               }),
             }}
-            className="w-full sm:w-auto" // Apply full width on small screens
+            className="w-full sm:w-auto rounded-lg"
           />
           <TextInput
             type="date"
@@ -322,23 +332,36 @@ const Index = () => {
                 ...provided,
                 backgroundColor: "white",
                 marginRight: "10px",
-                minWidth: "200px", // Set minimum width
+                minWidth: "200px",
+                border: "1px solid #d1d5db",
+                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                "&:hover": {
+                  borderColor: "#6b7280",
+                },
               }),
             }}
-            className="w-full sm:w-auto" // Apply full width on small screens
+            className="w-full sm:w-auto rounded-lg"
           />
-          <Button color="white" onClick={handleSearch} className="w-full sm:w-auto">
+          <Button
+            color="white"
+            onClick={handleSearch}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+          >
             Search
           </Button>
-          <Button color="white" onClick={handleClear} className="w-full sm:w-auto">
+          <Button
+            color="white"
+            onClick={handleClear}
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+          >
             Clear
           </Button>
         </div>
       </div>
-
+  
       {/* Doctor Profile Container */}
       <div className="w-full max-w-4xl">
-        <div className="p-4 rounded">
+        <div className="p-4 rounded-lg">
           {showDoctorList ? (
             <DoctorsList doctorDetails={doctorDetails} onViewProfile={handleViewProfile} />
           ) : (
