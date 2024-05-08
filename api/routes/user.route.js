@@ -1,6 +1,6 @@
 import express from "express";
 
-import { test, signout, updateUser, deleteUser, getusers, getdoctors, getAllDoctors, getPatients, getUser,filterUsers,searchUsers } from "../controller/user.controller.js";
+import { test, signout, updateUser, deleteUser, getusers, getdoctors, getAllDoctors, getPatients, getUser,filterUsers,searchUsers,getDoctors,getNurses} from "../controller/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
 
@@ -15,5 +15,6 @@ router.get("/getPatients", verifyToken, getPatients);
 router.post("/filter",verifyToken, filterUsers);
 router.post("/search",verifyToken, searchUsers);
 router.get('/:userId',getUser);
-
+router.get("/get/getDoctors", getDoctors);
+router.get("/get/getNurses", getNurses);
 export default router;
