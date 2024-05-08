@@ -61,6 +61,8 @@ export const createBooking = async (req, res, next) => {
     next(error);
   }
 };
+
+
 export const getBookings = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
     return next(
@@ -72,13 +74,31 @@ export const getBookings = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-    const bookings = await Booking.find();
+
+    const bookings = await Booking.find()
+      .populate("doctorId", "username")
+      .populate("patientId", "username")
+      .populate("roomNo", "description")
+      .skip(startIndex)
+      .limit(limit)
+      .sort({ createdAt: sortDirection });
+    console.log("Bookings fetched:", bookings); 
     const totalBookings = await Booking.countDocuments();
-    res.status(200).json({ bookings, totalBookings });
+
+    const updatedBookings = bookings.map((booking) => ({
+      ...booking.toObject(),
+      doctorName: booking.doctorId ? booking.doctorId.username : "Unknown",
+      patientName: booking.patientId ? booking.patientId.name : "Unknown",
+      roomName: booking.roomNo ? booking.roomNo.description : "Online Appointment",
+    }));
+    console.log(" fetched successfully");
+    res.status(200).json({ bookings: updatedBookings, totalBookings });
   } catch (error) {
     next(error);
   }
 };
+
+// ... (rest of the code remains the same)
 
 export const getBookingsForScheduling = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
