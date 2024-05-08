@@ -10,7 +10,7 @@ const bookingSchema = new mongoose.Schema(
     },
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Patient",
       required: false,
     },
     slotId: {

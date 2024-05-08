@@ -77,7 +77,7 @@ export const getBookings = async (req, res, next) => {
 
     const bookings = await Booking.find()
       .populate("doctorId", "username")
-      .populate("patientId", "username")
+      .populate("patientId", "name")
       .populate("roomNo", "description")
       .skip(startIndex)
       .limit(limit)
@@ -88,7 +88,7 @@ export const getBookings = async (req, res, next) => {
     const updatedBookings = bookings.map((booking) => ({
       ...booking.toObject(),
       doctorName: booking.doctorId ? booking.doctorId.username : "Unknown",
-      patientName: booking.patientId ? booking.patientId.name : "Unknown",
+      patientName: booking.patientId ? booking.patientId.name : "Unassigned",
       roomName: booking.roomNo ? booking.roomNo.description : "Online Appointment",
     }));
     console.log(" fetched successfully");
@@ -307,7 +307,63 @@ export const bookAppointment = async (req, res) => {
     const booking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
-        $set: { patientId: req.body.patientId, status: "Pending Payment" },
+        $set: { patientId: req.body.patientId, status: "Booked" },
+      },
+      { new: true }
+    );
+    console.log("Booking updated:", booking);
+
+    // if (!booking) {
+    //   console.log("Booking not found for ID:", req.params.bookingId);
+    //   return res.status(404).json({ message: "Booking not found" });
+    // }
+
+    // console.log("Checking for existing orders...");
+
+    // const patientFind = await Booking.findById(booking.patientId._id);
+    // const patientName = patientFind.name;
+    // const patientEmail = patientFind.contactEmail;
+    // const payment = await Payment.create({
+    //   patientId: booking.patientId._id,
+    //   patientName: patientName,
+    //   patientEmail: patientEmail,
+    //   OrderType: "Consultation Fee",
+    //   totalPayment: 50000,
+    // });
+
+    // try {
+    //   await createOrUpdatePaymentOrder(
+    //     booking.patientId._id,
+    //     patientName,
+    //     patientEmail,
+    //     payment._id
+    //   );
+    // } catch (error) {
+    //   res.status(500).json({ message: error.message });
+    // }
+
+    res.status(200).json(booking);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const reBookAppointment = async (req, res) => {
+  console.log("Request received:", req.body);
+
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
+    console.log("User not authorized to book appointments:", req.user);
+    return res
+      .status(403)
+      .json({ message: "You are not allowed to book appointments" });
+  }
+
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.bookingId,
+      {
+        $set: { patientId: req.body.patientId, status: "ReBooked" },
       },
       { new: true }
     );
@@ -351,27 +407,24 @@ export const bookAppointment = async (req, res) => {
 
 export const cancelSelectedBookings = async (req, res) => {
   try {
-    // Extract the array of booking IDs from the request body
-    const { bookingIds } = req.body;
-
-    // Check if bookingIds array is provided and not empty
-    if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Invalid or empty booking IDs array" });
-    }
-
-    // Update the status of selected bookings to "Cancelled"
-    await Booking.updateMany(
-      { _id: { $in: bookingIds } }, // Find bookings by their IDs
-      { $set: { status: "Cancelled" } } // Set the status to "Cancelled"
+    const { bookingId } = req.params;
+    console.log("Request received:", req.params);
+    const { reason } = req.body;
+    console.log("Request received:", req.body);
+    const booking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { status: "Cancelled", reason: reason },
+      { new: true }
     );
 
-    // Respond with success message
-    res.json({ message: "Selected bookings cancelled successfully" });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json(booking);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to cancel selected bookings" });
+    res.status(500).json({ error: "Failed to cancel the booking" });
   }
 };
 

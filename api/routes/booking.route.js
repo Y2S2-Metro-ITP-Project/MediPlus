@@ -13,6 +13,7 @@ import {
   cancelSelectedBookings,
   getBookingsForScheduling,
   updateStatus,
+  reBookAppointment,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -27,8 +28,8 @@ router.get("/appointments", verifyToken, searchAppointments);
 router.post("/filterBookings", verifyToken, filterBookings);
 router.put("/update/:bookingId", verifyToken, updateBooking);
 router.put("/bookAppointment/:bookingId", verifyToken, bookAppointment);
-router.put("/cancelSelected", verifyToken, cancelSelectedBookings );
+router.put("/rebookAppointment/:bookingId", verifyToken, reBookAppointment);
 router.put("/updateStatus", verifyToken, updateStatus);
-
+router.put("/cancel/:bookingId", verifyToken, cancelSelectedBookings);
 
 export default router;

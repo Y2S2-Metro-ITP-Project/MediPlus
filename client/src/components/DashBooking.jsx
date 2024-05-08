@@ -18,6 +18,7 @@ import {
   HiOutlineExclamationCircle,
   HiMail,
   HiIdentification,
+  HiPencil,
 } from "react-icons/hi";
 import { HiCalendarDays } from "react-icons/hi2";
 import { useSelector } from "react-redux";
@@ -27,6 +28,8 @@ import {
   BsBookmarkDashFill,
   BsBookmarkCheckFill,
   BsBookmarkFill,
+  BsBookmarkPlus,
+  BsBookmarkStar,
 } from "react-icons/bs";
 import LoadingSpinner from "./LoadingSpinner";
 import html2pdf from "html2pdf.js";
@@ -36,6 +39,9 @@ export default function DashBooking() {
   const [bookings, setBookings] = useState([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [patientOptions, setPatientOptions] = useState([]);
   const [sortColumn, setSortColumn] = useState(null);
@@ -46,6 +52,11 @@ export default function DashBooking() {
   const [filterDoctor, setFilterDoctor] = useState("");
   const [filterPatient, setFilterPatient] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  const [formData, setFormData] = useState({});
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [updateFormData, setUpdateFormData] = useState({});
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isRebooking, setIsRebooking] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -123,16 +134,70 @@ export default function DashBooking() {
     }
   };
 
-  const handleCancelBooking = async () => {
+  const handleCancelBooking = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleBookAppointment = async (e) => {
+    e.preventDefault();
+
     try {
-      const res = await fetch(`/api/booking/cancel/${selectedBooking._id}`, {
+      const url = isRebooking
+        ? `/api/booking/rebookAppointment/${selectedBooking._id}`
+        : `/api/booking/bookAppointment/${selectedBooking._id}`;
+
+      const res = await fetch(url, {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ patientId: selectedPatientId }),
       });
 
       if (res.ok) {
+        toast.success(
+          isRebooking
+            ? "Appointment rebooked successfully."
+            : "Appointment booked successfully."
+        );
+        setShowBookModal(false);
+        setSelectedPatientId("");
+        setIsRebooking(false);
+        await fetchBookings();
+      } else {
+        toast.error(
+          isRebooking
+            ? "Failed to rebook the appointment. Please try again later."
+            : "Failed to book the appointment. Please try again later."
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        isRebooking
+          ? "An error occurred while rebooking the appointment. Please try again later."
+          : "An error occurred while booking the appointment. Please try again later."
+      );
+    }
+  };
+
+  const confirmCancellation = async () => {
+    try {
+      const res = await fetch(`/api/booking/cancel/${selectedBooking._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason: cancellationReason }),
+      });
+
+      console.log(res);
+
+      if (res.ok) {
         toast.success("Booking cancelled successfully.");
-        setShowViewModal(false);
+        setShowCancelModal(false);
         setSelectedBooking(null);
+        setCancellationReason("");
         await fetchBookings();
       } else {
         toast.error("Failed to cancel the booking. Please try again later.");
@@ -145,31 +210,30 @@ export default function DashBooking() {
     }
   };
 
-  const handleBookAppointment = async (booking) => {
-    try {
-      const selectedPatientId = prompt("Enter the patient ID:");
-      if (!selectedPatientId) {
-        return;
-      }
+  const handleUpdateBooking = async (e) => {
+    e.preventDefault();
 
-      const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
+    try {
+      const res = await fetch(`/api/booking/update/${selectedBooking._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ patientId: selectedPatientId }),
+        body: JSON.stringify(updateFormData),
       });
 
       if (res.ok) {
-        toast.success("Appointment booked successfully.");
+        toast.success("Booking updated successfully.");
+        setShowUpdateModal(false);
+        setUpdateFormData({});
         await fetchBookings();
       } else {
-        toast.error("Failed to book the appointment. Please try again later.");
+        toast.error("Failed to update the booking. Please try again later.");
       }
     } catch (error) {
       console.error(error);
       toast.error(
-        "An error occurred while booking the appointment. Please try again later."
+        "An error occurred while updating the booking. Please try again later."
       );
     }
   };
@@ -210,9 +274,7 @@ export default function DashBooking() {
                   <td>${new Date(booking.date).toLocaleDateString()}</td>
                   <td>${booking.time}</td>
                   <td>${booking.doctorName}</td>
-                  <td>${
-                    booking.patientName ? booking.patientName : "-"
-                  }</td>
+                  <td>${booking.patientName ? booking.patientName : "-"}</td>
                   <td>${booking.roomName}</td>
                   <td>${booking.status}</td>
                 </tr>
@@ -298,7 +360,7 @@ export default function DashBooking() {
       Room: ${selectedBooking.roomName}
       Status: ${selectedBooking.status}
 
-      Please arrive on time for your appointment.
+      Please arrive 30 min before your Appointment for your appointment.
 
       Thank you,
       Your Healthcare Provider
@@ -327,7 +389,11 @@ export default function DashBooking() {
       : true;
     const matchesRoom = filterRoom ? booking.roomId === filterRoom : true;
     return (
-      matchesSearch && matchesDate && matchesDoctor && matchesPatient && matchesRoom
+      matchesSearch &&
+      matchesDate &&
+      matchesDoctor &&
+      matchesPatient &&
+      matchesRoom
     );
   });
 
@@ -465,219 +531,532 @@ export default function DashBooking() {
                     Time
                   </span>
                 </Table.HeadCell>
-        <Table.HeadCell>
-          <span
-            className={`cursor-pointer ${
-              sortColumn === "doctorName" ? "text-blue-500" : ""
-            }`}
-            onClick={() => handleSort("doctorName")}
-          >
-            Doctor
-          </span>
-        </Table.HeadCell>
-        <Table.HeadCell>
-          <span
-            className={`cursor-pointer ${
-              sortColumn === "patientName" ? "text-blue-500" : ""
-            }`}
-            onClick={() => handleSort("patientName")}
-          >
-            Patient
-          </span>
-        </Table.HeadCell>
-        <Table.HeadCell>
-          <span
-            className={`cursor-pointer ${
-              sortColumn === "roomName" ? "text-blue-500" : ""
-            }`}
-            onClick={() => handleSort("roomName")}
-          >
-            Room
-          </span>
-        </Table.HeadCell>
-        <Table.HeadCell>
-          <span
-            className={`cursor-pointer ${
-              sortColumn === "status" ? "text-blue-500" : ""
-            }`}
-            onClick={() => handleSort("status")}
-          >
-            Status
-          </span>
-        </Table.HeadCell>
-        <Table.HeadCell>Actions</Table.HeadCell>
-      </Table.Head>
-      <Table.Body className="divide-y">
-        {filteredBookings.map((booking) => (
-          <Table.Row
-            key={booking._id}
-            className="bg-white dark:border-gray-700 dark:bg-gray-800"
-          >
-            <Table.Cell>
-              {new Date(booking.date).toLocaleDateString()}
-            </Table.Cell>
-            <Table.Cell>{booking.time}</Table.Cell>
-            <Table.Cell>{booking.doctorName}</Table.Cell>
-            <Table.Cell>
-              {booking.patientName ? booking.patientName : "-"}
-            </Table.Cell>
-            <Table.Cell>{booking.roomName}</Table.Cell>
-            <Table.Cell>
-              {booking.status === "Completed" && (
-                <Badge color="success">
-                  <BsBookmarkFill className="mr-1" />
-                  Completed
-                </Badge>
-              )}
-              {booking.status === "Pending" && (
-                <Badge color="warning">
-                  <BsBookmarkCheckFill className="mr-1" />
-                  Pending
-                </Badge>
-              )}
-              {booking.status === "Cancelled" && (
-                <Badge color="failure">
-                  <BsBookmarkXFill className="mr-1" />
-                  Cancelled
-                </Badge>
-              )}
-              {booking.status === "Not Booked" && (
-                <Badge color="gray">
-                  <BsBookmarkDashFill className="mr-1" />
-                  Not Booked
-                </Badge>
-              )}
-            </Table.Cell>
-            <Table.Cell>
-              <div className="flex items-center space-x-4">
-                <Button
-                  size="sm"
-                  color="gray"
-                  onClick={() => handleViewBooking(booking)}
-                >
-                  <HiEye className="mr-2 h-5 w-5" />
-                  View
-                </Button>
-                {booking.status === "Not Booked" && (
-                  <Button
-                    size="sm"
-                    color="blue"
-                    onClick={() => handleBookAppointment(booking)}
+                <Table.HeadCell>
+                  <span
+                    className={`cursor-pointer ${
+                      sortColumn === "doctorName" ? "text-blue-500" : ""
+                    }`}
+                    onClick={() => handleSort("doctorName")}
                   >
-                    <HiIdentification className="mr-2 h-5 w-5" />
-                    Book
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  color="failure"
-                  onClick={() => {
-                    setSelectedBooking(booking);
-                    setShowDeleteModal(true);
-                  }}
-                >
-                  <HiTrash className="mr-2 h-5 w-5" />
-                  Delete
-                </Button>
-              </div>
-            </Table.Cell>
-          </Table.Row>
-        ))}
-      </Table.Body>
-    </Table>
-  ) : (
-    <p className="px-4">No bookings found.</p>
-  )}
-  <div className="mt-4">
-    <Button onClick={generateReport}>
-      <HiDocumentReport className="mr-2 h-5 w-5" />
-      Generate Report
-    </Button>
-  </div>
-
-  <Modal show={showViewModal} onClose={() => setShowViewModal(false)}>
-    <Modal.Header>Booking Details</Modal.Header>
-    <Modal.Body>
-      {selectedBooking && (
-        <div>
-          <div className="mb-4">
-            <p>
-              <strong>Date:</strong>{" "}
-              {new Date(selectedBooking.date).toLocaleDateString()}
-            </p>
-            <p>
-              <strong>Time:</strong> {selectedBooking.time}
-            </p>
-            <p>
-              <strong>Doctor:</strong> {selectedBooking.doctorName}
-            </p>
-            <p>
-              <strong>Patient:</strong>{" "}
-              {selectedBooking.patientName
-                ? selectedBooking.patientName
-                : "-"}
-            </p>
-            <p>
-              <strong>Room:</strong> {selectedBooking.roomName}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedBooking.status}
-            </p>
+                    Doctor
+                  </span>
+                </Table.HeadCell>
+                <Table.HeadCell>
+                  <span
+                    className={`cursor-pointer ${
+                      sortColumn === "patientName" ? "text-blue-500" : ""
+                    }`}
+                    onClick={() => handleSort("patientName")}
+                  >
+                    Patient
+                  </span>
+                </Table.HeadCell>
+                <Table.HeadCell>
+                  <span
+                    className={`cursor-pointer ${
+                      sortColumn === "roomName" ? "text-blue-500" : ""
+                    }`}
+                    onClick={() => handleSort("roomName")}
+                  >
+                    Room
+                  </span>
+                </Table.HeadCell>
+                <Table.HeadCell>
+                  <span
+                    className={`cursor-pointer ${
+                      sortColumn === "status" ? "text-blue-500" : ""
+                    }`}
+                    onClick={() => handleSort("status")}
+                  >
+                    Status
+                  </span>
+                </Table.HeadCell>
+                <Table.HeadCell>Actions</Table.HeadCell>
+              </Table.Head>
+              <Table.Body className="divide-y">
+                {filteredBookings.map((booking) => (
+                  <Table.Row
+                    key={booking._id}
+                    className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    <Table.Cell>
+                      {new Date(booking.date).toLocaleDateString()}
+                    </Table.Cell>
+                    <Table.Cell>{booking.time}</Table.Cell>
+                    <Table.Cell>{booking.doctorName}</Table.Cell>
+                    <Table.Cell>
+                      {booking.patientName ? booking.patientName : "-"}
+                    </Table.Cell>
+                    <Table.Cell>{booking.roomName}</Table.Cell>
+                    <Table.Cell>
+                      {booking.status === "Completed" && (
+                        <Badge color="success">
+                          <BsBookmarkFill className="mr-1" />
+                          Completed
+                        </Badge>
+                      )}
+                      {booking.status === "Pending" && (
+                        <Badge color="warning">
+                          <BsBookmarkCheckFill className="mr-1" />
+                          Pending
+                        </Badge>
+                      )}
+                      {booking.status === "Cancelled" && (
+                        <Badge color="failure">
+                          <BsBookmarkXFill className="mr-1" />
+                          Cancelled
+                        </Badge>
+                      )}
+                      {booking.status === "Not Booked" && (
+                        <Badge color="gray">
+                          <BsBookmarkDashFill className="mr-1" />
+                          Not Booked
+                        </Badge>
+                      )}
+                      {booking.status === "Booked" && (
+                        <Badge color="info">
+                          <BsBookmarkPlus className="mr-1" />
+                          Booked
+                        </Badge>
+                      )}
+                      {booking.status === "Rebooked" && (
+                        <Badge color="purple">
+                          <BsBookmarkStar className="mr-1" />
+                          Rebooked
+                        </Badge>
+                      )}
+                      {booking.status === "In Consultation" && (
+                        <Badge color="indigo">
+                          <HiIdentification className="mr-1" />
+                          In Consultation
+                        </Badge>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          size="sm"
+                          color="gray"
+                          onClick={() => handleViewBooking(booking)}
+                        >
+                          <HiEye className="mr-2 h-5 w-5" />
+                          View
+                        </Button>
+                        {booking.status === "Not Booked" && (
+                          <Button
+                            size="sm"
+                            color="blue"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setFormData({
+                                type: booking.type,
+                                date: booking.date,
+                                time: booking.time,
+                                doctorName: booking.doctorName,
+                                roomNo: booking.roomName,
+                              });
+                              setIsRebooking(false);
+                              setShowBookModal(true);
+                            }}
+                          >
+                            <HiIdentification className="mr-2 h-5 w-5" />
+                            Book
+                          </Button>
+                        )}
+                        {booking.status === "Cancelled" && (
+                          <Button
+                            size="sm"
+                            color="purple"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setFormData({
+                                type: booking.type,
+                                date: booking.date,
+                                time: booking.time,
+                                doctorName: booking.doctorName,
+                                roomNo: booking.roomName,
+                              });
+                              setIsRebooking(true);
+                              setShowBookModal(true);
+                            }}
+                          >
+                            <BsBookmarkStar className="mr-2 h-5 w-5" />
+                            Rebook
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          color="yellow"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setUpdateFormData({
+                              type: booking.type,
+                              date: booking.date,
+                              time: booking.time,
+                              doctorName: booking.doctorName,
+                              roomNo: booking.roomName,
+                            });
+                            setShowUpdateModal(true);
+                          }}
+                        >
+                          <HiPencil className="mr-2 h-5 w-5" />
+                          Update
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="failure"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <HiTrash className="mr-2 h-5 w-5" />
+                          Delete
+                        </Button>
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          ) : (
+            <p className="px-4">No bookings found.</p>
+          )}
+          <div className="mt-4">
+            <Button onClick={generateReport}>
+              <HiDocumentReport className="mr-2 h-5 w-5" />
+              Generate Report
+            </Button>
           </div>
-          <div className="flex justify-end">
-            {selectedBooking.status !== "Cancelled" && (
-              <Button
-                color="failure"
-                onClick={handleCancelBooking}
-                className="mr-2"
-              >
+
+          <Modal show={showViewModal} onClose={() => setShowViewModal(false)}>
+            <Modal.Header>Booking Details</Modal.Header>
+            <Modal.Body>
+              {selectedBooking && (
+                <div>
+                  <div className="mb-4">
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {new Date(selectedBooking.date).toLocaleDateString()}
+                    </p>
+                    <p>
+                      <strong>Time:</strong> {selectedBooking.time}
+                    </p>
+                    <p>
+                      <strong>Doctor:</strong> {selectedBooking.doctorName}
+                    </p>
+                    <p>
+                      <strong>Patient:</strong>{" "}
+                      {selectedBooking.patientName
+                        ? selectedBooking.patientName
+                        : "-"}
+                    </p>
+                    <p>
+                      <strong>Room:</strong> {selectedBooking.roomName}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {selectedBooking.status}
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    {selectedBooking.status !== "Cancelled" &&
+                      selectedBooking.status !== "Completed" &&
+                      selectedBooking.status !== "In Consultation" && (
+                        <Button
+                          color="failure"
+                          onClick={handleCancelBooking}
+                          className="mr-2"
+                          disabled={selectedBooking.status === "Not Booked"}
+                        >
+                          Cancel Booking
+                        </Button>
+                      )}
+                    {selectedBooking.status !== "Not Booked" &&
+                      selectedBooking.status !== "Cancelled" && (
+                        <Button
+                          color="purple"
+                          onClick={() =>
+                            generateAppointmentCard(selectedBooking)
+                          }
+                          className="mr-2"
+                        >
+                          <HiIdentification className="mr-2 h-5 w-5" />
+                          Appointment Card
+                        </Button>
+                      )}
+                    {selectedBooking.status !== "Not Booked" &&
+                      selectedBooking.status !== "Cancelled" && (
+                        <Button color="blue" onClick={sendEmail}>
+                          <HiMail className="mr-2 h-5 w-5" />
+                          Send Email
+                        </Button>
+                      )}
+                  </div>
+                </div>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button color="gray" onClick={() => setShowViewModal(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+          <Modal
+            show={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+          >
+            <Modal.Header>Confirm Delete</Modal.Header>
+            <Modal.Body>
+              Are you sure you want to delete this booking?
+            </Modal.Body>
+            <Modal.Footer>
+              <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button color="failure" onClick={handleDeleteBooking}>
+                Delete
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+          <Modal
+            show={showBookModal}
+            onClose={() => setShowBookModal(false)}
+            size="md"
+          >
+            <Modal.Header />
+            <Modal.Body>
+              <div className="text-center">
+                <h3 className="mb-4 text-lg text-gray-500">
+                  {isRebooking ? "Rebook Appointment" : "Book Appointment"}
+                </h3>
+                <form onSubmit={handleBookAppointment} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="flex items-center">
+                      <Label htmlFor="type" className="mr-2">
+                        Type:
+                      </Label>
+                      <span className="text-gray-700">
+                        {formData.type || ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="date" className="mr-2">
+                        Date:
+                      </Label>
+                      <span className="text-gray-700">
+                        {formData.date || ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="time" className="mr-2">
+                        Time:
+                      </Label>
+                      <span className="text-gray-700">
+                        {formData.time || ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="doctorName" className="mr-2">
+                        Doctor Name:
+                      </Label>
+                      <span className="text-gray-700">
+                        {formData.doctorName || ""}
+                      </span>
+                    </div>
+                    {formData.type === "Hospital Booking" && (
+                      <div className="flex items-center">
+                        <Label htmlFor="roomNo" className="mr-2">
+                          Room:
+                        </Label>
+                        <span className="text-gray-700">{formData.roomNo}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <Label htmlFor="selectedPatientId" className="mr-2">
+                        Select Patient:
+                      </Label>
+                      <Select
+                        id="selectedPatientId"
+                        className="mt-1"
+                        onChange={(e) => setSelectedPatientId(e.target.value)}
+                        required
+                      >
+                        <option value="">Select Patient</option>
+                        {patientOptions.map((patient) => (
+                          <option key={patient.value} value={patient.value}>
+                            {patient.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-center mt-6 space-x-4">
+                    <Button color="blue" type="submit" outline>
+                      {isRebooking ? "Rebook" : "Book"}
+                    </Button>
+                    <Button
+                      color="red"
+                      onClick={() => {
+                        setShowBookModal(false);
+                        setFormData({});
+                        setSelectedPatientId("");
+                        setIsRebooking(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </Modal.Body>
+          </Modal>
+          <Modal
+            show={showUpdateModal}
+            onClose={() => setShowUpdateModal(false)}
+            size="md"
+          >
+            <Modal.Header />
+            <Modal.Body>
+              <div className="text-center">
+                <h3 className="mb-4 text-lg text-gray-500">Update Booking</h3>
+                <form onSubmit={handleUpdateBooking} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="flex items-center">
+                      <Label htmlFor="type" className="mr-2">
+                        Type:
+                      </Label>
+                      <TextInput
+                        id="type"
+                        type="text"
+                        value={updateFormData.type || ""}
+                        onChange={(e) =>
+                          setUpdateFormData({
+                            ...updateFormData,
+                            type: e.target.value,
+                          })
+                        }
+                        readOnly
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="date" className="mr-2">
+                        Date:
+                      </Label>
+                      <TextInput
+                        id="date"
+                        type="date"
+                        value={updateFormData.date || ""}
+                        onChange={(e) =>
+                          setUpdateFormData({
+                            ...updateFormData,
+                            date: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="time" className="mr-2">
+                        Time:
+                      </Label>
+                      <TextInput
+                        id="time"
+                        type="time"
+                        value={updateFormData.time || ""}
+                        onChange={(e) =>
+                          setUpdateFormData({
+                            ...updateFormData,
+                            time: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="doctorName" className="mr-2">
+                        Doctor Name:
+                      </Label>
+                      <TextInput
+                        id="doctorName"
+                        type="text"
+                        value={updateFormData.doctorName || ""}
+                        onChange={(e) =>
+                          setUpdateFormData({
+                            ...updateFormData,
+                            doctorName: e.target.value,
+                          })
+                        }
+                        readOnly
+                      />
+                    </div>
+                    {updateFormData.type === "Hospital Booking" && (
+                      <div className="flex items-center">
+                        <Label htmlFor="roomNo" className="mr-2">
+                          Room:
+                        </Label>
+                        <TextInput
+                          id="roomNo"
+                          type="text"
+                          value={updateFormData.roomNo || ""}
+                          onChange={(e) =>
+                            setUpdateFormData({
+                              ...updateFormData,
+                              roomNo: e.target.value,
+                            })
+                          }
+                          readOnly
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-center mt-6 space-x-4">
+                    <Button color="blue" type="submit" outline>
+                      Update
+                    </Button>
+                    <Button
+                      color="red"
+                      onClick={() => {
+                        setShowUpdateModal(false);
+                        setUpdateFormData({});
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </Modal.Body>
+          </Modal>
+          <Modal
+            show={showCancelModal}
+            onClose={() => setShowCancelModal(false)}
+          >
+            <Modal.Header>Cancel Booking</Modal.Header>
+            <Modal.Body>
+              <div className="mb-4">
+                <Label htmlFor="cancellationReason">Cancellation Reason:</Label>
+                <TextInput
+                  id="cancellationReason"
+                  type="text"
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  required
+                />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button color="gray" onClick={() => setShowCancelModal(false)}>
+                Close
+              </Button>
+              <Button color="failure" onClick={confirmCancellation}>
                 Cancel Booking
               </Button>
-            )}
-            <Button
-              color="purple"
-              onClick={() => generateAppointmentCard(selectedBooking)}
-              className="mr-2"
-            >
-              <HiIdentification className="mr-2 h-5 w-5" />
-              Appointment Card
-            </Button>
-            <Button color="blue" onClick={sendEmail}>
-              <HiMail className="mr-2 h-5 w-5" />
-              Send Email
-            </Button>
-          </div>
-        </div>
+            </Modal.Footer>
+          </Modal>
+        </>
       )}
-    </Modal.Body>
-    <Modal.Footer>
-      <Button color="gray" onClick={() => setShowViewModal(false)}>
-        Close
-      </Button>
-    </Modal.Footer>
-  </Modal>
-
-  <Modal
-    show={showDeleteModal}
-    onClose={() => setShowDeleteModal(false)}
-  >
-    <Modal.Header>Confirm Delete</Modal.Header>
-    <Modal.Body>
-      Are you sure you want to delete this booking?
-    </Modal.Body>
-    <Modal.Footer>
-      <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-        Cancel
-      </Button>
-      <Button color="failure" onClick={handleDeleteBooking}>
-        Delete
-      </Button>
-    </Modal.Footer>
-  </Modal>
-</>
-
-    )
-  }
-  </div>
+    </div>
   );
-  }
+}
