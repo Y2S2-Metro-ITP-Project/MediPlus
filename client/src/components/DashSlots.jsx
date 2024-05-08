@@ -9,15 +9,9 @@ import {
   Card,
   Badge,
 } from "flowbite-react";
-import {
-  HiSearch,
-  HiFilter,
-  HiTrash,
-  HiEye,
-  HiDocumentReport,
-} from "react-icons/hi";
+import {  HiSearch, HiFilter, HiTrash, HiEye, HiDocumentReport } from "react-icons/hi";
 import { useSelector } from "react-redux";
-import { HiCalendarDays } from "react-icons/hi2";
+import {HiCalendarDays} from "react-icons/hi2";
 import { ToastContainer, toast } from "react-toastify";
 import {
   BsBookmarkXFill,
@@ -226,16 +220,11 @@ export default function DashSlot() {
         await fetchSlots();
       } else {
         console.log(dataSlot.message);
-        toast.error(
-          dataSlot.message || "Failed to create slot and schedule appointments."
-        );
+        toast.error(dataSlot.message || "Failed to create slot and schedule appointments.");
       }
     } catch (error) {
       console.log(error);
-      toast.error(
-        error.message ||
-          "An error occurred while creating slot and scheduling appointments."
-      );
+      toast.error(error.message || "An error occurred while creating slot and scheduling appointments.");
     }
   };
 
@@ -319,9 +308,7 @@ export default function DashSlot() {
       }
     } catch (error) {
       console.error("Error cancelling slot:", error);
-      toast.error(
-        "An error occurred while cancelling the slot. Please try again later."
-      );
+      toast.error("An error occurred while cancelling the slot. Please try again later.");
     }
   };
 
@@ -340,9 +327,7 @@ export default function DashSlot() {
       }
     } catch (error) {
       console.error("Error deleting slot:", error);
-      toast.error(
-        "An error occurred while deleting the slot. Please try again later."
-      );
+      toast.error("An error occurred while deleting the slot. Please try again later.");
     }
   };
 
@@ -380,20 +365,13 @@ export default function DashSlot() {
       toast.success("Total slots report generated successfully.");
     } catch (error) {
       console.error("Error generating total slots report:", error);
-      toast.error(
-        "Failed to generate total slots report. Please try again later."
-      );
+      toast.error("Failed to generate total slots report. Please try again later.");
     }
   };
 
   const filteredSlots = slots.filter((slot) => {
-    const matchesSearch = slot.doctorName
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesDate = filterDate
-      ? new Date(slot.date).toLocaleDateString() ===
-        new Date(filterDate).toLocaleDateString()
-      : true;
+    const matchesSearch = slot.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = filterDate ? new Date(slot.date).toLocaleDateString() === new Date(filterDate).toLocaleDateString() : true;
     const matchesDoctor = filterDoctor ? slot.doctorId === filterDoctor : true;
     const matchesRoom = filterRoom ? slot.room === filterRoom : true;
     return matchesSearch && matchesDate && matchesDoctor && matchesRoom;
@@ -437,537 +415,525 @@ export default function DashSlot() {
             </Card>
             <Card>
               <div className="flex items-center justify-between">
-                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
-                  Booked Slots
-                </h5>
-                <Badge color="success" className="text-2xl font-bold">
-                  {
-                    slots.filter((slot) => slot.status === "Fully Booked")
-                      .length
-                  }
-                </Badge>
-              </div>
-            </Card>
-            <Card>
-              <div className="flex items-center justify-between">
-                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
-                  Available Slots
-                </h5>
-                <Badge color="warning" className="text-2xl font-bold">
-                  {
-                    slots.filter((slot) => slot.status !== "Fully Booked")
-                      .length
-                  }
-                </Badge>
-              </div>
-            </Card>
-          </div>
-          <div className="mb-4 flex flex-wrap gap-4">
-            <div className="flex items-center">
-              <TextInput
-                type="text"
-                placeholder="Search by doctor name"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="mr-2"
-              />
-              <Button color="gray" onClick={() => setSearchTerm("")}>
-                <HiSearch className="mr-2 h-5 w-5" />
-                Search
-              </Button>
-            </div>
-            <div className="flex items-center">
-              <TextInput
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="mr-2"
-              />
-              <Button color="gray" onClick={() => setFilterDate("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Date
-              </Button>
-            </div>
-            <div className="flex items-center">
-              <Select
-                value={filterDoctor}
-                onChange={(e) => setFilterDoctor(e.target.value)}
-                className="mr-2"
-              >
-                <option value="">All Doctors</option>
-                {doctorOptions.map((doctor) => (
-                  <option key={doctor.value} value={doctor.value}>
-                    {doctor.label}
-                  </option>
-                ))}
-              </Select>
-              <Button color="gray" onClick={() => setFilterDoctor("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Doctor
-              </Button>
-            </div>
-            <div className="flex items-center">
-              <Select
-                value={filterRoom}
-                onChange={(e) => setFilterRoom(e.target.value)}
-                className="mr-2"
-              >
-                <option value="">All Rooms</option>
-                {roomOptions.map((room) => (
-                  <option key={room.value} value={room.value}>
-                    {room.label}
-                  </option>
-                ))}
-              </Select>
-              <Button color="gray" onClick={() => setFilterRoom("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Room
-              </Button>
-            </div>
-          </div>
-          {filteredSlots.length > 0 ? (
-            <Table hoverable className="shadow-md">
-              <Table.Head>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "date" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("date")}
-                  >
-                    Date
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "startTime" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("startTime")}
-                  >
-                    Start Time
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "doctorName" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("doctorName")}
-                  >
-                    Doctor
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "room" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("room")}
-                  >
-                    Room
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "totalBookings" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("totalBookings")}
-                  >
-                    Total Bookings
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>
-                  <span
-                    className={`cursor-pointer ${
-                      sortColumn === "bookedCount" ? "text-blue-500" : ""
-                    }`}
-                    onClick={() => handleSort("bookedCount")}
-                  >
-                    Booked Count
-                  </span>
-                </Table.HeadCell>
-                <Table.HeadCell>Status</Table.HeadCell>
-                <Table.HeadCell>Actions</Table.HeadCell>
-              </Table.Head>
-              <Table.Body className="divide-y">
-                {filteredSlots.map((slot) => (
-                  <Table.Row
-                    key={slot._id}
-                    className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                  >
-                    <Table.Cell>
-                      {new Date(slot.date).toLocaleDateString()}
-                    </Table.Cell>
-                    <Table.Cell>{slot.startTime}</Table.Cell>
-                    <Table.Cell>{slot.doctorName}</Table.Cell>
-                    <Table.Cell>{slot.room}</Table.Cell>
-                    <Table.Cell>{slot.totalBookings}</Table.Cell>
-                    <Table.Cell>{slot.bookedCount}</Table.Cell>
-                    <Table.Cell>
-                      {slot.status === "Fully Booked" && (
-                        <Badge color="success">
-                          <BsBookmarkFill className="mr-1" />
-                          Fully Booked
-                        </Badge>
-                      )}
-                      {slot.status === "Filling" && (
-                        <Badge color="warning">
-                          <BsBookmarkCheckFill className="mr-1" />
-                          Filling
-                        </Badge>
-                      )}
-                      {slot.status === "Not Booked" && (
-                        <Badge color="gray">
-                          <BsBookmarkDashFill className="mr-1" />
-                          Not Booked
-                        </Badge>
-                      )}
-                      {slot.status === "Cancelled" && (
-                        <Badge color="failure">
-                          <BsBookmarkXFill className="mr-1" />
-                          Cancelled
-                        </Badge>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <div className="flex items-center space-x-4">
-                        <Button
-                          size="sm"
-                          color="gray"
-                          onClick={() => {
-                            setSelectedSlot(slot);
-                            setShowViewModal(true);
-                          }}
-                        >
-                          <HiEye className="mr-2 h-5 w-5" />
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="gray"
-                          onClick={() => generateSlotReport(slot._id)}
-                        >
-                          <HiDocumentReport className="mr-2 h-5 w-5" />
-                          Report
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="failure"
-                          onClick={() => {
-                            setSelectedSlot(slot);
-                            setShowDeleteModal(true);
-                          }}
-                        >
-                          <HiTrash className="mr-2 h-5 w-5" />
-                          Delete
-                        </Button>
-                      </div>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table>
-          ) : (
-            <p className="px-4">No slots found.</p>
+              <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                 Booked Slots
+               </h5>
+               <Badge color="success" className="text-2xl font-bold">
+                 {slots.filter((slot) => slot.status == "Fully Booked").length}
+               </Badge>
+             </div>
+           </Card>
+           <Card>
+             <div className="flex items-center justify-between">
+               <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                 Available Slots
+               </h5>
+               <Badge color="warning" className="text-2xl font-bold">
+                 {slots.filter((slot) => slot.status != "Fully Booked").length}
+               </Badge>
+             </div>
+           </Card>
+         </div>
+         <div className="mb-4 flex flex-wrap gap-4">
+           <div className="flex items-center">
+             <TextInput
+               type="text"
+               placeholder="Search by doctor name"
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+               className="mr-2"
+             />
+             <Button color="gray" onClick={() => setSearchTerm("")}>
+               <HiSearch className="mr-2 h-5 w-5" />
+               Search
+             </Button>
+           </div>
+           <div className="flex items-center">
+             <TextInput
+               type="date"
+               value={filterDate}
+               onChange={(e) => setFilterDate(e.target.value)}
+               className="mr-2"
+             />
+             <Button color="gray" onClick={() => setFilterDate("")}>
+               <HiFilter className="mr-2 h-5 w-5" />
+               Filter by Date
+             </Button>
+           </div>
+           <div className="flex items-center">
+             <Select
+               value={filterDoctor}
+               onChange={(e) => setFilterDoctor(e.target.value)}
+               className="mr-2"
+             >
+               <option value="">All Doctors</option>
+               {doctorOptions.map((doctor) => (
+                 <option key={doctor.value} value={doctor.value}>
+                   {doctor.label}
+                 </option>
+               ))}
+             </Select>
+             <Button color="gray" onClick={() => setFilterDoctor("")}>
+               <HiFilter className="mr-2 h-5 w-5" />
+               Filter by Doctor
+             </Button>
+           </div>
+           <div className="flex items-center">
+             <Select
+               value={filterRoom}
+               onChange={(e) => setFilterRoom(e.target.value)}
+               className="mr-2"
+             >
+               <option value="">All Rooms</option>
+               {roomOptions.map((room) => (
+                 <option key={room.value} value={room.value}>
+                   {room.label}
+                 </option>
+               ))}
+             </Select>
+             <Button color="gray" onClick={() => setFilterRoom("")}>
+               <HiFilter className="mr-2 h-5 w-5" />
+               Filter by Room
+             </Button>
+           </div>
+         </div>
+         {filteredSlots.length > 0 ? (
+           <Table hoverable className="shadow-md">
+             <Table.Head>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "date" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("date")}
+                 >
+                   Date
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "startTime" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("startTime")}
+                 >
+                   Start Time
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "doctorName" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("doctorName")}
+                 >
+                   Doctor
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "room" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("room")}
+                 >
+                   Room
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "totalBookings" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("totalBookings")}
+                 >
+                   Total Bookings
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>
+                 <span
+                   className={`cursor-pointer ${
+                     sortColumn === "bookedCount" ? "text-blue-500" : ""
+                   }`}
+                   onClick={() => handleSort("bookedCount")}
+                 >
+                   Booked Count
+                 </span>
+               </Table.HeadCell>
+               <Table.HeadCell>Status</Table.HeadCell>
+               <Table.HeadCell>Actions</Table.HeadCell>
+             </Table.Head>
+             <Table.Body className="divide-y">
+               {filteredSlots.map((slot) => (
+                 <Table.Row
+                   key={slot._id}
+                   className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                 >
+                   <Table.Cell>
+                     {new Date(slot.date).toLocaleDateString()}
+                   </Table.Cell>
+                   <Table.Cell>{slot.startTime}</Table.Cell>
+                   <Table.Cell>{slot.doctorName}</Table.Cell>
+                   <Table.Cell>{slot.room}</Table.Cell>
+                   <Table.Cell>{slot.totalBookings}</Table.Cell>
+                   <Table.Cell>{slot.bookedCount}</Table.Cell>
+                   <Table.Cell>
+                     {slot.status === "Fully Booked" && (
+                       <Badge color="success">
+                         <BsBookmarkFill className="mr-1" />
+                         Fully Booked
+                       </Badge>
+                     )}
+                     {slot.status === "Filling" && (
+                       <Badge color="warning">
+                         <BsBookmarkCheckFill className="mr-1" />
+                         Filling
+                       </Badge>
+                     )}
+                     {slot.status === "Not Booked" && (
+                       <Badge color="gray">
+                         <BsBookmarkDashFill className="mr-1" />
+                         Not Booked
+                       </Badge>
+                     )}
+                     {slot.status === "Cancelled" && (
+                       <Badge color="failure">
+                         <BsBookmarkXFill className="mr-1" />
+                         Cancelled
+                       </Badge>
+                     )}
+                   </Table.Cell>
+                   <Table.Cell>
+                     <div className="flex items-center space-x-4">
+                       <Button
+                         size="sm"
+                         color="gray"
+                         onClick={() => {
+                           setSelectedSlot(slot);
+                           setShowViewModal(true);
+                         }}
+                       >
+                         <HiEye className="mr-2 h-5 w-5" />
+                         View
+                       </Button>
+                       <Button
+                         size="sm"
+                         color="gray"
+                         onClick={() => generateSlotReport(slot._id)}
+                       >
+                         <HiDocumentReport className="mr-2 h-5 w-5" />
+                         Report
+                       </Button>
+                       <Button
+                         size="sm"
+                         color="failure"
+                         onClick={() => {
+                           setSelectedSlot(slot);
+                           setShowDeleteModal(true);
+                         }}
+                       >
+                         <HiTrash className="mr-2 h-5 w-5" />
+                         Delete
+                       </Button>
+                     </div>
+                   </Table.Cell>
+                 </Table.Row>
+               ))}
+             </Table.Body>
+           </Table>
+         ) : (
+           <p className="px-4">No slots found.</p>
+         )}
+         <div className="mt-4">
+           <Button onClick={generateTotalReport}>
+             <HiDocumentReport className="mr-2 h-5 w-5" />
+             Generate Total Report
+           </Button>
+         </div>
+         <Modal
+           show={showAddModal}
+           onClose={() => {
+             setShowAddModal(false);
+             setFormData({});
+             setSelectedTimeSlots([]);
+           }}
+           popup
+           size="xl"
+         >
+           <Modal.Header />
+           <Modal.Body>
+             <div className="text-center">
+               <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+                 Schedule Appointment
+               </h3>
+             </div>
+             <form onSubmit={handleAddSlot}>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div>
+                   <Label htmlFor="type">Type</Label>
+                   <Select
+                     id="type"
+                     onChange={onChange}
+                     className="input-field"
+                     value={formData.type || ""}
+                   >
+                     <option value="">Select Type</option>
+                     <option value="MACS">MACS</option>
+                     <option value="Online Appointment">
+                       Online Appointment
+                     </option>
+                     <option value="Hospital Booking">Hospital Booking</option>
+                   </Select>
+                 </div>
+                 <div className="mb-4">
+                   <Label>Doctor</Label>
+                   {currentUser.isDoctor ? (
+                     <TextInput
+                       type="text"
+                       id="selectedDoctorId"
+                       value={currentUser._id}
+                       readOnly
+                       className="mt-1 bg-gray-100"
+                     />
+                   ) : (
+                     <Select
+                       id="selectedDoctorId"
+                       className="mt-1"
+                       onChange={onChange}
+                       required
+                     >
+                       <option value="">Select Doctor</option>
+                       {doctorOptions.map((doctor) => (
+                         <option key={doctor.value} value={doctor.value}>
+                           {doctor.label}
+                         </option>
+                       ))}
+                     </Select>
+                   )}
+                 </div>
+                 {formData.type === "Hospital Booking" && (
+                   <div>
+                     <Label htmlFor="roomNo">Room</Label>
+                     <Select
+                       id="roomNo"
+                       onChange={onChange}
+                       className="input-field"
+                       value={formData.roomNo || ""}
+                     >
+                       <option value="">Select Room</option>
+                       {roomOptions.map((room) => (
+                         <option key={room.value} value={room.value}>
+                           {room.label}
+                         </option>
+                       ))}
+                     </Select>
+                   </div>
+                 )}
+                 <div>
+                   <Label htmlFor="date">Date</Label>
+                   <TextInput
+                     type="date"
+                     id="date"
+                     onChange={onChange}
+                     className="input-field"
+                     value={formData.date || ""}
+                   />
+                 </div>
+                 <div>
+                   <Label htmlFor="amPm">AM/PM</Label>
+                   <Select
+                     id="amPm"
+                     onChange={onChange}
+                     className="input-field"
+                     value={formData.amPm || ""}
+                   >
+                     <option value="">Select AM/PM</option>
+                     <option value="AM">AM</option>
+                     <option value="PM">PM</option>
+                   </Select>
+                 </div>
+               </div>
+               {formData.amPm && (
+                 <div className="mt-4">
+                   <Label>Time Slots</Label>
+                   <div className="flex justify-between items-center mb-2">
+                     <Button color="purple" onClick={toggleSelectAll}>
+                       {selectAll ? "Deselect All" : "Select All"}
+                     </Button>
+                   </div>
+                   <div className="grid grid-cols-6 gap-2">
+                     {generateTimeSlots(formData.amPm).map(
+                       (timeSlot, index) => (
+                         <div key={index} className="flex items-center">
+                           <input
+                             type="checkbox"
+                             id={`timeSlot-${index}`}
+                             value={timeSlot}
+                             checked={selectedTimeSlots.includes(timeSlot)}
+                             onChange={() =>
+                               handleTimeSlotSelection(timeSlot, index)
+                             }
+                             className="form-checkbox h-5 w-5 text-blue-600"
+                           />
+                           <label
+                             htmlFor={`timeSlot-${index}`}
+                             className="ml-2 text-gray-700"
+                           >
+                             {timeSlot}
+                           </label>
+                         </div>
+                       )
+                     )}
+                   </div>
+                 </div>
+               )}
+               <div className="flex justify-center mt-3">
+                 <Button color="blue" type="submit" outline>
+                   Submit
+                 </Button>
+                 <Button
+                   className="ml-4"
+                   color="red"
+                   onClick={() => {
+                     setShowAddModal(false);
+                     setFormData({});
+                     setSelectedTimeSlots([]);
+                   }}
+                 >
+                   Cancel
+                 </Button>
+               </div>
+             </form>
+           </Modal.Body>
+         </Modal>
+         <Modal
+           show={showViewModal}
+           onClose={() => setShowViewModal(false)}
+           size="xl"
+         >
+           <Modal.Header>Slot Details</Modal.Header>
+           <Modal.Body>
+             {selectedSlot && (
+               <div>
+                 <div className="mb-4">
+                   <p>
+                     <strong>Date:</strong>{" "}
+                     {new Date(selectedSlot.date).toLocaleDateString()}
+                   </p>
+                   <p>
+                     <strong>Start Time:</strong> {selectedSlot.startTime}
+                   </p>
+                   <p>
+                     <strong>End Time:</strong> {selectedSlot.endTime}
+                   </p>
+                   <p>
+                     <strong>Doctor:</strong> {selectedSlot.doctorName}
+                   </p>
+                   <p>
+                     <strong>Room:</strong> {selectedSlot.room}
+                   </p>
+                   <p>
+                     <strong>Status:</strong> {selectedSlot.status}
+                   </p>
+                 </div>
+                 <div className="mb-4">
+                   <h4 className="text-lg font-bold mb-2">Booking Details</h4>
+                   <Table>
+                     <Table.Head>
+                       <Table.HeadCell>Patient Name</Table.HeadCell>
+                       <Table.HeadCell>Booking Time</Table.HeadCell>
+                       <Table.HeadCell>Status</Table.HeadCell>
+                     </Table.Head>
+                     <Table.Body>
+                     <Table.Body>
+  {selectedSlot.bookings && selectedSlot.bookings.length > 0 ? (
+    selectedSlot.bookings.map((booking) => (
+      <Table.Row key={booking._id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Table.Cell>{booking.patientName}</Table.Cell>
+        <Table.Cell>{booking.time}</Table.Cell>
+        <Table.Cell>
+          {booking.status === "Booked" && (
+            <Badge color="success">
+              <BsBookmarkFill className="mr-1" />
+              Booked
+            </Badge>
           )}
-          <div className="mt-4">
-            <Button onClick={generateTotalReport}>
-              <HiDocumentReport className="mr-2 h-5 w-5" />
-              Generate Total Report
-            </Button>
-          </div>
-          <Modal
-            show={showAddModal}
-            onClose={() => {
-              setShowAddModal(false);
-              setFormData({});
-              setSelectedTimeSlots([]);
-            }}
-            popup
-            size="xl"
-          >
-            <Modal.Header />
-            <Modal.Body>
-              <div className="text-center">
-                <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-                  Schedule Appointment
-                </h3>
-              </div>
-              <form onSubmit={handleAddSlot}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <Label htmlFor="type">Type</Label>
-                    <Select
-                      id="type"
-                      onChange={onChange}
-                      className="input-field"
-                      value={formData.type || ""}
-                    >
-                      <option value="">Select Type</option>
-                      <option value="MACS">MACS</option>
-                      <option value="Online Appointment">
-                        Online Appointment
-                      </option>
-                      <option value="Hospital Booking">Hospital Booking</option>
-                    </Select>
-                  </div>
-                  <div className="mb-4">
-                    <Label>Doctor</Label>
-                    {currentUser.isDoctor ? (
-                      <TextInput
-                        type="text"
-                        id="selectedDoctorId"
-                        value={currentUser._id}
-                        readOnly
-                        className="mt-1 bg-gray-100"
-                      />
-                    ) : (
-                      <Select
-                        id="selectedDoctorId"
-                        className="mt-1"
-                        onChange={onChange}
-                        required
-                      >
-                        <option value="">Select Doctor</option>
-                        {doctorOptions.map((doctor) => (
-                          <option key={doctor.value} value={doctor.value}>
-                            {doctor.label}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </div>
-                  {formData.type === "Hospital Booking" && (
-                    <div>
-                      <Label htmlFor="roomNo">Room</Label>
-                      <Select
-                        id="roomNo"
-                        onChange={onChange}
-                        className="input-field"
-                        value={formData.roomNo || ""}
-                      >
-                        <option value="">Select Room</option>
-                        {roomOptions.map((room) => (
-                          <option key={room.value} value={room.value}>
-                            {room.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <TextInput
-                      type="date"
-                      id="date"
-                      onChange={onChange}
-                      className="input-field"
-                      value={formData.date || ""}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="amPm">AM/PM</Label>
-                    <Select
-                      id="amPm"
-                      onChange={onChange}
-                      className="input-field"
-                      value={formData.amPm || ""}
-                    >
-                      <option value="">Select AM/PM</option>
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </Select>
-                  </div>
-                </div>
-                {formData.amPm && (
-                  <div className="mt-4">
-                    <Label>Time Slots</Label>
-                    <div className="flex justify-between items-center mb-2">
-                      <Button color="purple" onClick={toggleSelectAll}>
-                        {selectAll ? "Deselect All" : "Select All"}
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-6 gap-2">
-                      {generateTimeSlots(formData.amPm).map(
-                        (timeSlot, index) => (
-                          <div key={index} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`timeSlot-${index}`}
-                              value={timeSlot}
-                              checked={selectedTimeSlots.includes(timeSlot)}
-                              onChange={() =>
-                                handleTimeSlotSelection(timeSlot, index)
-                              }
-                              className="form-checkbox h-5 w-5 text-blue-600"
-                            />
-                            <label
-                              htmlFor={`timeSlot-${index}`}
-                              className="ml-2 text-gray-700"
-                            >
-                              {timeSlot}
-                            </label>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-center mt-3">
-                  <Button color="blue" type="submit" outline>
-                    Submit
-                  </Button>
-                  <Button
-                    className="ml-4"
-                    color="red"
-                    onClick={() => {
-                      setShowAddModal(false);
-                      setFormData({});
-                      setSelectedTimeSlots([]);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </Modal.Body>
-          </Modal>
-          <Modal
-            show={showViewModal}
-            onClose={() => setShowViewModal(false)}
-            size="xl"
-          >
-            <Modal.Header>Slot Details</Modal.Header>
-            <Modal.Body>
-              {selectedSlot && (
-                <div>
-                  <div className="mb-4">
-                    <p>
-                      <strong>Date:</strong>{" "}
-                      {new Date(selectedSlot.date).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <strong>Start Time:</strong> {selectedSlot.startTime}
-                    </p>
-                    <p>
-                      <strong>End Time:</strong> {selectedSlot.endTime}
-                    </p>
-                    <p>
-                      <strong>Doctor:</strong> {selectedSlot.doctorName}
-                    </p>
-                    <p>
-                      <strong>Room:</strong> {selectedSlot.room}
-                    </p>
-                    <p>
-                      <strong>Status:</strong> {selectedSlot.status}
-                    </p>
-                  </div>
-                  <div className="mb-4">
-                    <h4 className="text-lg font-bold mb-2">Booking Details</h4>
-                    <Table>
-                      <Table.Head>
-                        <Table.HeadCell>Patient Name</Table.HeadCell>
-                        <Table.HeadCell>Booking Time</Table.HeadCell>
-                        <Table.HeadCell>Status</Table.HeadCell>
-                      </Table.Head>
-                      <Table.Body>
-                        <Table.Body>
-                          {selectedSlot.bookings &&
-                          selectedSlot.bookings.length > 0 ? (
-                            selectedSlot.bookings.map((booking) => (
-                              <Table.Row
-                                key={booking._id}
-                                className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                              >
-                                <Table.Cell>{booking.patientName}</Table.Cell>
-                                <Table.Cell>{booking.time}</Table.Cell>
-                                <Table.Cell>
-                                  {booking.status === "Booked" && (
-                                    <Badge color="success">
-                                      <BsBookmarkFill className="mr-1" />
-                                      Booked
-                                    </Badge>
-                                  )}
-                                  {booking.status === "Cancelled" && (
-                                    <Badge color="failure">
-                                      <BsBookmarkXFill className="mr-1" />
-                                      Cancelled
-                                    </Badge>
-                                  )}
-                                </Table.Cell>
-                              </Table.Row>
-                            ))
-                          ) : (
-                            <Table.Row>
-                              <Table.Cell colSpan={3} className="text-center">
-                                No bookings for this slot
-                              </Table.Cell>
-                            </Table.Row>
-                          )}
-                        </Table.Body>
-                      </Table.Body>
-                    </Table>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold mb-2">Slot Statistics</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p>
-                          <strong>Total Bookings:</strong>{" "}
-                          {selectedSlot.totalBookings}
-                        </p>
-                      </div>
-                      <div>
-                        <p>
-                          <strong>Booked Count:</strong>{" "}
-                          {selectedSlot.bookedCount}
-                        </p>
-                      </div>
-                      <div>
-                        <p>
-                          <strong>Cancelled Count:</strong>{" "}
-                          {selectedSlot.cancelledCount || 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p>
-                          <strong>Not Booked Count:</strong>{" "}
-                          {selectedSlot.notBookedCount || 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Modal.Body>
-            <Modal.Footer>
-              <Button color="gray" onClick={() => setShowViewModal(false)}>
-                Close
-              </Button>
-              <Button color="failure" onClick={handleCancel}>
-                Cancel Slot
-              </Button>
-            </Modal.Footer>
-          </Modal>
-          <Modal
-            show={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-          >
-            <Modal.Header>Confirm Delete</Modal.Header>
-            <Modal.Body>Are you sure you want to delete this slot?</Modal.Body>
-            <Modal.Footer>
-              <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </Button>
-              <Button color="failure" onClick={handleDelete}>
-                Delete
-              </Button>
-            </Modal.Footer>
-          </Modal>
-        </>
-      )}
-    </div>
-  );
+          {booking.status === "Cancelled" && (
+            <Badge color="failure">
+              <BsBookmarkXFill className="mr-1" />
+              Cancelled
+            </Badge>
+          )}
+        </Table.Cell>
+      </Table.Row>
+    ))
+  ) : (
+    <Table.Row>
+      <Table.Cell colSpan={3} className="text-center">
+        No bookings for this slot
+      </Table.Cell>
+    </Table.Row>
+  )}
+</Table.Body>
+                     </Table.Body>
+                   </Table>
+                 </div>
+                 <div>
+                   <h4 className="text-lg font-bold mb-2">Slot Statistics</h4>
+                   <div className="grid grid-cols-2 gap-4">
+ <div>
+   <p>
+     <strong>Total Bookings:</strong> {selectedSlot.totalBookings}
+   </p>
+ </div>
+ <div>
+   <p>
+     <strong>Booked Count:</strong> {selectedSlot.bookedCount}
+   </p>
+ </div>
+ <div>
+   <p>
+     <strong>Cancelled Count:</strong> {selectedSlot.cancelledCount || 0}
+   </p>
+ </div>
+ <div>
+   <p>
+     <strong>Not Booked Count:</strong> {selectedSlot.notBookedCount || 0}
+   </p>
+ </div>
+</div>
+</div>
+               </div>
+             )}
+           </Modal.Body>
+           <Modal.Footer>
+             <Button color="gray" onClick={() => setShowViewModal(false)}>
+               Close
+             </Button>
+             <Button color="failure" onClick={handleCancel}>
+               Cancel Slot
+             </Button>
+           </Modal.Footer>
+         </Modal>
+         <Modal
+           show={showDeleteModal}
+           onClose={() => setShowDeleteModal(false)}
+         >
+           <Modal.Header>Confirm Delete</Modal.Header>
+           <Modal.Body>
+             Are you sure you want to delete this slot?
+           </Modal.Body>
+           <Modal.Footer>
+             <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+               Cancel
+             </Button>
+             <Button color="failure" onClick={handleDelete}>
+               Delete
+             </Button>
+           </Modal.Footer>
+         </Modal>
+       </>
+     )}
+   </div>
+ );
 }
