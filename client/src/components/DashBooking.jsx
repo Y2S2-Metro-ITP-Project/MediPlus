@@ -44,6 +44,7 @@ export default function DashBooking() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [patientOptions, setPatientOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function DashBooking() {
   const [filterRoom, setFilterRoom] = useState("");
   const [formData, setFormData] = useState({});
   const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [updateFormData, setUpdateFormData] = useState({});
   const [cancellationReason, setCancellationReason] = useState("");
   const [isRebooking, setIsRebooking] = useState(false);
@@ -61,6 +63,7 @@ export default function DashBooking() {
   useEffect(() => {
     fetchBookings();
     fetchPatients();
+    fetchStatusOptions();
   }, []);
 
   const fetchBookings = async () => {
@@ -96,6 +99,19 @@ export default function DashBooking() {
       console.error(error);
       toast.error("Failed to fetch patients. Please try again later.");
     }
+  };
+
+  const fetchStatusOptions = () => {
+    const statusOptions = [
+      { value: "Completed", label: "Completed" },
+      { value: "Pending", label: "Pending" },
+      { value: "Cancelled", label: "Cancelled" },
+      { value: "Not Booked", label: "Not Booked" },
+      { value: "Booked", label: "Booked" },
+      { value: "ReBooked", label: "Rebooked" },
+      { value: "In Consultation", label: "In Consultation" },
+    ];
+    setStatusOptions(statusOptions);
   };
 
   const handleSort = (column) => {
@@ -141,6 +157,11 @@ export default function DashBooking() {
   const handleBookAppointment = async (e) => {
     e.preventDefault();
 
+    if (!selectedPatientId) {
+      toast.error("Please select a patient.");
+      return;
+    }
+
     try {
       const url = isRebooking
         ? `/api/booking/rebookAppointment/${selectedBooking._id}`
@@ -182,6 +203,11 @@ export default function DashBooking() {
   };
 
   const confirmCancellation = async () => {
+    if (!cancellationReason) {
+      toast.error("Please provide a cancellation reason.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/booking/cancel/${selectedBooking._id}`, {
         method: "PUT",
@@ -190,8 +216,6 @@ export default function DashBooking() {
         },
         body: JSON.stringify({ reason: cancellationReason }),
       });
-
-      console.log(res);
 
       if (res.ok) {
         toast.success("Booking cancelled successfully.");
@@ -213,22 +237,33 @@ export default function DashBooking() {
   const handleUpdateBooking = async (e) => {
     e.preventDefault();
 
+    if (!selectedPatientId || !selectedStatus) {
+      toast.error("Please select a patient and a status.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/booking/update/${selectedBooking._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updateFormData),
+        body: JSON.stringify({
+          patientId: selectedPatientId || updateFormData.patientId,
+          status: selectedStatus,
+        }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        toast.success("Booking updated successfully.");
+        toast.success(data.message);
         setShowUpdateModal(false);
-        setUpdateFormData({});
+        setSelectedPatientId("");
+        setSelectedStatus("");
         await fetchBookings();
       } else {
-        toast.error("Failed to update the booking. Please try again later.");
+        toast.error(data.message || "Failed to update the booking. Please try again later.");
       }
     } catch (error) {
       console.error(error);
@@ -243,13 +278,44 @@ export default function DashBooking() {
       <html>
         <head>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+  
+            body {
+              font-family: 'Roboto', sans-serif;
+              background-color: #f5f5f5;
+              color: #333;
+            }
+  
             table {
               width: 100%;
               border-collapse: collapse;
+              box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             }
+  
             th, td {
-              border: 1px solid black;
-              padding: 8px;
+              padding: 12px 15px;
+              text-align: left;
+              border: 1px solid #ddd;
+            }
+  
+            th {
+              background-color: #4CAF50;
+              color: white;
+            }
+  
+            tr:nth-child(even) {
+              background-color: #f2f2f2;
+            }
+  
+            tr:hover {
+              background-color: #e6e6e6;
+            }
+  
+            h2 {
+              text-align: center;
+              color: #4CAF50;
+              margin-top: 30px;
+              margin-bottom: 20px;
             }
           </style>
         </head>
@@ -270,15 +336,15 @@ export default function DashBooking() {
               ${filteredBookings
                 .map(
                   (booking) => `
-                <tr>
-                  <td>${new Date(booking.date).toLocaleDateString()}</td>
-                  <td>${booking.time}</td>
-                  <td>${booking.doctorName}</td>
-                  <td>${booking.patientName ? booking.patientName : "-"}</td>
-                  <td>${booking.roomName}</td>
-                  <td>${booking.status}</td>
-                </tr>
-              `
+                    <tr>
+                      <td>${new Date(booking.date).toLocaleDateString()}</td>
+                      <td>${booking.time}</td>
+                      <td>${booking.doctorName}</td>
+                      <td>${booking.patientName ? booking.patientName : "-"}</td>
+                      <td>${booking.roomName}</td>
+                      <td>${booking.status}</td>
+                    </tr>
+                  `
                 )
                 .join("")}
             </tbody>
@@ -286,7 +352,7 @@ export default function DashBooking() {
         </body>
       </html>
     `;
-
+  
     const opt = {
       margin: 1,
       filename: "bookings_report.pdf",
@@ -294,7 +360,7 @@ export default function DashBooking() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
     };
-
+  
     html2pdf().set(opt).from(reportContent).save();
   };
 
@@ -303,38 +369,54 @@ export default function DashBooking() {
       <html>
         <head>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+  
             .card {
               width: 400px;
-              border: 1px solid #ccc;
+              border: 1px solid #ddd;
               padding: 20px;
-              font-family: Arial, sans-serif;
+              font-family: 'Roboto', sans-serif;
+              background-color: #fff;
+              box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+              border-radius: 8px;
             }
+  
             .card h2 {
               margin-top: 0;
+              color: #4CAF50;
+              text-align: center;
             }
+  
             .card p {
               margin-bottom: 10px;
+              font-size: 16px;
+              line-height: 1.5;
+            }
+  
+            .card p strong {
+              color: #333;
+              font-weight: 700;
+            }
+  
+            .card p:last-child {
+              margin-bottom: 0;
             }
           </style>
         </head>
         <body>
           <div class="card">
             <h2>Appointment Card</h2>
-            <p><strong>Date:</strong> ${new Date(
-              booking.date
-            ).toLocaleDateString()}</p>
+            <p><strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
             <p><strong>Time:</strong> ${booking.time}</p>
             <p><strong>Doctor:</strong> ${booking.doctorName}</p>
-            <p><strong>Patient:</strong> ${
-              booking.patientName ? booking.patientName : "-"
-            }</p>
+            <p><strong>Patient:</strong> ${booking.patientName ? booking.patientName : "-"}</p>
             <p><strong>Room:</strong> ${booking.roomName}</p>
             <p><strong>Status:</strong> ${booking.status}</p>
           </div>
         </body>
       </html>
     `;
-
+  
     const opt = {
       margin: 1,
       filename: "appointment_card.pdf",
@@ -342,33 +424,43 @@ export default function DashBooking() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: "in", format: [4, 2], orientation: "portrait" },
     };
-
+  
     html2pdf().set(opt).from(appointmentCard).save();
   };
 
   const sendEmail = () => {
     const emailContent = `
       Subject: Appointment Details
-
+  
       Dear ${selectedBooking.patientName},
-
-      Here are the details of your appointment:
-
-      Date: ${new Date(selectedBooking.date).toLocaleDateString()}
-      Time: ${selectedBooking.time}
-      Doctor: ${selectedBooking.doctorName}
-      Room: ${selectedBooking.roomName}
-      Status: ${selectedBooking.status}
-
-      Please arrive 30 min before your Appointment for your appointment.
-
-      Thank you,
-      Your Healthcare Provider
+  
+      Here are the details of your upcoming appointment:
+  
+      <h3 style="color: #4CAF50; font-family: 'Roboto', sans-serif;">Appointment Details</h3>
+  
+      <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+        <strong>Date:</strong> ${new Date(selectedBooking.date).toLocaleDateString()}<br>
+        <strong>Time:</strong> ${selectedBooking.time}<br>
+        <strong>Doctor:</strong> ${selectedBooking.doctorName}<br>
+        <strong>Room:</strong> ${selectedBooking.roomName}<br>
+        <strong>Status:</strong> ${selectedBooking.status}
+      </p>
+  
+      <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+        Please arrive 30 minutes before your appointment for check-in and registration.
+      </p>
+  
+      <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+        Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+      </p>
+  
+      <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+        Best regards,<br>
+        Your Healthcare Provider
+      </p>
     `;
-
-    const mailtoLink = `mailto:${
-      selectedBooking.patientEmail
-    }?subject=Appointment%20Details&body=${encodeURIComponent(emailContent)}`;
+  
+    const mailtoLink = `mailto:${selectedBooking.patientEmail}?subject=Appointment%20Details&body=${encodeURIComponent(emailContent)}`;
     window.location.href = mailtoLink;
   };
 
@@ -396,6 +488,19 @@ export default function DashBooking() {
       matchesRoom
     );
   });
+
+  const totalCompletedBookings = bookings.filter(
+    (booking) => booking.status === "Completed"
+  ).length;
+  const totalPendingBookings = bookings.filter(
+    (booking) => booking.status === "Pending"
+  ).length;
+  const totalCancelledBookings = bookings.filter(
+    (booking) => booking.status === "Cancelled"
+  ).length;
+  const totalNotBookedBookings = bookings.filter(
+    (booking) => booking.status === "Not Booked"
+  ).length;
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -426,26 +531,20 @@ export default function DashBooking() {
             <Card>
               <div className="flex items-center justify-between">
                 <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
-                  Pending Bookings
+                  Completed Bookings
                 </h5>
-                <Badge color="warning" className="text-2xl font-bold">
-                  {
-                    bookings.filter((booking) => booking.status === "Pending")
-                      .length
-                  }
+                <Badge color="success" className="text-2xl font-bold">
+                  {totalCompletedBookings}
                 </Badge>
               </div>
             </Card>
             <Card>
               <div className="flex items-center justify-between">
                 <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
-                  Completed Bookings
+                  Pending Bookings
                 </h5>
-                <Badge color="success" className="text-2xl font-bold">
-                  {
-                    bookings.filter((booking) => booking.status === "Completed")
-                      .length
-                  }
+                <Badge color="warning" className="text-2xl font-bold">
+                  {totalPendingBookings}
                 </Badge>
               </div>
             </Card>
@@ -455,10 +554,17 @@ export default function DashBooking() {
                   Cancelled Bookings
                 </h5>
                 <Badge color="failure" className="text-2xl font-bold">
-                  {
-                    bookings.filter((booking) => booking.status === "Cancelled")
-                      .length
-                  }
+                  {totalCancelledBookings}
+                </Badge>
+              </div>
+            </Card>
+            <Card>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Not Booked
+                </h5>
+                <Badge color="gray" className="text-2xl font-bold">
+                  {totalNotBookedBookings}
                 </Badge>
               </div>
             </Card>
@@ -619,7 +725,7 @@ export default function DashBooking() {
                           Booked
                         </Badge>
                       )}
-                      {booking.status === "Rebooked" && (
+                      {booking.status === "ReBooked" && (
                         <Badge color="purple">
                           <BsBookmarkStar className="mr-1" />
                           Rebooked
@@ -695,6 +801,8 @@ export default function DashBooking() {
                               time: booking.time,
                               doctorName: booking.doctorName,
                               roomNo: booking.roomName,
+                              patientName: booking.patientName,
+                              status: booking.status,
                             });
                             setShowUpdateModal(true);
                           }}
@@ -730,33 +838,53 @@ export default function DashBooking() {
           </div>
 
           <Modal show={showViewModal} onClose={() => setShowViewModal(false)}>
-            <Modal.Header>Booking Details</Modal.Header>
+            <Modal.Header>
+              <h3 className="text-xl font-semibold">Booking Details</h3>
+            </Modal.Header>
             <Modal.Body>
               {selectedBooking && (
-                <div>
-                  <div className="mb-4">
-                    <p>
-                      <strong>Date:</strong>{" "}
-                      {new Date(selectedBooking.date).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <strong>Time:</strong> {selectedBooking.time}
-                    </p>
-                    <p>
-                      <strong>Doctor:</strong> {selectedBooking.doctorName}
-                    </p>
-                    <p>
-                      <strong>Patient:</strong>{" "}
-                      {selectedBooking.patientName
-                        ? selectedBooking.patientName
-                        : "-"}
-                    </p>
-                    <p>
-                      <strong>Room:</strong> {selectedBooking.roomName}
-                    </p>
-                    <p>
-                      <strong>Status:</strong> {selectedBooking.status}
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Date:</p>
+                    <p>{new Date(selectedBooking.date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Time:</p>
+                    <p>{selectedBooking.time}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Doctor:</p>
+                    <p>{selectedBooking.doctorName}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Patient:</p>
+                    <p>{selectedBooking.patientName || "-"}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Room:</p>
+                    <p>{selectedBooking.roomName}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Status:</p>
+                    <Badge
+                      color={
+                        selectedBooking.status === "Completed"
+                          ? "success"
+                          : selectedBooking.status === "Pending"
+                          ? "warning"
+                          : selectedBooking.status === "Cancelled"
+                          ? "failure"
+                          : selectedBooking.status === "Not Booked"
+                          ? "gray"
+                          : selectedBooking.status === "Booked"
+                          ? "info"
+                          : selectedBooking.status === "ReBooked"
+                          ? "purple"
+                          : "indigo"
+                      }
+                    >
+                      {selectedBooking.status}
+                    </Badge>
                   </div>
                   <div className="flex justify-end">
                     {selectedBooking.status !== "Cancelled" &&
@@ -846,7 +974,7 @@ export default function DashBooking() {
                         Date:
                       </Label>
                       <span className="text-gray-700">
-                        {formData.date || ""}
+                        {new Date(formData.date).toLocaleDateString() || ""}
                       </span>
                     </div>
                     <div className="flex items-center">
@@ -870,7 +998,9 @@ export default function DashBooking() {
                         <Label htmlFor="roomNo" className="mr-2">
                           Room:
                         </Label>
-                        <span className="text-gray-700">{formData.roomNo}</span>
+                        <span className="text-gray-700">
+                          {formData.roomNo || ""}
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center">
@@ -913,122 +1043,101 @@ export default function DashBooking() {
             </Modal.Body>
           </Modal>
           <Modal
-            show={showUpdateModal}
-            onClose={() => setShowUpdateModal(false)}
-            size="md"
+  show={showUpdateModal}
+  onClose={() => setShowUpdateModal(false)}
+  size="md"
+>
+  <Modal.Header />
+  <Modal.Body>
+    <div className="text-center">
+      <h3 className="mb-4 text-lg text-gray-500">Update Booking</h3>
+      <form onSubmit={handleUpdateBooking} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="flex items-center">
+            <p className="font-bold mr-2">Type:</p>
+            <p>{updateFormData.type || ""}</p>
+          </div>
+          <div className="flex items-center">
+            <p className="font-bold mr-2">Date:</p>
+            <p>{new Date(updateFormData.date).toLocaleDateString() || ""}</p>
+          </div>
+          <div className="flex items-center">
+            <p className="font-bold mr-2">Time:</p>
+            <p>{updateFormData.time || ""}</p>
+          </div>
+          <div className="flex items-center">
+            <p className="font-bold mr-2">Doctor Name:</p>
+            <p>{updateFormData.doctorName || ""}</p>
+          </div>
+          {updateFormData.type === "Hospital Booking" && (
+            <div className="flex items-center">
+              <p className="font-bold mr-2">Room:</p>
+              <p>{updateFormData.roomNo || ""}</p>
+            </div>
+          )}
+          <div className="flex items-center">
+            <Label htmlFor="selectedPatientId" className="mr-2">
+              Select Patient:
+            </Label>
+            <Select
+              id="selectedPatientId"
+              className="mt-1"
+              value={selectedPatientId || updateFormData.patientId}
+              onChange={(e) => setSelectedPatientId(e.target.value)}
+              required
+            >
+              <option value={updateFormData.patientId}>
+                {updateFormData.patientName || ""}
+              </option>
+              {patientOptions
+                .filter((patient) => patient.value !== updateFormData.patientId)
+                .map((patient) => (
+                  <option key={patient.value} value={patient.value}>
+                    {patient.label}
+                  </option>
+                ))}
+            </Select>
+          </div>
+          <div className="flex items-center">
+            <Label htmlFor="selectedStatus" className="mr-2">
+              Select Status:
+            </Label>
+            <Select
+              id="selectedStatus"
+              className="mt-1"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              required
+            >
+              <option value="">Select Status</option>
+              {statusOptions.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-center mt-6 space-x-4">
+          <Button color="blue" type="submit" outline>
+            Update
+          </Button>
+          <Button
+            color="red"
+            onClick={() => {
+              setShowUpdateModal(false);
+              setUpdateFormData({});
+              setSelectedPatientId("");
+              setSelectedStatus("");
+            }}
           >
-            <Modal.Header />
-            <Modal.Body>
-              <div className="text-center">
-                <h3 className="mb-4 text-lg text-gray-500">Update Booking</h3>
-                <form onSubmit={handleUpdateBooking} className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="flex items-center">
-                      <Label htmlFor="type" className="mr-2">
-                        Type:
-                      </Label>
-                      <TextInput
-                        id="type"
-                        type="text"
-                        value={updateFormData.type || ""}
-                        onChange={(e) =>
-                          setUpdateFormData({
-                            ...updateFormData,
-                            type: e.target.value,
-                          })
-                        }
-                        readOnly
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <Label htmlFor="date" className="mr-2">
-                        Date:
-                      </Label>
-                      <TextInput
-                        id="date"
-                        type="date"
-                        value={updateFormData.date || ""}
-                        onChange={(e) =>
-                          setUpdateFormData({
-                            ...updateFormData,
-                            date: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <Label htmlFor="time" className="mr-2">
-                        Time:
-                      </Label>
-                      <TextInput
-                        id="time"
-                        type="time"
-                        value={updateFormData.time || ""}
-                        onChange={(e) =>
-                          setUpdateFormData({
-                            ...updateFormData,
-                            time: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <Label htmlFor="doctorName" className="mr-2">
-                        Doctor Name:
-                      </Label>
-                      <TextInput
-                        id="doctorName"
-                        type="text"
-                        value={updateFormData.doctorName || ""}
-                        onChange={(e) =>
-                          setUpdateFormData({
-                            ...updateFormData,
-                            doctorName: e.target.value,
-                          })
-                        }
-                        readOnly
-                      />
-                    </div>
-                    {updateFormData.type === "Hospital Booking" && (
-                      <div className="flex items-center">
-                        <Label htmlFor="roomNo" className="mr-2">
-                          Room:
-                        </Label>
-                        <TextInput
-                          id="roomNo"
-                          type="text"
-                          value={updateFormData.roomNo || ""}
-                          onChange={(e) =>
-                            setUpdateFormData({
-                              ...updateFormData,
-                              roomNo: e.target.value,
-                            })
-                          }
-                          readOnly
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-center mt-6 space-x-4">
-                    <Button color="blue" type="submit" outline>
-                      Update
-                    </Button>
-                    <Button
-                      color="red"
-                      onClick={() => {
-                        setShowUpdateModal(false);
-                        setUpdateFormData({});
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </Modal.Body>
-          </Modal>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  </Modal.Body>
+</Modal>
           <Modal
             show={showCancelModal}
             onClose={() => setShowCancelModal(false)}

@@ -276,18 +276,24 @@ export const updateBooking = async (req, res) => {
   }
 
   try {
+    const { patientId, status } = req.body;
+
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
-        $set: req.body,
+        $set: {
+          patientId,
+          status,
+        },
       },
       { new: true }
     );
+
     if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.status(200).json({ message: "Booked successfully" });
+    res.status(200).json({ message: "Booking updated successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
