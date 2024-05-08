@@ -11,12 +11,6 @@ const roomSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  slots: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Slot",
-    },
-  ],
 });
 
 // Method to check the availability of the room for a given date and time
