@@ -277,12 +277,17 @@ export const updateBooking = async (req, res) => {
 
   try {
     const { patientId, status } = req.body;
+    let patientUpdateId = patientId;
+
+    if(status == "Not Booked"){
+      patientUpdateId = null;
+    }
 
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
         $set: {
-          patientId,
+          patientId: patientUpdateId,
           status,
         },
       },
