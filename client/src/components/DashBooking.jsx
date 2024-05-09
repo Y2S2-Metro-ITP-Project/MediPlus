@@ -8,6 +8,7 @@ import {
   TextInput,
   Card,
   Badge,
+  Spinner,
 } from "flowbite-react";
 import {
   HiSearch,
@@ -31,7 +32,6 @@ import {
   BsBookmarkPlus,
   BsBookmarkStar,
 } from "react-icons/bs";
-import LoadingSpinner from "./LoadingSpinner";
 import html2pdf from "html2pdf.js";
 
 export default function DashBooking() {
@@ -220,6 +220,7 @@ export default function DashBooking() {
       if (res.ok) {
         toast.success("Booking cancelled successfully.");
         setShowCancelModal(false);
+        setShowViewModal(false)
         setSelectedBooking(null);
         setCancellationReason("");
         await fetchBookings();
@@ -237,8 +238,8 @@ export default function DashBooking() {
   const handleUpdateBooking = async (e) => {
     e.preventDefault();
 
-    if (!selectedPatientId || !selectedStatus) {
-      toast.error("Please select a patient and a status.");
+    if (!selectedStatus) {
+      toast.error("Please select  a status.");
       return;
     }
 
@@ -505,7 +506,9 @@ export default function DashBooking() {
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {isLoading ? (
-        <LoadingSpinner />
+        <div className="flex justify-center items-center h-64">
+        <Spinner color="info" aria-label="Loading spinner" />
+      </div>
       ) : (
         <>
           <ToastContainer />
