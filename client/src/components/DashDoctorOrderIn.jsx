@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Table, TextInput, Button, Modal } from "flowbite-react";
+import { Table, TextInput, Button, Modal, ModalBody } from "flowbite-react";
 import { AiOutlineSearch } from "react-icons/ai";
 import {
   HiAnnotation,
@@ -18,6 +18,7 @@ import { set } from "mongoose";
 export default function DashDoctorOrderIn() {
   const [orders, setOrders] = useState([]);
   const [pageNumber, setPageNumber] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const prescriptionOrdersPerPage = 5;
   const { currentUser } = useSelector((state) => state.user);
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,62 +34,8 @@ export default function DashDoctorOrderIn() {
   const [seleactedDoctor, setSeleactedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const fetchOrders = async () => {
-    try {
-      const res = await fetch(
-        `/api/prescriptionOrder/getInpatientPrescriptionOrder`
-      );
-      const data = await res.json();
-      if (res.ok) {
-        const filteredOrders = data.prescriptionOrders.filter(
-          (order) =>
-            order.doctorId.username
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            order.patientId.name
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase())
-        );
-        // Unique doctors
-        const uniqueDoctors = Array.from(
-          new Set(data.prescriptionOrders.map((order) => order.doctorId))
-        ).map((doctorId) => ({
-          doctorId: doctorId,
-          username: doctorId.username,
-        }));
-
-        // Unique dates
-        const uniqueDates = Array.from(
-          new Set(
-            data.prescriptionOrders.map((order) =>
-              format(new Date(order.date), "yyyy-MM-dd")
-            )
-          )
-        );
-
-        // Unique patients
-        const uniquePatients = Array.from(
-          new Set(data.prescriptionOrders.map((order) => order.patientId))
-        ).map((patientId) => ({
-          patientId: patientId,
-          name: patientId.name,
-        }));
-
-        setDoctors(uniqueDoctors);
-        setDates(uniqueDates);
-        setUniquePatients(uniquePatients);
-        setTotalOrders(data.totalOrders);
-        setTotalCompletedOrders(data.totalCompletedOrders);
-        setTotalPendingOrders(data.totalPendingOrders);
-        setTotalRejectedOrders(data.totalRejectedOrders);
-        setOrders(filteredOrders);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  console.log(orders);
   useEffect(() => {
+    setIsLoading(true);
     const fetchOrders = async () => {
       try {
         const res = await fetch(
@@ -143,8 +90,10 @@ export default function DashDoctorOrderIn() {
           setTotalPendingOrders(data.totalPendingOrders);
           setTotalRejectedOrders(data.totalRejectedOrders);
           setOrders(filteredOrders);
+          setIsLoading(false);
         }
       } catch (error) {
+        setIsLoading(false);
         console.log(error);
       }
     };
@@ -175,8 +124,22 @@ export default function DashDoctorOrderIn() {
   const [rejectModal, setRejectModal] = useState(false);
   const [OrderIdToReject, setOrderIdToReject] = useState("");
   const [wardToShow, setWardToShow] = useState({});
-  const handleWardToshow = (order) => {
-    setWardToShow(order);
+  const [showWardModal, setWardShowModal] = useState(false);
+  const [wardDetails, setWardDetails] = useState({
+    Bed_Number:false,
+    WardName:false,
+    WardType:false,
+    DoctorName:false,
+    NurseName:false,
+  });
+  const handleWardToshow = (number,wardName,wardType,doctorName,nurseName) => {
+    setWardDetails({
+        Bed_Number:number,
+        WardName:wardName,
+        WardType:wardType,
+        DoctorName:doctorName,
+        NurseName:nurseName,
+    })
   };
   const displayPrescriptionOrders = orders
     .slice(
@@ -205,8 +168,8 @@ export default function DashDoctorOrderIn() {
               <HiEye
                 className="text-blue-500 cursor-pointer"
                 onClick={() => {
-                  setShowModal(true);
-                  handleWardToshow(order);
+                  setWardShowModal(true);
+                  handleWardToshow(order.patientId.bed.number,order.patientId.bed.ward.WardName,order.patientId.bed.ward.WardType,order.patientId.bed.ward.doctorName,order.patientId.bed.ward.nurseName);
                 }}
               />
             ) : (
@@ -463,7 +426,6 @@ export default function DashDoctorOrderIn() {
       console.log(error);
     }
   };
-  console.log(wardToShow);
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -662,7 +624,7 @@ export default function DashDoctorOrderIn() {
               <Table.HeadCell>Patient Name</Table.HeadCell>
               <Table.HeadCell>Discharged Status</Table.HeadCell>
               <Table.HeadCell>Contact Number</Table.HeadCell>
-              <Table.HeadCell>Contact Email</Table.HeadCell>
+              <Table.HeadCell>Ward Details</Table.HeadCell>
               <Table.HeadCell>Doctor</Table.HeadCell>
               <Table.HeadCell>No of Prescriptions</Table.HeadCell>
               <Table.HeadCell>Dispense Status</Table.HeadCell>
@@ -746,56 +708,58 @@ export default function DashDoctorOrderIn() {
         </Modal.Body>
       </Modal>
       {/** ward modal */}
-      <Modal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        popup
-        size="md"
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
-            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Ward and Bed Details
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col">
-              <label className="text-gray-600 dark:text-gray-400">
-                Bed Number:
-              </label>
-              <p>{wardToShow.patientId.bed.number}</p>
+      {!isLoading && (
+        <Modal
+          show={showWardModal}
+          onClose={() => setWardShowModal(false)}
+          popup
+          size="md"
+        >
+          <Modal.Header />
+          <Modal.Body>
+            <div className="text-center">
+              <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+              <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+                Ward and Bed Details
+              </h3>
             </div>
-            <>
+            <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col">
                 <label className="text-gray-600 dark:text-gray-400">
-                  Ward Name:
+                  Bed Number:
                 </label>
-                <p>{wardToShow.patientId.bed.ward.WardName}</p>
+                <p>{wardDetails.Bed_Number}</p>
               </div>
-              <div className="flex flex-col">
-                <label className="text-gray-600 dark:text-gray-400">
-                  Ward Type:
-                </label>
-                <p>{wardToShow.patientId.bed.ward.WardType}</p>
-              </div>
-              <div className="flex flex-col">
-                <label className="text-gray-600 dark:text-gray-400">
-                  Doctor Name:
-                </label>
-                <p>{wardToShow.patientId.bed.ward.doctorName}</p>
-              </div>
-              <div className="flex flex-col">
-                <label className="text-gray-600 dark:text-gray-400">
-                  Nurse Name:
-                </label>
-                <p>{wardToShow.patientId.bed.ward.nurseName}</p>
-              </div>
-            </>
-          </div>
-        </Modal.Body>
-      </Modal>
+                <>
+                  <div className="flex flex-col">
+                    <label className="text-gray-600 dark:text-gray-400">
+                      Ward Name:
+                    </label>
+                    <p>{wardDetails.WardName}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-gray-600 dark:text-gray-400">
+                      Ward Type:
+                    </label>
+                    <p>{wardDetails.WardType}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-gray-600 dark:text-gray-400">
+                      Doctor Name:
+                    </label>
+                    <p>{wardDetails.DoctorName}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-gray-600 dark:text-gray-400">
+                      Nurse Name:
+                    </label>
+                    <p>{wardDetails.NurseName}</p>
+                  </div>
+                </>
+            </div>
+          </Modal.Body>
+        </Modal>
+      )}
     </div>
   );
 }
