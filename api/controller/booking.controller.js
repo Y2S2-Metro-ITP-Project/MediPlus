@@ -1,18 +1,14 @@
 import { errorHandler } from "../utils/error.js";
 import Booking from "../models/booking.model.js";
-import { authorize, createSpace } from "../utils/googleMeet.js";
+import { createSpace } from "../utils/googleMeet.js";
+import generatePDFFromHtml from "../utils/generatePDF.js";
+import { authorize, sendEmail } from "../utils/bookingEmail.js";
+
+let isProcessing = false;
 
 export const createBooking = async (req, res, next) => {
-  const {
-    type,
-    doctorId,
-    patientId,
-    date,
-    time,
-    roomNo,
-    reason,
-    slotId,
-  } = req.body;
+  const { type, doctorId, patientId, date, time, roomNo, reason, slotId } =
+    req.body;
 
   console.log("Booking request received with data:", {
     type,
@@ -62,7 +58,6 @@ export const createBooking = async (req, res, next) => {
   }
 };
 
-
 export const getBookings = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
     return next(
@@ -74,31 +69,27 @@ export const getBookings = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-
     const bookings = await Booking.find()
       .populate("doctorId", "username")
-      .populate("patientId", "name")
+      .populate("patientId", "name contactEmail")
       .populate("roomNo", "description")
       .skip(startIndex)
       .limit(limit)
       .sort({ createdAt: sortDirection });
-    console.log("Bookings fetched:", bookings); 
     const totalBookings = await Booking.countDocuments();
-
     const updatedBookings = bookings.map((booking) => ({
       ...booking.toObject(),
       doctorName: booking.doctorId ? booking.doctorId.username : "Unknown",
-      patientName: booking.patientId ? booking.patientId.name : "Unassigned",
-      roomName: booking.roomNo ? booking.roomNo.description : "Online Appointment",
+      patientName: booking.patientId ? booking.patientId.name : "UnAssigned",
+      roomName: booking.roomNo
+        ? booking.roomNo.description
+        : "Online Appointment",
     }));
-    console.log(" fetched successfully");
     res.status(200).json({ bookings: updatedBookings, totalBookings });
   } catch (error) {
     next(error);
   }
 };
-
-// ... (rest of the code remains the same)
 
 export const getBookingsForScheduling = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
@@ -243,7 +234,6 @@ export const filterBookings = async (req, res, next) => {
       default:
         break;
     }
-
     if (startDate && endDate) {
       query.date = { $gte: startDate, $lte: endDate };
     }
@@ -258,8 +248,6 @@ export const filterBookings = async (req, res, next) => {
 export const searchAppointments = async (req, res, next) => {
   try {
     const { doctorId, date } = req.query;
-
-    // Fetch appointments matching the provided doctor ID and date
     const appointments = await Booking.find({ doctorId, date });
 
     res.status(200).json(appointments);
@@ -276,13 +264,20 @@ export const updateBooking = async (req, res) => {
   }
 
   try {
-    const { patientId, status } = req.body;
-    let patientUpdateId = patientId;
+    const { patientId, status, doctorName, roomName } = req.body;
+    let patientUpdateId = patientId || null;
 
-    if(status == "Not Booked"){
-      patientUpdateId = null;
+    const booking = await Booking.findById(req.params.bookingId).populate(
+      "patientId",
+      "name contactEmail"
+    );
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
     }
-
+    const previousPatientName = booking.patientId.name;
+    const previousPatientEmail = booking.patientId.contactEmail;
+    console.log("Previous patient name:", previousPatientName);
+    console.log("Previous patient email:", previousPatientEmail);
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
@@ -292,219 +287,545 @@ export const updateBooking = async (req, res) => {
         },
       },
       { new: true }
-    );
+    ).populate("patientId", "name contactEmail");
 
     if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.status(200).json({ message: "Booking updated successfully" });
+    const { name, contactEmail } = updatedBooking.patientId;
+    const { date, time } = updatedBooking;
+    console.log("Updated patient name:", name);
+    console.log("Updated patient email:", contactEmail);
+    // Send email to the previous patient
+    const emailContentPreviousPatient = `
+          Dear ${previousPatientName},
+    
+          Your appointment with the following details has been updated:
+    
+          Date: ${new Date(date).toLocaleDateString()}
+          Time: ${time}
+          Doctor: ${doctorName}
+          Room: ${roomName}
+    
+          Please contact our support team for more information.
+    
+          Best regards,
+          Your Healthcare Provider
+        `;
+
+    const auth = await authorize();
+    await sendEmail(
+      auth,
+      previousPatientEmail,
+      "Appointment Status Update",
+      emailContentPreviousPatient
+    );
+
+    // Send email to the new patient
+    const emailContentNewPatient = `
+          Dear ${name},
+    
+          The status of your appointment has been updated to: ${status}
+    
+          The appointment details are as follows:
+    
+          Date: ${new Date(date).toLocaleDateString()}
+          Time: ${time}
+          Doctor: ${doctorName}
+          Room: ${roomName}
+    
+          If you have any questions, please contact our support team.
+    
+          Best regards,
+          Your Healthcare Provider
+        `;
+
+    await sendEmail(
+      auth,
+      contactEmail,
+      "Appointment Status Update",
+      emailContentNewPatient
+    );
+
+    res.json(updatedBooking);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ error: "Server error" });
+  } finally {
+    isProcessing = false;
   }
 };
 
 export const bookAppointment = async (req, res) => {
-  console.log("Request received:", req.body);
-
-  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-    console.log("User not authorized to book appointments:", req.user);
+  if (isProcessing) {
     return res
-      .status(403)
-      .json({ message: "You are not allowed to book appointments" });
+      .status(429)
+      .json({ message: "Please wait for the previous request to complete." });
   }
-
+  isProcessing = true;
   try {
+    const { patientId, roomName, doctorName } = req.body;
+    const bookingId = req.params.bookingId;
+
+    if (!patientId || !roomName || !doctorName) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
     const booking = await Booking.findByIdAndUpdate(
-      req.params.bookingId,
-      {
-        $set: { patientId: req.body.patientId, status: "Booked" },
-      },
+      bookingId,
+      { $set: { patientId, status: "Booked" } },
       { new: true }
+    ).populate("patientId", "name contactEmail");
+
+    const { name, contactEmail } = booking.patientId;
+    const { date, time } = booking;
+
+    const emailContent = `
+        Dear ${name},
+      
+        Here are the details of your upcoming appointment:
+      
+        <h3 style="color: #4CAF50; font-family: 'Roboto', sans-serif;">Appointment Details</h3>
+      
+        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+          <strong>Date:</strong> ${new Date(date).toLocaleDateString()}<br>
+          <strong>Time:</strong> ${time}<br>
+          <strong>Doctor:</strong> ${doctorName}<br>
+          <strong>Room:</strong> ${roomName}<br>
+          <strong>Status:</strong> Booked
+        </p>
+      
+        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+          Please arrive 30 minutes before your appointment for check-in and registration.
+        </p>
+      
+        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+          Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+        </p>
+      
+        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+          Best regards,<br>
+          Your Healthcare Provider
+        </p>
+      `;
+
+    const auth = await authorize();
+    await sendEmail(
+      auth,
+      contactEmail,
+      "Your Booking Details at Ismail Hospital",
+      emailContent
     );
-    console.log("Booking updated:", booking);
-
-    // if (!booking) {
-    //   console.log("Booking not found for ID:", req.params.bookingId);
-    //   return res.status(404).json({ message: "Booking not found" });
-    // }
-
-    // console.log("Checking for existing orders...");
-
-    // const patientFind = await Booking.findById(booking.patientId._id);
-    // const patientName = patientFind.name;
-    // const patientEmail = patientFind.contactEmail;
-    // const payment = await Payment.create({
-    //   patientId: booking.patientId._id,
-    //   patientName: patientName,
-    //   patientEmail: patientEmail,
-    //   OrderType: "Consultation Fee",
-    //   totalPayment: 50000,
-    // });
-
-    // try {
-    //   await createOrUpdatePaymentOrder(
-    //     booking.patientId._id,
-    //     patientName,
-    //     patientEmail,
-    //     payment._id
-    //   );
-    // } catch (error) {
-    //   res.status(500).json({ message: error.message });
-    // }
 
     res.status(200).json(booking);
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: error.message });
+  } finally {
+    isProcessing = false;
   }
 };
 
 export const reBookAppointment = async (req, res) => {
-  console.log("Request received:", req.body);
-
-  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isReceptionist) {
-    console.log("User not authorized to book appointments:", req.user);
+  if (isProcessing) {
     return res
-      .status(403)
-      .json({ message: "You are not allowed to book appointments" });
+      .status(429)
+      .json({ message: "Please wait for the previous request to complete." });
   }
-
+  isProcessing = true;
   try {
+    const { roomName, doctorName } = req.body;
     const booking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
         $set: { patientId: req.body.patientId, status: "ReBooked" },
       },
       { new: true }
+    ).populate("patientId", "name contactEmail");
+    const { name, contactEmail } = booking.patientId;
+    const { date, time } = booking;
+
+    const emailContent = `
+  Dear ${name},
+
+  Your appointment has been successfully rebooked with the following details:
+
+  Date: ${new Date(date).toLocaleDateString()}
+  Time: ${time}
+  Doctor: ${doctorName}
+  Room: ${roomName}
+
+  Please arrive at the hospital 15 minutes prior to your appointment time.
+
+  If you have any questions or need to reschedule, please contact our support team.
+
+  Best regards,
+  Your Healthcare Provider
+`;
+
+    const auth = await authorize();
+    await sendEmail(
+      auth,
+      contactEmail,
+      "Appointment Rebooking Confirmation",
+      emailContent
     );
-    console.log("Booking updated:", booking);
-
-    // if (!booking) {
-    //   console.log("Booking not found for ID:", req.params.bookingId);
-    //   return res.status(404).json({ message: "Booking not found" });
-    // }
-
-    // console.log("Checking for existing orders...");
-
-    // const patientFind = await Booking.findById(booking.patientId._id);
-    // const patientName = patientFind.name;
-    // const patientEmail = patientFind.contactEmail;
-    // const payment = await Payment.create({
-    //   patientId: booking.patientId._id,
-    //   patientName: patientName,
-    //   patientEmail: patientEmail,
-    //   OrderType: "Consultation Fee",
-    //   totalPayment: 50000,
-    // });
-
-    // try {
-    //   await createOrUpdatePaymentOrder(
-    //     booking.patientId._id,
-    //     patientName,
-    //     patientEmail,
-    //     payment._id
-    //   );
-    // } catch (error) {
-    //   res.status(500).json({ message: error.message });
-    // }
 
     res.status(200).json(booking);
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: error.message });
+  } finally {
+    isProcessing = false;
   }
 };
 
 export const cancelSelectedBookings = async (req, res) => {
+  if (isProcessing) {
+    return res
+      .status(429)
+      .json({ message: "Please wait for the previous request to complete." });
+  }
+  isProcessing = true;
   try {
     const { bookingId } = req.params;
-    console.log("Request received:", req.params);
-    const { reason } = req.body;
-    console.log("Request received:", req.body);
+    const { reason, roomName, doctorName } = req.body;
     const booking = await Booking.findByIdAndUpdate(
       bookingId,
       { status: "Cancelled", reason: reason },
       { new: true }
-    );
-
+    ).populate("patientId", "name contactEmail");
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    res.json(booking);
+    const { name, contactEmail } = booking.patientId;
+    const { date, time } = booking;
+
+    const emailContent = `
+      Dear ${name},
+    
+      We regret to inform you that your appointment has been cancelled due to the following reason:
+    
+      ${reason}
+    
+      The cancelled appointment details are as follows:
+    
+      Date: ${new Date(date).toLocaleDateString()}
+      Time: ${time}
+      Doctor: ${doctorName}
+      Room: ${roomName}
+    
+      If you have any questions or need to reschedule, please contact our support team.
+    
+      Best regards,
+      Your Healthcare Provider
+    `;
+
+    const auth = await authorize();
+    await sendEmail(
+      auth,
+      contactEmail,
+      "Appointment Cancellation",
+      emailContent
+    );
+
+    return res.json(booking);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to cancel the booking" });
+    return res.status(500).json({ error: "Failed to cancel the booking" });
+  } finally {
+    isProcessing = false;
   }
 };
 
 export const updateStatus = async (req, res) => {
+  if (isProcessing) {
+    return res
+      .status(429)
+      .json({ message: "Please wait for the previous request to complete." });
+  }
+  isProcessing = true;
+  const booking = await Booking.findById(req.params.bookingId).populate(
+    "patientId",
+    "name contactEmail"
+  );
+  if (!booking) {
+    return res.status(404).json({ message: "Booking not found" });
+  }
+  const previousPatientName = booking.patientId.name;
+  const previousPatientEmail = booking.patientId.contactEmail;
   try {
-    const { bookingId, status, patientId } = req.body; // Extract patientId from request body
-    console.log("Request received:", req.body);
-
-    // Find the booking by ID and update its status and patientId
+    const { bookingId, status, patientId, doctorName, roomName } = req.body;
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { status, patientId }, // Include patientId in the update object
+      { status, patientId },
       { new: true }
-    );
-
+    ).populate("patientId", "name contactEmail");
     if (!updatedBooking) {
       return res.status(404).json({ error: "Booking not found" });
     }
+
+    const { name, contactEmail } = updatedBooking.patientId;
+    const { date, time } = updatedBooking;
+
+    // Send email to the previous patient
+    const emailContentPreviousPatient = `
+          Dear ${previousPatientName},
+    
+          Your appointment with the following details has been updated:
+    
+          Date: ${new Date(date).toLocaleDateString()}
+          Time: ${time}
+          Doctor: ${doctorName}
+          Room: ${roomName}
+    
+          Please contact our support team for more information.
+    
+          Best regards,
+          Your Healthcare Provider
+        `;
+
+    const auth = await authorize();
+    await sendEmail(
+      auth,
+      previousPatientEmail,
+      "Appointment Status Update",
+      emailContentPreviousPatient
+    );
+
+    // Send email to the new patient
+    const emailContentNewPatient = `
+          Dear ${name},
+    
+          The status of your appointment has been updated to: ${status}
+    
+          The appointment details are as follows:
+    
+          Date: ${new Date(date).toLocaleDateString()}
+          Time: ${time}
+          Doctor: ${doctorName}
+          Room: ${roomName}
+    
+          If you have any questions, please contact our support team.
+    
+          Best regards,
+          Your Healthcare Provider
+        `;
+
+    await sendEmail(
+      auth,
+      contactEmail,
+      "Appointment Status Update",
+      emailContentNewPatient
+    );
 
     res.json(updatedBooking);
   } catch (error) {
     console.error("Error updating booking status:", error);
     res.status(500).json({ error: "Server error" });
+  } finally {
+    isProcessing = false;
   }
 };
 
-// const createOrUpdatePaymentOrder = async (
+export const generateBookingsReport = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate("doctorId", "username")
+      .populate("patientId", "name")
+      .populate("roomNo", "description");
+    const reportContent = `
+    <html>
+    <head>
+    <style>
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    }
+    h1 {
+    text-align: center;
+    color: #333;
+    }
+    Copy codetable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo img {
+      max-width: 200px;
+    }
+    
+    .report-title {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .report-date {
+      text-align: right;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+      </style>
+    </head>
+    <body>
+      <div class="logo">
+        <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+      </div>
+      <div class="report-title">
+        <h1>Hospital Booking Report</h1>
+      </div>
+      <div class="report-date">
+        Report Generated on ${new Date().toLocaleDateString()}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Booking Date</th>
+            <th>Booking Time</th>
+            <th>Doctor</th>
+            <th>Patient</th>
+            <th>Room/Location</th>
+            <th>Booking Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bookings
+            .map(
+              (booking) => `
+                <tr>
+                  <td>${new Date(booking.date).toLocaleDateString()}</td>
+                  <td>${booking.time}</td>
+                  <td>Dr. ${booking.doctorId.username}</td>
+                  <td>${booking.patientId ? booking.patientId.name : "-"}</td>
+                  <td>${
+                    booking.roomNo
+                      ? `Room ${booking.roomNo.description}`
+                      : "Online Appointment"
+                  }</td>
+                  <td>${booking.status}</td>
+                </tr>
+              `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </body>
+    </html>
+    `;
+    const pdfBuffer = await generatePDFFromHtml(reportContent);
+    res.contentType("application/pdf");
+    res.send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
 
-//   patientId,
-//   patientName,
-//   patientEmail,
-//   paymentId,
-//   paymentStatus
-// ) => {
-//   try {
-//     // Find the payment order for the patient ID
-//     let paymentOrder = await PaymentOrder.findOne({ PatientID: patientId });
+export const generateAppointmentCard = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId)
+      .populate("doctorId", "username")
+      .populate("patientId", "name")
+      .populate("roomNo", "description");
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    const appointmentCard = `
+      <html>
+        <head>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+    Copy code    .card {
+          width: 400px;
+          border: 1px solid #ddd;
+          padding: 20px;
+          font-family: 'Roboto', sans-serif;
+          background-color: #fff;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+          border-radius: 8px;
+        }
+        
+        .card h2 {
+          margin-top: 0;
+          color: #4CAF50;
+          text-align: center;
+        }
+        
+        .card p {
+          margin-bottom: 10px;
+          font-size: 16px;
+          line-height: 1.5;
+        }
+        
+        .card p strong {
+          color: #333;
+          font-weight: 700;
+        }
+        
+        .card p:last-child {
+          margin-bottom: 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <h2>Appointment Card</h2>
+        <p><strong>Date:</strong> ${new Date(
+          booking.date
+        ).toLocaleDateString()}</p>
+        <p><strong>Time:</strong> ${booking.time}</p>
+        <p><strong>Doctor:</strong> ${booking.doctorId.username}</p>
+        <p><strong>Patient:</strong> ${
+          booking.patientId ? booking.patientId.name : "-"
+        }</p>
+        <p><strong>Room:</strong> ${
+          booking.roomNo ? booking.roomNo.description : "Online Appointment"
+        }</p>
+        <p><strong>Status:</strong> ${booking.status}</p>
+      </div>
+    </body>
+      </html>
+    `;
 
-//     if (paymentOrder) {
-//       // If a payment order exists, check if it has a pending status
-//       if (paymentOrder.status === "Pending") {
-//         // If it's pending, push the payment into its Payment array
-//         paymentOrder.Payment.push(paymentId);
-//       } else {
-//         // If it's not pending, create a new payment order
-//         paymentOrder = new PaymentOrder({
-//           PatientID: patientId,
-//           PatientName: patientName,
-//           PatientEmail: patientEmail,
-//           Payment: [paymentId],
-//           status: "Pending",
-//         });
-//       }
-//     } else {
-//       // If no payment order exists, create a new one
-//       paymentOrder = new PaymentOrder({
-//         PatientID: patientId,
-//         PatientName: patientName,
-//         PatientEmail: patientEmail,
-//         Payment: [paymentId],
-//         Status: paymentStatus === "Pending" ? "Pending" : "Completed", // Set status based on payment status
-//       });
-//     }
+    const pdfBuffer = await generatePDFFromHtml(appointmentCard);
+    res.contentType("application/pdf");
+    res.send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
 
-//     // Save the payment order
-//     await paymentOrder.save();
-
-//     return paymentOrder;
-//   } catch (error) {
-//     throw new Error("Failed to create or update payment order");
-//   }
-// };
+export const sendEmails = async (req, res, next) => {
+  try {
+    const { to, subject, html } = req.body;
+    const auth = await authorize();
+    await sendEmail(auth, to, subject, html);
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (error) {
+    next(error);
+  }
+};

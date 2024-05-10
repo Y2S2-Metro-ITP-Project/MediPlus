@@ -14,6 +14,9 @@ import {
   getBookingsForScheduling,
   updateStatus,
   reBookAppointment,
+  generateBookingsReport,
+  generateAppointmentCard,
+  sendEmails,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -31,5 +34,8 @@ router.put("/bookAppointment/:bookingId", verifyToken, bookAppointment);
 router.put("/rebookAppointment/:bookingId", verifyToken, reBookAppointment);
 router.put("/updateStatus", verifyToken, updateStatus);
 router.put("/cancel/:bookingId", verifyToken, cancelSelectedBookings);
+router.get("/generateReport", verifyToken, generateBookingsReport);
+router.get("/generateAppointmentCard/:bookingId", verifyToken, generateAppointmentCard);
+router.post('/sendEmail', verifyToken, sendEmails);
 
 export default router;

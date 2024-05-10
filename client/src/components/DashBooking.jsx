@@ -16,7 +16,6 @@ import {
   HiTrash,
   HiEye,
   HiDocumentReport,
-  HiOutlineExclamationCircle,
   HiMail,
   HiIdentification,
   HiPencil,
@@ -32,7 +31,7 @@ import {
   BsBookmarkPlus,
   BsBookmarkStar,
 } from "react-icons/bs";
-import html2pdf from "html2pdf.js";
+import { ro } from "date-fns/locale";
 
 export default function DashBooking() {
   const { currentUser } = useSelector((state) => state.user);
@@ -50,15 +49,21 @@ export default function DashBooking() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [filterDoctor, setFilterDoctor] = useState("");
   const [filterPatient, setFilterPatient] = useState("");
-  const [filterRoom, setFilterRoom] = useState("");
   const [formData, setFormData] = useState({});
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [updateFormData, setUpdateFormData] = useState({});
   const [cancellationReason, setCancellationReason] = useState("");
   const [isRebooking, setIsRebooking] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGeneratingAppointmentCard, setIsGeneratingAppointmentCard] =
+    useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -129,6 +134,7 @@ export default function DashBooking() {
   };
 
   const handleDeleteBooking = async () => {
+    setIsDeleting(true);
     try {
       const res = await fetch(`/api/booking/delete/${selectedBooking._id}`, {
         method: "DELETE",
@@ -147,6 +153,8 @@ export default function DashBooking() {
       toast.error(
         "An error occurred while deleting the booking. Please try again later."
       );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -156,9 +164,14 @@ export default function DashBooking() {
 
   const handleBookAppointment = async (e) => {
     e.preventDefault();
+    setIsBooking(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
 
     if (!selectedPatientId) {
       toast.error("Please select a patient.");
+      setIsBooking(false);
       return;
     }
 
@@ -172,7 +185,11 @@ export default function DashBooking() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ patientId: selectedPatientId }),
+        body: JSON.stringify({
+          patientId: selectedPatientId,
+          doctorName,
+          roomName,
+        }),
       });
 
       if (res.ok) {
@@ -199,6 +216,8 @@ export default function DashBooking() {
           ? "An error occurred while rebooking the appointment. Please try again later."
           : "An error occurred while booking the appointment. Please try again later."
       );
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -207,6 +226,10 @@ export default function DashBooking() {
       toast.error("Please provide a cancellation reason.");
       return;
     }
+    setIsCancelling(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
 
     try {
       const res = await fetch(`/api/booking/cancel/${selectedBooking._id}`, {
@@ -214,13 +237,17 @@ export default function DashBooking() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ reason: cancellationReason }),
+        body: JSON.stringify({
+          reason: cancellationReason,
+          doctorName,
+          roomName,
+        }),
       });
 
       if (res.ok) {
         toast.success("Booking cancelled successfully.");
         setShowCancelModal(false);
-        setShowViewModal(false)
+        setShowViewModal(false);
         setSelectedBooking(null);
         setCancellationReason("");
         await fetchBookings();
@@ -232,14 +259,21 @@ export default function DashBooking() {
       toast.error(
         "An error occurred while cancelling the booking. Please try again later."
       );
+    } finally {
+      setIsCancelling(false);
     }
   };
 
   const handleUpdateBooking = async (e) => {
     e.preventDefault();
+    setIsUpdating(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
 
     if (!selectedStatus) {
-      toast.error("Please select  a status.");
+      toast.error("Please select a status.");
+      setIsUpdating(false);
       return;
     }
 
@@ -250,8 +284,13 @@ export default function DashBooking() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          patientId: selectedPatientId || updateFormData.patientId,
+          patientId:
+            selectedPatientId ||
+            updateFormData.patientId ||
+            selectedBooking.patientId,
           status: selectedStatus,
+          doctorName,
+          roomName,
         }),
       });
 
@@ -264,205 +303,133 @@ export default function DashBooking() {
         setSelectedStatus("");
         await fetchBookings();
       } else {
-        toast.error(data.message || "Failed to update the booking. Please try again later.");
+        toast.error(
+          data.message ||
+            "Failed to update the booking. Please try again later."
+        );
       }
     } catch (error) {
       console.error(error);
       toast.error(
         "An error occurred while updating the booking. Please try again later."
       );
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const generateReport = () => {
-    const reportContent = `
-      <html>
-        <head>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-  
-            body {
-              font-family: 'Roboto', sans-serif;
-              background-color: #f5f5f5;
-              color: #333;
-            }
-  
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            }
-  
-            th, td {
-              padding: 12px 15px;
-              text-align: left;
-              border: 1px solid #ddd;
-            }
-  
-            th {
-              background-color: #4CAF50;
-              color: white;
-            }
-  
-            tr:nth-child(even) {
-              background-color: #f2f2f2;
-            }
-  
-            tr:hover {
-              background-color: #e6e6e6;
-            }
-  
-            h2 {
-              text-align: center;
-              color: #4CAF50;
-              margin-top: 30px;
-              margin-bottom: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <h2>Bookings Report</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Doctor</th>
-                <th>Patient</th>
-                <th>Room</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredBookings
-                .map(
-                  (booking) => `
-                    <tr>
-                      <td>${new Date(booking.date).toLocaleDateString()}</td>
-                      <td>${booking.time}</td>
-                      <td>${booking.doctorName}</td>
-                      <td>${booking.patientName ? booking.patientName : "-"}</td>
-                      <td>${booking.roomName}</td>
-                      <td>${booking.status}</td>
-                    </tr>
-                  `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-  
-    const opt = {
-      margin: 1,
-      filename: "bookings_report.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-    };
-  
-    html2pdf().set(opt).from(reportContent).save();
+  const generateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const res = await fetch("/api/booking/generateReport");
+      const blob = await res.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "bookings_report.pdf";
+      link.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate the report. Please try again later.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
-  const generateAppointmentCard = (booking) => {
-    const appointmentCard = `
-      <html>
-        <head>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-  
-            .card {
-              width: 400px;
-              border: 1px solid #ddd;
-              padding: 20px;
-              font-family: 'Roboto', sans-serif;
-              background-color: #fff;
-              box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-              border-radius: 8px;
-            }
-  
-            .card h2 {
-              margin-top: 0;
-              color: #4CAF50;
-              text-align: center;
-            }
-  
-            .card p {
-              margin-bottom: 10px;
-              font-size: 16px;
-              line-height: 1.5;
-            }
-  
-            .card p strong {
-              color: #333;
-              font-weight: 700;
-            }
-  
-            .card p:last-child {
-              margin-bottom: 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h2>Appointment Card</h2>
-            <p><strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${booking.time}</p>
-            <p><strong>Doctor:</strong> ${booking.doctorName}</p>
-            <p><strong>Patient:</strong> ${booking.patientName ? booking.patientName : "-"}</p>
-            <p><strong>Room:</strong> ${booking.roomName}</p>
-            <p><strong>Status:</strong> ${booking.status}</p>
-          </div>
-        </body>
-      </html>
-    `;
-  
-    const opt = {
-      margin: 1,
-      filename: "appointment_card.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: [4, 2], orientation: "portrait" },
-    };
-  
-    html2pdf().set(opt).from(appointmentCard).save();
+  const generateAppointmentCard = async (booking) => {
+    setIsGeneratingAppointmentCard(true);
+    try {
+      const response = await fetch(
+        `/api/booking/generateAppointmentCard/${booking._id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "appointment_card.pdf");
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+      } else {
+        toast.error(
+          "Failed to generate appointment card. Please try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error generating appointment card:", error);
+      toast.error(
+        "An error occurred while generating the appointment card. Please try again later."
+      );
+    } finally {
+      setIsGeneratingAppointmentCard(false);
+    }
   };
 
-  const sendEmail = () => {
-    const emailContent = `
-      Subject: Appointment Details
-  
+  const sendEmail = async () => {
+    setIsSendingEmail(true);
+    try {
+      const { date, time, doctorName, roomName } = selectedBooking;
+      const contactEmail = selectedBooking.patientId.contactEmail;
+      console.log(contactEmail);
+      const emailContent = `
       Dear ${selectedBooking.patientName},
-  
+
       Here are the details of your upcoming appointment:
-  
+
       <h3 style="color: #4CAF50; font-family: 'Roboto', sans-serif;">Appointment Details</h3>
-  
+
       <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
-        <strong>Date:</strong> ${new Date(selectedBooking.date).toLocaleDateString()}<br>
-        <strong>Time:</strong> ${selectedBooking.time}<br>
-        <strong>Doctor:</strong> ${selectedBooking.doctorName}<br>
-        <strong>Room:</strong> ${selectedBooking.roomName}<br>
-        <strong>Status:</strong> ${selectedBooking.status}
+        <strong>Date:</strong> ${new Date(date).toLocaleDateString()}<br>
+        <strong>Time:</strong> ${time}<br>
+        <strong>Doctor:</strong> ${doctorName}<br>
+        <strong>Room:</strong> ${roomName}<br>
+        <strong>Status:</strong> Booked
       </p>
-  
+
       <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
         Please arrive 30 minutes before your appointment for check-in and registration.
       </p>
-  
+
       <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
         Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
       </p>
-  
+
       <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
         Best regards,<br>
         Your Healthcare Provider
       </p>
-    `;
-  
-    const mailtoLink = `mailto:${selectedBooking.patientEmail}?subject=Appointment%20Details&body=${encodeURIComponent(emailContent)}`;
-    window.location.href = mailtoLink;
+      `;
+
+      await fetch("/api/booking/sendEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: contactEmail,
+          subject: "Appointment Details",
+          html: emailContent,
+        }),
+      });
+
+      toast.success("Email sent successfully.");
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error("Failed to send email. Please try again later.");
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const filteredBookings = bookings.filter((booking) => {
@@ -474,20 +441,10 @@ export default function DashBooking() {
       ? new Date(booking.date).toLocaleDateString() ===
         new Date(filterDate).toLocaleDateString()
       : true;
-    const matchesDoctor = filterDoctor
-      ? booking.doctorId === filterDoctor
-      : true;
     const matchesPatient = filterPatient
       ? booking.patientId === filterPatient
       : true;
-    const matchesRoom = filterRoom ? booking.roomId === filterRoom : true;
-    return (
-      matchesSearch &&
-      matchesDate &&
-      matchesDoctor &&
-      matchesPatient &&
-      matchesRoom
-    );
+    return matchesSearch && matchesDate && matchesPatient;
   });
 
   const totalCompletedBookings = bookings.filter(
@@ -507,8 +464,8 @@ export default function DashBooking() {
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-        <Spinner color="info" aria-label="Loading spinner" />
-      </div>
+          <Spinner color="info" aria-label="Loading spinner" />
+        </div>
       ) : (
         <>
           <ToastContainer />
@@ -596,24 +553,6 @@ export default function DashBooking() {
               <Button color="gray" onClick={() => setFilterDate("")}>
                 <HiFilter className="mr-2 h-5 w-5" />
                 Filter by Date
-              </Button>
-            </div>
-            <div className="flex items-center">
-              <Select
-                value={filterPatient}
-                onChange={(e) => setFilterPatient(e.target.value)}
-                className="mr-2"
-              >
-                <option value="">All Patients</option>
-                {patientOptions.map((patient) => (
-                  <option key={patient.value} value={patient.value}>
-                    {patient.label}
-                  </option>
-                ))}
-              </Select>
-              <Button color="gray" onClick={() => setFilterPatient("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Patient
               </Button>
             </div>
           </div>
@@ -767,9 +706,16 @@ export default function DashBooking() {
                               setIsRebooking(false);
                               setShowBookModal(true);
                             }}
+                            disabled={isBooking}
                           >
-                            <HiIdentification className="mr-2 h-5 w-5" />
-                            Book
+                            {isBooking ? (
+                              <Spinner size="sm" aria-label="Loading spinner" />
+                            ) : (
+                              <>
+                                <HiIdentification className="mr-2 h-5 w-5" />
+                                Book
+                              </>
+                            )}
                           </Button>
                         )}
                         {booking.status === "Cancelled" && (
@@ -788,9 +734,16 @@ export default function DashBooking() {
                               setIsRebooking(true);
                               setShowBookModal(true);
                             }}
+                            disabled={isBooking}
                           >
-                            <BsBookmarkStar className="mr-2 h-5 w-5" />
-                            Rebook
+                            {isBooking ? (
+                              <Spinner size="sm" aria-label="Loading spinner" />
+                            ) : (
+                              <>
+                                <BsBookmarkStar className="mr-2 h-5 w-5" />
+                                Rebook
+                              </>
+                            )}
                           </Button>
                         )}
                         <Button
@@ -809,9 +762,16 @@ export default function DashBooking() {
                             });
                             setShowUpdateModal(true);
                           }}
+                          disabled={isUpdating}
                         >
-                          <HiPencil className="mr-2 h-5 w-5" />
-                          Update
+                          {isUpdating ? (
+                            <Spinner size="sm" aria-label="Loading spinner" />
+                          ) : (
+                            <>
+                              <HiPencil className="mr-2 h-5 w-5" />
+                              Update
+                            </>
+                          )}
                         </Button>
                         <Button
                           size="sm"
@@ -820,9 +780,16 @@ export default function DashBooking() {
                             setSelectedBooking(booking);
                             setShowDeleteModal(true);
                           }}
+                          disabled={isDeleting}
                         >
-                          <HiTrash className="mr-2 h-5 w-5" />
-                          Delete
+                          {isDeleting ? (
+                            <Spinner size="sm" aria-label="Loading spinner" />
+                          ) : (
+                            <>
+                              <HiTrash className="mr-2 h-5 w-5" />
+                              Delete
+                            </>
+                          )}
                         </Button>
                       </div>
                     </Table.Cell>
@@ -834,12 +801,17 @@ export default function DashBooking() {
             <p className="px-4">No bookings found.</p>
           )}
           <div className="mt-4">
-            <Button onClick={generateReport}>
-              <HiDocumentReport className="mr-2 h-5 w-5" />
-              Generate Report
+            <Button onClick={generateReport} disabled={isGeneratingReport}>
+              {isGeneratingReport ? (
+                <Spinner size="sm" aria-label="Loading spinner" />
+              ) : (
+                <>
+                  <HiDocumentReport className="mr-2 h-5 w-5" />
+                  Generate Report
+                </>
+              )}
             </Button>
           </div>
-
           <Modal show={showViewModal} onClose={() => setShowViewModal(false)}>
             <Modal.Header>
               <h3 className="text-xl font-semibold">Booking Details</h3>
@@ -897,9 +869,16 @@ export default function DashBooking() {
                           color="failure"
                           onClick={handleCancelBooking}
                           className="mr-2"
-                          disabled={selectedBooking.status === "Not Booked"}
+                          disabled={
+                            selectedBooking.status === "Not Booked" ||
+                            isCancelling
+                          }
                         >
-                          Cancel Booking
+                          {isCancelling ? (
+                            <Spinner size="sm" aria-label="Loading spinner" />
+                          ) : (
+                            "Cancel Booking"
+                          )}
                         </Button>
                       )}
                     {selectedBooking.status !== "Not Booked" &&
@@ -910,16 +889,33 @@ export default function DashBooking() {
                             generateAppointmentCard(selectedBooking)
                           }
                           className="mr-2"
+                          disabled={isGeneratingAppointmentCard}
                         >
-                          <HiIdentification className="mr-2 h-5 w-5" />
-                          Appointment Card
+                          {isGeneratingAppointmentCard ? (
+                            <Spinner size="sm" aria-label="Loading spinner" />
+                          ) : (
+                            <>
+                              <HiIdentification className="mr-2 h-5 w-5" />
+                              Appointment Card
+                            </>
+                          )}
                         </Button>
                       )}
                     {selectedBooking.status !== "Not Booked" &&
                       selectedBooking.status !== "Cancelled" && (
-                        <Button color="blue" onClick={sendEmail}>
-                          <HiMail className="mr-2 h-5 w-5" />
-                          Send Email
+                        <Button
+                          color="blue"
+                          onClick={sendEmail}
+                          disabled={isSendingEmail}
+                        >
+                          {isSendingEmail ? (
+                            <Spinner size="sm" aria-label="Loading spinner" />
+                          ) : (
+                            <>
+                              <HiMail className="mr-2 h-5 w-5" />
+                              Send Email
+                            </>
+                          )}
                         </Button>
                       )}
                   </div>
@@ -932,7 +928,6 @@ export default function DashBooking() {
               </Button>
             </Modal.Footer>
           </Modal>
-
           <Modal
             show={showDeleteModal}
             onClose={() => setShowDeleteModal(false)}
@@ -945,23 +940,32 @@ export default function DashBooking() {
               <Button color="gray" onClick={() => setShowDeleteModal(false)}>
                 Cancel
               </Button>
-              <Button color="failure" onClick={handleDeleteBooking}>
-                Delete
+              <Button
+                color="failure"
+                onClick={handleDeleteBooking}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                ) : (
+                  "Delete"
+                )}
               </Button>
             </Modal.Footer>
           </Modal>
-
           <Modal
             show={showBookModal}
             onClose={() => setShowBookModal(false)}
             size="md"
           >
-            <Modal.Header />
+            <Modal.Header>
+              <h3 className="text-xl font-semibold">
+                {isRebooking ? "Rebook An Appointment" : "Book An Appointment"}
+              </h3>
+            </Modal.Header>
             <Modal.Body>
               <div className="text-center">
-                <h3 className="mb-4 text-lg text-gray-500">
-                  {isRebooking ? "Rebook Appointment" : "Book Appointment"}
-                </h3>
+                <h3 className="mb-4 text-lg text-gray-500"></h3>
                 <form onSubmit={handleBookAppointment} className="space-y-6">
                   <div className="grid grid-cols-1 gap-6">
                     <div className="flex items-center">
@@ -1026,8 +1030,19 @@ export default function DashBooking() {
                     </div>
                   </div>
                   <div className="flex justify-center mt-6 space-x-4">
-                    <Button color="blue" type="submit" outline>
-                      {isRebooking ? "Rebook" : "Book"}
+                    <Button
+                      color="blue"
+                      type="submit"
+                      outline
+                      disabled={isBooking}
+                    >
+                      {isBooking ? (
+                        <Spinner size="sm" aria-label="Loading spinner" />
+                      ) : isRebooking ? (
+                        "Rebook"
+                      ) : (
+                        "Book"
+                      )}
                     </Button>
                     <Button
                       color="red"
@@ -1046,106 +1061,124 @@ export default function DashBooking() {
             </Modal.Body>
           </Modal>
           <Modal
-  show={showUpdateModal}
-  onClose={() => setShowUpdateModal(false)}
-  size="md"
->
-  <Modal.Header />
-  <Modal.Body>
-    <div className="text-center">
-      <h3 className="mb-4 text-lg text-gray-500">Update Booking</h3>
-      <form onSubmit={handleUpdateBooking} className="space-y-6">
-        <div className="grid grid-cols-1 gap-6">
-          <div className="flex items-center">
-            <p className="font-bold mr-2">Type:</p>
-            <p>{updateFormData.type || ""}</p>
-          </div>
-          <div className="flex items-center">
-            <p className="font-bold mr-2">Date:</p>
-            <p>{new Date(updateFormData.date).toLocaleDateString() || ""}</p>
-          </div>
-          <div className="flex items-center">
-            <p className="font-bold mr-2">Time:</p>
-            <p>{updateFormData.time || ""}</p>
-          </div>
-          <div className="flex items-center">
-            <p className="font-bold mr-2">Doctor Name:</p>
-            <p>{updateFormData.doctorName || ""}</p>
-          </div>
-          {updateFormData.type === "Hospital Booking" && (
-            <div className="flex items-center">
-              <p className="font-bold mr-2">Room:</p>
-              <p>{updateFormData.roomNo || ""}</p>
-            </div>
-          )}
-          <div className="flex items-center">
-            <Label htmlFor="selectedPatientId" className="mr-2">
-              Select Patient:
-            </Label>
-            <Select
-              id="selectedPatientId"
-              className="mt-1"
-              value={selectedPatientId || updateFormData.patientId}
-              onChange={(e) => setSelectedPatientId(e.target.value)}
-              required
-            >
-              <option value={updateFormData.patientId}>
-                {updateFormData.patientName || ""}
-              </option>
-              {patientOptions
-                .filter((patient) => patient.value !== updateFormData.patientId)
-                .map((patient) => (
-                  <option key={patient.value} value={patient.value}>
-                    {patient.label}
-                  </option>
-                ))}
-            </Select>
-          </div>
-          <div className="flex items-center">
-            <Label htmlFor="selectedStatus" className="mr-2">
-              Select Status:
-            </Label>
-            <Select
-              id="selectedStatus"
-              className="mt-1"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              required
-            >
-              <option value="">Select Status</option>
-              {statusOptions.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-center mt-6 space-x-4">
-          <Button color="blue" type="submit" outline>
-            Update
-          </Button>
-          <Button
-            color="red"
-            onClick={() => {
-              setShowUpdateModal(false);
-              setUpdateFormData({});
-              setSelectedPatientId("");
-              setSelectedStatus("");
-            }}
+            show={showUpdateModal}
+            onClose={() => setShowUpdateModal(false)}
+            size="md"
           >
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </div>
-  </Modal.Body>
-</Modal>
+            <Modal.Header>
+              <h3 className="text-xl font-semibold">Update Booking</h3>
+            </Modal.Header>
+            <Modal.Body>
+              <div className="text-center">
+                <form onSubmit={handleUpdateBooking} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="flex items-center">
+                      <p className="font-bold mr-2">Type:</p>
+                      <p>{updateFormData.type || ""}</p>
+                    </div>
+                    <div className="flex items-center">
+                      <p className="font-bold mr-2">Date:</p>
+                      <p>
+                        {new Date(updateFormData.date).toLocaleDateString() ||
+                          ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      <p className="font-bold mr-2">Time:</p>
+                      <p>{updateFormData.time || ""}</p>
+                    </div>
+                    <div className="flex items-center">
+                      <p className="font-bold mr-2">Doctor Name:</p>
+                      <p>{updateFormData.doctorName || ""}</p>
+                    </div>
+                    {updateFormData.type === "Hospital Booking" && (
+                      <div className="flex items-center">
+                        <p className="font-bold mr-2">Room:</p>
+                        <p>{updateFormData.roomNo || ""}</p>
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <Label htmlFor="selectedPatientId" className="mr-2">
+                        Select Patient:
+                      </Label>
+                      <Select
+                        id="selectedPatientId"
+                        className="mt-1"
+                        value={selectedPatientId || updateFormData.patientId}
+                        onChange={(e) => setSelectedPatientId(e.target.value)}
+                        required
+                      >
+                        <option value={updateFormData.patientId}>
+                          {updateFormData.patientName || ""}
+                        </option>
+                        {patientOptions
+                          .filter(
+                            (patient) =>
+                              patient.value !== updateFormData.patientId
+                          )
+                          .map((patient) => (
+                            <option key={patient.value} value={patient.value}>
+                              {patient.label}
+                            </option>
+                          ))}
+                      </Select>
+                    </div>
+                    <div className="flex items-center">
+                      <Label htmlFor="selectedStatus" className="mr-2">
+                        Select Status:
+                      </Label>
+                      <Select
+                        id="selectedStatus"
+                        className="mt-1"
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        required
+                      >
+                        <option value="">Select Status</option>
+                        {statusOptions.map((status) => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-center mt-6 space-x-4">
+                    <Button
+                      color="blue"
+                      type="submit"
+                      outline
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <Spinner size="sm" aria-label="Loading spinner" />
+                      ) : (
+                        "Update"
+                      )}
+                    </Button>
+                    <Button
+                      color="red"
+                      onClick={() => {
+                        setShowUpdateModal(false);
+                        setUpdateFormData({});
+                        setSelectedPatientId("");
+                        setSelectedStatus("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </Modal.Body>
+          </Modal>
           <Modal
             show={showCancelModal}
             onClose={() => setShowCancelModal(false)}
           >
-            <Modal.Header>Cancel Booking</Modal.Header>
+            <Modal.Header>
+              <h3 className="text-xl font-semibold">Cancel Booking</h3>
+            </Modal.Header>
             <Modal.Body>
               <div className="mb-4">
                 <Label htmlFor="cancellationReason">Cancellation Reason:</Label>
@@ -1162,8 +1195,16 @@ export default function DashBooking() {
               <Button color="gray" onClick={() => setShowCancelModal(false)}>
                 Close
               </Button>
-              <Button color="failure" onClick={confirmCancellation}>
-                Cancel Booking
+              <Button
+                color="failure"
+                onClick={confirmCancellation}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                ) : (
+                  "Cancel Booking"
+                )}
               </Button>
             </Modal.Footer>
           </Modal>
