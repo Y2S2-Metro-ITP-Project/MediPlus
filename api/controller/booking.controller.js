@@ -1,5 +1,7 @@
 import { errorHandler } from "../utils/error.js";
 import Booking from "../models/booking.model.js";
+import Patient from "../models/patient.model.js";
+import User from "../models/user.model.js";
 import { createSpace } from "../utils/googleMeet.js";
 import generatePDFFromHtml from "../utils/generatePDF.js";
 import { authorize, sendEmail } from "../utils/bookingEmail.js";
@@ -9,6 +11,10 @@ let isProcessing = false;
 export const createBooking = async (req, res, next) => {
   const { type, doctorId, patientId, date, time, roomNo, reason, slotId } =
     req.body;
+    const patient = Patient.findById(patientId, "name");
+  const patientName = patient.name;
+  const doctor =  User.findById(doctorId, "username");
+  const doctorName = doctor.username;
 
   console.log("Booking request received with data:", {
     type,
@@ -25,7 +31,8 @@ export const createBooking = async (req, res, next) => {
     console.log("Required fields missing in the booking request");
     return res.status(400).json({ error: "All fields are required" });
   }
-
+  console.log("Patient Name:", patientName);
+  console.log("Doctor Name:", doctorName);
   try {
     let meetLink = "";
     console.log("Booking request type:", type);
@@ -46,10 +53,57 @@ export const createBooking = async (req, res, next) => {
       reason,
       slotId,
       meetLink,
+      history: [
+        {
+          action: "Booking Created",
+          timestamp: new Date(),
+          user: req.user._id,
+          details: `A new ${type} booking has been created for Dr. ${doctorName} on ${new Date(
+            date
+          ).toLocaleDateString()} at ${time}.`,
+        },
+      ],
     });
 
     await newBooking.save();
     console.log("Booking saved to the database");
+
+    // Send email to the patient
+    if (patientId) {
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        const emailContent = `
+          Dear ${patient.name},
+    
+          A new ${type} booking has been created for you with the following details:
+    
+          Date: ${new Date(date).toLocaleDateString()}
+          Time: ${time}
+          Doctor: Dr. ${doctorId.username}
+          ${
+            roomNo
+              ? `Room: ${roomNo.description}`
+              : "Location: Online Appointment"
+          }
+    
+          Please arrive 15 minutes before your appointment time for check-in and registration.
+    
+          If you have any questions or need to reschedule, please contact our support team.
+    
+          Best regards,
+          Your Healthcare Provider
+        `;
+
+        const auth = await authorize();
+        await sendEmail(
+          auth,
+          patient.contactEmail,
+          "New Booking Created",
+          emailContent
+        );
+      }
+    }
+
     res.status(201).json(newBooking);
     console.log("Booking created successfully");
   } catch (error) {
@@ -128,7 +182,60 @@ export const deleteBooking = async (req, res, next) => {
   }
 
   try {
-    await Booking.findByIdAndDelete(req.params.bookingId);
+    const booking = await Booking.findByIdAndDelete(
+      req.params.bookingId
+    ).populate("patientId", "name contactEmail");
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    booking.history.push({
+      action: "Booking Deleted",
+      timestamp: new Date(),
+      user: req.user._id,
+      details: `The ${booking.type} booking for patient ${
+        booking.patientId ? booking.patientId.name : "UnAssigned"
+      } with Dr. ${booking.doctorId.username} on ${new Date(
+        booking.date
+      ).toLocaleDateString()} at ${booking.time} in ${
+        booking.roomNo ? booking.roomNo.description : "Online Appointment"
+      } has been deleted.`,
+    });
+    await booking.save();
+
+    // Send email to the patient
+    if (booking.patientId) {
+      const emailContent = `
+        Dear ${booking.patientId.name},
+  
+        Your ${
+          booking.type
+        } booking with the following details has been deleted:
+  
+        Date: ${new Date(booking.date).toLocaleDateString()}
+        Time: ${booking.time}
+        Doctor: Dr. ${booking.doctorId.username}
+        ${
+          booking.roomNo
+            ? `Room: ${booking.roomNo.description}`
+            : "Location: Online Appointment"
+        }
+  
+        If you have any questions or need to reschedule, please contact our support team.
+  
+        Best regards,
+        Your Healthcare Provider
+      `;
+
+      const auth = await authorize();
+      await sendEmail(
+        auth,
+        booking.patientId.contactEmail,
+        "Booking Deleted",
+        emailContent
+      );
+    }
+
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     next(error);
@@ -274,16 +381,28 @@ export const updateBooking = async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
+
     const previousPatientName = booking.patientId.name;
     const previousPatientEmail = booking.patientId.contactEmail;
     console.log("Previous patient name:", previousPatientName);
     console.log("Previous patient email:", previousPatientEmail);
+
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
         $set: {
           patientId: patientUpdateId,
           status,
+        },
+        $push: {
+          history: {
+            action: "Booking Updated",
+            timestamp: new Date(),
+            user: req.user._id,
+            details: `Patient updated from ${previousPatientName} to ${
+              patientUpdateId ? patientUpdateId.name : "UnAssigned"
+            }. Status updated to ${status}.`,
+          },
         },
       },
       { new: true }
@@ -297,19 +416,20 @@ export const updateBooking = async (req, res) => {
     const { date, time } = updatedBooking;
     console.log("Updated patient name:", name);
     console.log("Updated patient email:", contactEmail);
+
     // Send email to the previous patient
     const emailContentPreviousPatient = `
           Dear ${previousPatientName},
-    
+
           Your appointment with the following details has been updated:
-    
+
           Date: ${new Date(date).toLocaleDateString()}
           Time: ${time}
           Doctor: ${doctorName}
           Room: ${roomName}
-    
+
           Please contact our support team for more information.
-    
+
           Best regards,
           Your Healthcare Provider
         `;
@@ -325,18 +445,18 @@ export const updateBooking = async (req, res) => {
     // Send email to the new patient
     const emailContentNewPatient = `
           Dear ${name},
-    
+
           The status of your appointment has been updated to: ${status}
-    
+
           The appointment details are as follows:
-    
+
           Date: ${new Date(date).toLocaleDateString()}
           Time: ${time}
           Doctor: ${doctorName}
           Room: ${roomName}
-    
+
           If you have any questions, please contact our support team.
-    
+
           Best regards,
           Your Healthcare Provider
         `;
@@ -365,50 +485,61 @@ export const bookAppointment = async (req, res) => {
   }
   isProcessing = true;
   try {
-    const { patientId, roomName, doctorName } = req.body;
+    const { patientId, roomName, doctorName} = req.body;
     const bookingId = req.params.bookingId;
-
-    if (!patientId || !roomName || !doctorName) {
+    const patientName = await Patient.findById(patientId, "name");
+    const name = patientName.name;
+    console.log("Patient Name:", name);
+    if (!patientId || !roomName || !doctorName || !patientName) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
     const booking = await Booking.findByIdAndUpdate(
       bookingId,
-      { $set: { patientId, status: "Booked" } },
+      {
+        $set: { patientId, status: "Booked" },
+        $push: {
+          history: {
+            action: "Appointment Booked",
+            timestamp: new Date(),
+            user: req.user._id,
+            details: `Patient ${name} booked the appointment.`,
+          },
+        },
+      },
       { new: true }
     ).populate("patientId", "name contactEmail");
 
-    const { name, contactEmail } = booking.patientId;
+    const { contactEmail } = booking.patientId;
     const { date, time } = booking;
 
     const emailContent = `
-        Dear ${name},
+          Dear ${name},
       
-        Here are the details of your upcoming appointment:
+          Here are the details of your upcoming appointment:
       
-        <h3 style="color: #4CAF50; font-family: 'Roboto', sans-serif;">Appointment Details</h3>
+          <h3 style="color: #4CAF50; font-family: 'Roboto', sans-serif;">Appointment Details</h3>
       
-        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
-          <strong>Date:</strong> ${new Date(date).toLocaleDateString()}<br>
-          <strong>Time:</strong> ${time}<br>
-          <strong>Doctor:</strong> ${doctorName}<br>
-          <strong>Room:</strong> ${roomName}<br>
-          <strong>Status:</strong> Booked
-        </p>
+          <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+            <strong>Date:</strong> ${new Date(date).toLocaleDateString()}<br>
+            <strong>Time:</strong> ${time}<br>
+            <strong>Doctor:</strong> ${doctorName}<br>
+            <strong>Room:</strong> ${roomName}<br>
+            <strong>Status:</strong> Booked
+          </p>
       
-        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
-          Please arrive 30 minutes before your appointment for check-in and registration.
-        </p>
+          <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+            Please arrive 30 minutes before your appointment for check-in and registration.
+          </p>
       
-        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
-          Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
-        </p>
+          <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+            Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+          </p>
       
-        <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
-          Best regards,<br>
-          Your Healthcare Provider
-        </p>
-      `;
+          <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+            Best regards,<br>
+            Your Healthcare Provider
+          </p>
+        `;
 
     const auth = await authorize();
     await sendEmail(
@@ -426,7 +557,6 @@ export const bookAppointment = async (req, res) => {
     isProcessing = false;
   }
 };
-
 export const reBookAppointment = async (req, res) => {
   if (isProcessing) {
     return res
@@ -435,35 +565,29 @@ export const reBookAppointment = async (req, res) => {
   }
   isProcessing = true;
   try {
-    const { roomName, doctorName } = req.body;
+    const { patientId, roomName, doctorName } = req.body;
+    const patientName = await Patient.findById(patientId, "name");
+    const name = patientName.name;
     const booking = await Booking.findByIdAndUpdate(
       req.params.bookingId,
       {
         $set: { patientId: req.body.patientId, status: "ReBooked" },
+        $push: {
+          history: {
+            action: "Appointment Rebooked",
+            timestamp: new Date(),
+            user: req.user._id,
+            details: ` Patient ${name} rebooked the appointment.`,
+          },
+        },
       },
       { new: true }
     ).populate("patientId", "name contactEmail");
-    const { name, contactEmail } = booking.patientId;
+    const { contactEmail } = booking.patientId;
     const { date, time } = booking;
-
-    const emailContent = `
-  Dear ${name},
-
-  Your appointment has been successfully rebooked with the following details:
-
-  Date: ${new Date(date).toLocaleDateString()}
-  Time: ${time}
-  Doctor: ${doctorName}
-  Room: ${roomName}
-
-  Please arrive at the hospital 15 minutes prior to your appointment time.
-
-  If you have any questions or need to reschedule, please contact our support team.
-
-  Best regards,
-  Your Healthcare Provider
-`;
-
+    const emailContent = `   Dear ${name},   Your appointment has been successfully rebooked with the following details:   Date: ${new Date(
+      date
+    ).toLocaleDateString()}   Time: ${time}   Doctor: ${doctorName}   Room: ${roomName}   Please arrive at the hospital 15 minutes prior to your appointment time.   If you have any questions or need to reschedule, please contact our support team.   Best regards,   Your Healthcare Provider`;
     const auth = await authorize();
     await sendEmail(
       auth,
@@ -471,7 +595,6 @@ export const reBookAppointment = async (req, res) => {
       "Appointment Rebooking Confirmation",
       emailContent
     );
-
     res.status(200).json(booking);
   } catch (error) {
     console.error("Error:", error);
@@ -480,7 +603,6 @@ export const reBookAppointment = async (req, res) => {
     isProcessing = false;
   }
 };
-
 export const cancelSelectedBookings = async (req, res) => {
   if (isProcessing) {
     return res
@@ -493,36 +615,43 @@ export const cancelSelectedBookings = async (req, res) => {
     const { reason, roomName, doctorName } = req.body;
     const booking = await Booking.findByIdAndUpdate(
       bookingId,
-      { status: "Cancelled", reason: reason },
+      {
+        $set: { status: "Cancelled", reason: reason },
+        $push: {
+          history: {
+            action: "Appointment Cancelled",
+            timestamp: new Date(),
+            user: req.user._id,
+            details: ` Appointment cancelled due to the following reason: ${reason}`,
+          },
+        },
+      },
       { new: true }
     ).populate("patientId", "name contactEmail");
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
-
     const { name, contactEmail } = booking.patientId;
     const { date, time } = booking;
-
     const emailContent = `
-      Dear ${name},
-    
-      We regret to inform you that your appointment has been cancelled due to the following reason:
-    
-      ${reason}
-    
-      The cancelled appointment details are as follows:
-    
-      Date: ${new Date(date).toLocaleDateString()}
-      Time: ${time}
-      Doctor: ${doctorName}
-      Room: ${roomName}
-    
-      If you have any questions or need to reschedule, please contact our support team.
-    
-      Best regards,
-      Your Healthcare Provider
-    `;
-
+        Dear ${name},
+        
+        We regret to inform you that your appointment has been cancelled due to the following reason:
+        
+        ${reason}
+        
+        The cancelled appointment details are as follows:
+        
+        Date: ${new Date(date).toLocaleDateString()}
+        Time: ${time}
+        Doctor: ${doctorName}
+        Room: ${roomName}
+        
+        If you have any questions or need to reschedule, please contact our support team.
+        
+        Best regards,
+        Your Healthcare Provider
+        `;
     const auth = await authorize();
     await sendEmail(
       auth,
@@ -539,7 +668,6 @@ export const cancelSelectedBookings = async (req, res) => {
     isProcessing = false;
   }
 };
-
 export const updateStatus = async (req, res) => {
   if (isProcessing) {
     return res
@@ -560,66 +688,220 @@ export const updateStatus = async (req, res) => {
     const { bookingId, status, patientId, doctorName, roomName } = req.body;
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { status, patientId },
+      {
+        $set: { status, patientId },
+      },
       { new: true }
     ).populate("patientId", "name contactEmail");
     if (!updatedBooking) {
       return res.status(404).json({ error: "Booking not found" });
     }
-
     const { name, contactEmail } = updatedBooking.patientId;
     const { date, time } = updatedBooking;
+    let emailContent = "";
+    let emailSubject = "";
+    let recipientEmail = "";
+    let historyAction = "";
+    let historyDetails = "";
 
-    // Send email to the previous patient
-    const emailContentPreviousPatient = `
-          Dear ${previousPatientName},
-    
-          Your appointment with the following details has been updated:
-    
-          Date: ${new Date(date).toLocaleDateString()}
-          Time: ${time}
-          Doctor: ${doctorName}
-          Room: ${roomName}
-    
-          Please contact our support team for more information.
-    
-          Best regards,
-          Your Healthcare Provider
-        `;
+    switch (status) {
+      case "Completed":
+        emailContent = `
+              Dear ${name},
+        
+              Your appointment has been marked as completed.
+        
+              The appointment details were as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              Thank you for choosing our healthcare services. If you have any further questions or concerns, please don't hesitate to contact us.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Completed";
+        recipientEmail = contactEmail;
+        historyAction = "Appointment Completed";
+        historyDetails = `The appointment for patient ${name} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as completed.`;
+        break;
+      case "Pending":
+        emailContent = `
+              Dear ${name},
+        
+              Your appointment has been marked as pending.
+        
+              The appointment details are as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              We will notify you once the appointment is confirmed or if there are any changes. If you have any questions or need to reschedule, please contact our support team.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Pending";
+        recipientEmail = contactEmail;
+        historyAction = "Appointment Pending";
+        historyDetails = `The appointment for patient ${name} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as pending. Waiting for confirmation.`;
+        break;
+      case "Cancelled":
+        emailContent = `
+              Dear ${previousPatientName},
+        
+              Your appointment has been cancelled.
+        
+              The cancelled appointment details were as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              If you have any questions or need to reschedule, please contact our support team.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Cancelled";
+        recipientEmail = previousPatientEmail;
+        historyAction = "Appointment Cancelled";
+        historyDetails = `The appointment for patient ${previousPatientName} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been cancelled.`;
+        break;
+      case "Not Booked":
+        emailContent = `
+              Dear ${previousPatientName},
+        
+              Your appointment has been marked as not booked.
+        
+              The appointment details were as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              If you wish to book an appointment, please contact our support team.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Not Booked";
+        recipientEmail = previousPatientEmail;
+        historyAction = "Appointment Not Booked";
+        historyDetails = `The appointment for patient ${previousPatientName} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as not booked.`;
+        break;
+      case "Booked":
+        emailContent = `
+              Dear ${name},
+        
+              Your appointment has been successfully booked.
+        
+              The appointment details are as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              Please arrive 30 minutes before your appointment for check-in and registration.
+        
+              Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Booked";
+        recipientEmail = contactEmail;
+        historyAction = "Appointment Booked";
+        historyDetails = `The appointment for patient ${name} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been successfully booked.`;
+        break;
+      case "ReBooked":
+        emailContent = `
+              Dear ${name},
+        
+              Your appointment has been successfully rebooked.
+        
+              The updated appointment details are as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              Please arrive 30 minutes before your appointment for check-in and registration.
+        
+              Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment Rebooked";
+        recipientEmail = contactEmail;
+        historyAction = "Appointment Rebooked";
+        historyDetails = `The appointment for patient ${name} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been successfully rebooked.`;
+        break;
+      case "In Consultation":
+        emailContent = `
+              Dear ${name},
+        
+              Your appointment is currently in consultation.
+        
+              The appointment details are as follows:
+        
+              Date: ${new Date(date).toLocaleDateString()}
+              Time: ${time}
+              Doctor: ${doctorName}
+              Room: ${roomName}
+        
+              Please wait for further instructions from our healthcare staff.
+        
+              Best regards,
+              Your Healthcare Provider
+            `;
+        emailSubject = "Appointment In Consultation";
+        recipientEmail = contactEmail;
+        historyAction = "Appointment In Consultation";
+        historyDetails = `The appointment for patient ${name} on ${new Date(
+          date
+        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} is currently in consultation.`;
+        break;
+      default:
+        break;
+    }
 
-    const auth = await authorize();
-    await sendEmail(
-      auth,
-      previousPatientEmail,
-      "Appointment Status Update",
-      emailContentPreviousPatient
-    );
+    if (emailContent && emailSubject && recipientEmail) {
+      const auth = await authorize();
+      await sendEmail(auth, recipientEmail, emailSubject, emailContent);
+    }
 
-    // Send email to the new patient
-    const emailContentNewPatient = `
-          Dear ${name},
-    
-          The status of your appointment has been updated to: ${status}
-    
-          The appointment details are as follows:
-    
-          Date: ${new Date(date).toLocaleDateString()}
-          Time: ${time}
-          Doctor: ${doctorName}
-          Room: ${roomName}
-    
-          If you have any questions, please contact our support team.
-    
-          Best regards,
-          Your Healthcare Provider
-        `;
-
-    await sendEmail(
-      auth,
-      contactEmail,
-      "Appointment Status Update",
-      emailContentNewPatient
-    );
+    if (historyAction && historyDetails) {
+      updatedBooking.history.push({
+        action: historyAction,
+        timestamp: new Date(),
+        user: req.user._id,
+        details: historyDetails,
+      });
+      await updatedBooking.save();
+    }
 
     res.json(updatedBooking);
   } catch (error) {
@@ -632,110 +914,128 @@ export const updateStatus = async (req, res) => {
 
 export const generateBookingsReport = async (req, res, next) => {
   try {
-    const bookings = await Booking.find()
+    const { filterDate, filterPatient, filterType, filterRoom } = req.body;
+
+    const query = {};
+
+    if (filterDate) {
+      const startDate = new Date(filterDate);
+      const endDate = new Date(filterDate);
+      endDate.setDate(endDate.getDate() + 1);
+      query.date = { $gte: startDate, $lt: endDate };
+    }
+
+    if (filterPatient) {
+      query.patientId = filterPatient;
+    }
+
+    if (filterType) {
+      query.type = filterType;
+    }
+
+    if (filterRoom) {
+      query.roomNo = filterRoom;
+    }
+
+    const bookings = await Booking.find(query)
       .populate("doctorId", "username")
       .populate("patientId", "name")
       .populate("roomNo", "description");
+
     const reportContent = `
-    <html>
-    <head>
-    <style>
-    body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    }
-    h1 {
-    text-align: center;
-    color: #333;
-    }
-    Copy codetable {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    
-    th {
-      background-color: #f2f2f2;
-      font-weight: bold;
-    }
-    
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    .logo {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    
-    .logo img {
-      max-width: 200px;
-    }
-    
-    .report-title {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    
-    .report-date {
-      text-align: right;
-      font-style: italic;
-      margin-bottom: 10px;
-    }
-      </style>
-    </head>
-    <body>
-      <div class="logo">
-        <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
-      </div>
-      <div class="report-title">
-        <h1>Hospital Booking Report</h1>
-      </div>
-      <div class="report-date">
-        Report Generated on ${new Date().toLocaleDateString()}
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Booking Date</th>
-            <th>Booking Time</th>
-            <th>Doctor</th>
-            <th>Patient</th>
-            <th>Room/Location</th>
-            <th>Booking Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${bookings
-            .map(
-              (booking) => `
-                <tr>
-                  <td>${new Date(booking.date).toLocaleDateString()}</td>
-                  <td>${booking.time}</td>
-                  <td>Dr. ${booking.doctorId.username}</td>
-                  <td>${booking.patientId ? booking.patientId.name : "-"}</td>
-                  <td>${
-                    booking.roomNo
-                      ? `Room ${booking.roomNo.description}`
-                      : "Online Appointment"
-                  }</td>
-                  <td>${booking.status}</td>
-                </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    </body>
-    </html>
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+            }
+            h1 {
+              text-align: center;
+              color: #333;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td {
+              padding: 10px;
+              text-align: left;
+              border-bottom: 1px solid #ddd;
+            }
+            th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            tr:nth-child(even) {
+              background-color: #f9f9f9;
+            }
+            .logo {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .logo img {
+              max-width: 200px;
+            }
+            .report-title {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .report-date {
+              text-align: right;
+              font-style: italic;
+              margin-bottom: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="logo">
+            <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+          </div>
+          <div class="report-title">
+            <h1>Hospital Booking Report</h1>
+          </div>
+          <div class="report-date">
+            Report Generated on ${new Date().toLocaleDateString()}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Booking Date</th>
+                <th>Booking Time</th>
+                <th>Doctor</th>
+                <th>Patient</th>
+                <th>Room/Location</th>
+                <th>Booking Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${bookings
+                .map(
+                  (booking) => `
+                    <tr>
+                      <td>${new Date(booking.date).toLocaleDateString()}</td>
+                      <td>${booking.time}</td>
+                      <td>Dr. ${booking.doctorId.username}</td>
+                      <td>${booking.patientId ? booking.patientId.name : "-"}</td>
+                      <td>${
+                        booking.roomNo
+                          ? `Room ${booking.roomNo.description}`
+                          : "Online Appointment"
+                      }</td>
+                      <td>${booking.status}</td>
+                    </tr>
+                  `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
     `;
+
     const pdfBuffer = await generatePDFFromHtml(reportContent);
     res.contentType("application/pdf");
     res.send(pdfBuffer);
@@ -755,44 +1055,40 @@ export const generateAppointmentCard = async (req, res, next) => {
       return res.status(404).json({ error: "Booking not found" });
     }
     const appointmentCard = `
-      <html>
+        <html>
         <head>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-    Copy code    .card {
-          width: 400px;
-          border: 1px solid #ddd;
-          padding: 20px;
-          font-family: 'Roboto', sans-serif;
-          background-color: #fff;
-          box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-          border-radius: 8px;
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        .card {
+        width: 400px;
+        border: 1px solid #ddd;
+        padding: 20px;
+        font-family: 'Roboto', sans-serif;
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
         }
-        
         .card h2 {
-          margin-top: 0;
-          color: #4CAF50;
-          text-align: center;
+        margin-top: 0;
+        color: #4CAF50;
+        text-align: center;
         }
-        
         .card p {
-          margin-bottom: 10px;
-          font-size: 16px;
-          line-height: 1.5;
+        margin-bottom: 10px;
+        font-size: 16px;
+        line-height: 1.5;
         }
-        
         .card p strong {
-          color: #333;
-          font-weight: 700;
+        color: #333;
+        font-weight: 700;
         }
-        
         .card p:last-child {
-          margin-bottom: 0;
+        margin-bottom: 0;
         }
-      </style>
-    </head>
-    <body>
-      <div class="card">
+        </style>
+        </head>
+        <body>
+        <div class="card">
         <h2>Appointment Card</h2>
         <p><strong>Date:</strong> ${new Date(
           booking.date
@@ -806,11 +1102,10 @@ export const generateAppointmentCard = async (req, res, next) => {
           booking.roomNo ? booking.roomNo.description : "Online Appointment"
         }</p>
         <p><strong>Status:</strong> ${booking.status}</p>
-      </div>
-    </body>
-      </html>
-    `;
-
+        </div>
+        </body>
+        </html>
+        `;
     const pdfBuffer = await generatePDFFromHtml(appointmentCard);
     res.contentType("application/pdf");
     res.send(pdfBuffer);

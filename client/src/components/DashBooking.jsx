@@ -50,6 +50,8 @@ export default function DashBooking() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterPatient, setFilterPatient] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
   const [formData, setFormData] = useState({});
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -168,6 +170,8 @@ export default function DashBooking() {
 
     const doctorName = selectedBooking.doctorName;
     const roomName = selectedBooking.roomName;
+    const patientName = selectedBooking.patientName;
+    console.log();
 
     if (!selectedPatientId) {
       toast.error("Please select a patient.");
@@ -321,16 +325,30 @@ export default function DashBooking() {
   const generateReport = async () => {
     setIsGeneratingReport(true);
     try {
-      const res = await fetch("/api/booking/generateReport");
-      const blob = await res.blob();
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "bookings_report.pdf";
-      link.click();
-
-      window.URL.revokeObjectURL(url);
+      const res = await fetch("/api/booking/generateReport", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filterDate,
+          filterPatient,
+          filterType,
+          filterRoom,
+        }),
+      });
+  
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "bookings_report.pdf";
+        link.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error("Failed to generate the report");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to generate the report. Please try again later.");
@@ -444,9 +462,16 @@ export default function DashBooking() {
     const matchesPatient = filterPatient
       ? booking.patientId === filterPatient
       : true;
-    return matchesSearch && matchesDate && matchesPatient;
+    const matchesType = filterType ? booking.type === filterType : true;
+    const matchesRoom = filterRoom ? booking.roomName === filterRoom : true;
+    return (
+      matchesSearch &&
+      matchesDate &&
+      matchesPatient &&
+      matchesType &&
+      matchesRoom
+    );
   });
-
   const totalCompletedBookings = bookings.filter(
     (booking) => booking.status === "Completed"
   ).length;
@@ -459,7 +484,6 @@ export default function DashBooking() {
   const totalNotBookedBookings = bookings.filter(
     (booking) => booking.status === "Not Booked"
   ).length;
-
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {isLoading ? (
@@ -553,6 +577,35 @@ export default function DashBooking() {
               <Button color="gray" onClick={() => setFilterDate("")}>
                 <HiFilter className="mr-2 h-5 w-5" />
                 Filter by Date
+              </Button>
+            </div>
+            <div className="flex items-center">
+              <Select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="mr-2"
+              >
+                <option value="">All Types</option>
+                <option value="Online Appointment">Online Appointment</option>
+                <option value="Hospital Booking">Hospital Booking</option>
+              </Select>
+              <Button color="gray" onClick={() => setFilterType("")}>
+                <HiFilter className="mr-2 h-5 w-5" />
+                Filter by Type
+              </Button>
+            </div>
+            <div className="flex items-center">
+              <Select
+                value={filterRoom}
+                onChange={(e) => setFilterRoom(e.target.value)}
+                className="mr-2"
+              >
+                <option value="">All Rooms</option>
+                {/* Add room options based on your data */}
+              </Select>
+              <Button color="gray" onClick={() => setFilterRoom("")}>
+                <HiFilter className="mr-2 h-5 w-5" />
+                Filter by Room
               </Button>
             </div>
           </div>
@@ -918,6 +971,31 @@ export default function DashBooking() {
                           )}
                         </Button>
                       )}
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">
+                      Booking History
+                    </h4>
+                    <ul className="space-y-2">
+                      {selectedBooking.history.map((entry, index) => (
+                        <li key={index} className="border-b pb-2">
+                          <p className="font-semibold">{entry.action}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(entry.timestamp).toLocaleString()}
+                          </p>
+                          {entry.user && (
+                            <p className="text-sm text-gray-500">
+                              User: {entry.user.username}
+                            </p>
+                          )}
+                          {entry.details && (
+                            <p className="text-sm text-gray-500">
+                              Details: {entry.details}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               )}
