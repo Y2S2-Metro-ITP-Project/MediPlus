@@ -912,137 +912,137 @@ export const updateStatus = async (req, res) => {
   }
 };
 
-export const generateBookingsReport = async (req, res, next) => {
-  try {
-    const { filterDate, filterPatient, filterType, filterRoom } = req.body;
+// export const generateBookingsReport = async (req, res, next) => {
+//   try {
+//     const { filterDate, filterPatient, filterType, filterRoom } = req.body;
 
-    const query = {};
+//     const query = {};
 
-    if (filterDate) {
-      const startDate = new Date(filterDate);
-      const endDate = new Date(filterDate);
-      endDate.setDate(endDate.getDate() + 1);
-      query.date = { $gte: startDate, $lt: endDate };
-    }
+//     if (filterDate) {
+//       const startDate = new Date(filterDate);
+//       const endDate = new Date(filterDate);
+//       endDate.setDate(endDate.getDate() + 1);
+//       query.date = { $gte: startDate, $lt: endDate };
+//     }
 
-    if (filterPatient) {
-      query.patientId = filterPatient;
-    }
+//     if (filterPatient) {
+//       query.patientId = filterPatient;
+//     }
 
-    if (filterType) {
-      query.type = filterType;
-    }
+//     if (filterType) {
+//       query.type = filterType;
+//     }
 
-    if (filterRoom) {
-      query.roomNo = filterRoom;
-    }
+//     if (filterRoom) {
+//       query.roomNo = filterRoom;
+//     }
 
-    const bookings = await Booking.find(query)
-      .populate("doctorId", "username")
-      .populate("patientId", "name")
-      .populate("roomNo", "description");
+//     const bookings = await Booking.find(query)
+//       .populate("doctorId", "username")
+//       .populate("patientId", "name")
+//       .populate("roomNo", "description");
 
-    const reportContent = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 0;
-              padding: 20px;
-            }
-            h1 {
-              text-align: center;
-              color: #333;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-            th, td {
-              padding: 10px;
-              text-align: left;
-              border-bottom: 1px solid #ddd;
-            }
-            th {
-              background-color: #f2f2f2;
-              font-weight: bold;
-            }
-            tr:nth-child(even) {
-              background-color: #f9f9f9;
-            }
-            .logo {
-              text-align: center;
-              margin-bottom: 20px;
-            }
-            .logo img {
-              max-width: 200px;
-            }
-            .report-title {
-              text-align: center;
-              margin-bottom: 20px;
-            }
-            .report-date {
-              text-align: right;
-              font-style: italic;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="logo">
-            <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
-          </div>
-          <div class="report-title">
-            <h1>Hospital Booking Report</h1>
-          </div>
-          <div class="report-date">
-            Report Generated on ${new Date().toLocaleDateString()}
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Booking Date</th>
-                <th>Booking Time</th>
-                <th>Doctor</th>
-                <th>Patient</th>
-                <th>Room/Location</th>
-                <th>Booking Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${bookings
-                .map(
-                  (booking) => `
-                    <tr>
-                      <td>${new Date(booking.date).toLocaleDateString()}</td>
-                      <td>${booking.time}</td>
-                      <td>Dr. ${booking.doctorId.username}</td>
-                      <td>${booking.patientId ? booking.patientId.name : "-"}</td>
-                      <td>${
-                        booking.roomNo
-                          ? `Room ${booking.roomNo.description}`
-                          : "Online Appointment"
-                      }</td>
-                      <td>${booking.status}</td>
-                    </tr>
-                  `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+//     const reportContent = `
+//       <html>
+//         <head>
+//           <style>
+//             body {
+//               font-family: Arial, sans-serif;
+//               margin: 0;
+//               padding: 20px;
+//             }
+//             h1 {
+//               text-align: center;
+//               color: #333;
+//             }
+//             table {
+//               width: 100%;
+//               border-collapse: collapse;
+//               margin-top: 20px;
+//             }
+//             th, td {
+//               padding: 10px;
+//               text-align: left;
+//               border-bottom: 1px solid #ddd;
+//             }
+//             th {
+//               background-color: #f2f2f2;
+//               font-weight: bold;
+//             }
+//             tr:nth-child(even) {
+//               background-color: #f9f9f9;
+//             }
+//             .logo {
+//               text-align: center;
+//               margin-bottom: 20px;
+//             }
+//             .logo img {
+//               max-width: 200px;
+//             }
+//             .report-title {
+//               text-align: center;
+//               margin-bottom: 20px;
+//             }
+//             .report-date {
+//               text-align: right;
+//               font-style: italic;
+//               margin-bottom: 10px;
+//             }
+//           </style>
+//         </head>
+//         <body>
+//           <div class="logo">
+//             <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+//           </div>
+//           <div class="report-title">
+//             <h1>Hospital Booking Report</h1>
+//           </div>
+//           <div class="report-date">
+//             Report Generated on ${new Date().toLocaleDateString()}
+//           </div>
+//           <table>
+//             <thead>
+//               <tr>
+//                 <th>Booking Date</th>
+//                 <th>Booking Time</th>
+//                 <th>Doctor</th>
+//                 <th>Patient</th>
+//                 <th>Room/Location</th>
+//                 <th>Booking Status</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               ${bookings
+//                 .map(
+//                   (booking) => `
+//                     <tr>
+//                       <td>${new Date(booking.date).toLocaleDateString()}</td>
+//                       <td>${booking.time}</td>
+//                       <td>Dr. ${booking.doctorId.username}</td>
+//                       <td>${booking.patientId ? booking.patientId.name : "-"}</td>
+//                       <td>${
+//                         booking.roomNo
+//                           ? `Room ${booking.roomNo.description}`
+//                           : "Online Appointment"
+//                       }</td>
+//                       <td>${booking.status}</td>
+//                     </tr>
+//                   `
+//                 )
+//                 .join("")}
+//             </tbody>
+//           </table>
+//         </body>
+//       </html>
+//     `;
 
-    const pdfBuffer = await generatePDFFromHtml(reportContent);
-    res.contentType("application/pdf");
-    res.send(pdfBuffer);
-  } catch (error) {
-    next(error);
-  }
-};
+//     const pdfBuffer = await generatePDFFromHtml(reportContent);
+//     res.contentType("application/pdf");
+//     res.send(pdfBuffer);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 export const generateAppointmentCard = async (req, res, next) => {
   try {

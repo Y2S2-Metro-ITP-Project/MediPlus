@@ -19,6 +19,7 @@ import {
   HiMail,
   HiIdentification,
   HiPencil,
+  HiDownload,
 } from "react-icons/hi";
 import { HiCalendarDays } from "react-icons/hi2";
 import { useSelector } from "react-redux";
@@ -31,7 +32,7 @@ import {
   BsBookmarkPlus,
   BsBookmarkStar,
 } from "react-icons/bs";
-import { ro } from "date-fns/locale";
+import html2pdf from "html2pdf.js";
 
 export default function DashBooking() {
   const { currentUser } = useSelector((state) => state.user);
@@ -64,8 +65,15 @@ export default function DashBooking() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [isGeneratingAppointmentCard, setIsGeneratingAppointmentCard] =
-    useState(false);
+  const [isGeneratingAppointmentCard, setIsGeneratingAppointmentCard] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   useEffect(() => {
     fetchBookings();
@@ -322,33 +330,109 @@ export default function DashBooking() {
     }
   };
 
-  const generateReport = async () => {
+  const generateReport = () => {
     setIsGeneratingReport(true);
     try {
-      const res = await fetch("/api/booking/generateReport", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filterDate,
-          filterPatient,
-          filterType,
-          filterRoom,
-        }),
-      });
-  
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "bookings_report.pdf";
-        link.click();
-        window.URL.revokeObjectURL(url);
-      } else {
-        throw new Error("Failed to generate the report");
-      }
+      const reportContent = `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                font-size: 12px;
+              }
+              h1 {
+                text-align: center;
+                color: #333;
+                font-size: 18px;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+              }
+              th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+              }
+              th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+              }
+              tr:nth-child(even) {
+                background-color: #f9f9f9;
+              }
+              .logo {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .logo img {
+                max-width: 150px;
+              }
+              .report-title {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .report-date {
+                text-align: right;
+                font-style: italic;
+                margin-bottom: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="logo">
+              <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+            </div>
+            <div class="report-title">
+              <h1>Hospital Booking Report</h1>
+            </div>
+            <div class="report-date">
+              Report Generated on ${new Date().toLocaleDateString()}
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking Date</th>
+                  <th>Booking Time</th>
+                  <th>Doctor</th>
+                  <th>Patient</th>
+                  <th>Room/Location</th>
+                  <th>Booking Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredBookings
+                  .map(
+                    (booking) => `
+                      <tr>
+                        <td>${new Date(booking.date).toLocaleDateString()}</td>
+                        <td>${booking.time}</td>
+                        <td>${booking.doctorName}</td>
+                        <td>${booking.patientName || "-"}</td>
+                        <td>${booking.roomName}</td>
+                        <td>${booking.status}</td>
+                      </tr>
+                    `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const options = {
+        filename: "bookings_report.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+      };
+
+      html2pdf().set(options).from(reportContent).save();
     } catch (error) {
       console.error(error);
       toast.error("Failed to generate the report. Please try again later.");
@@ -450,6 +534,118 @@ export default function DashBooking() {
     }
   };
 
+  const generateBookingReport = async (booking) => {
+    try {
+      const reportContent = `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+              }
+              h1 {
+                color: #333;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+              }
+              th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              .logo {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .logo img {
+                max-width: 150px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="logo">
+              <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+            </div>
+            <h1>Booking Report</h1>
+            <table>
+              <tr>
+                <th>Booking Date</th>
+                <td>${new Date(booking.date).toLocaleDateString()}</td>
+              </tr>
+              <tr>
+                <th>Booking Time</th>
+                <td>${booking.time}</td>
+              </tr>
+              <tr>
+                <th>Doctor</th>
+                <td>${booking.doctorName}</td>
+              </tr>
+              <tr>
+                <th>Patient</th>
+                <td>${booking.patientName || "-"}</td>
+              </tr>
+              <tr>
+                <th>Room/Location</th>
+                <td>${booking.roomName}</td>
+              </tr>
+              <tr>
+                <th>Booking Status</th>
+                <td>${booking.status}</td>
+              </tr>
+            </table>
+            <h2>Booking History</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${booking.history
+                  .map(
+                    (entry) => `
+                      <tr>
+                        <td>${entry.action}</td>
+                        <td>${new Date(entry.timestamp).toLocaleString()}</td>
+                        <td>${entry.user ? entry.user.username : "-"}</td>
+                        <td>${entry.details || "-"}</td>
+                      </tr>
+                    `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const options = {
+        filename: `booking_report_${booking._id}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+      };
+
+      html2pdf().set(options).from(reportContent).save();
+    } catch (error) {
+      console.error("Error generating booking report:", error);
+      toast.error(
+        "Failed to generate the booking report. Please try again later."
+      );
+    }
+  };
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -484,6 +680,7 @@ export default function DashBooking() {
   const totalNotBookedBookings = bookings.filter(
     (booking) => booking.status === "Not Booked"
   ).length;
+
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {isLoading ? (
@@ -915,6 +1112,14 @@ export default function DashBooking() {
                     </Badge>
                   </div>
                   <div className="flex justify-end">
+                    <Button
+                      color="gray"
+                      onClick={() => generateBookingReport(selectedBooking)}
+                      className="mr-2"
+                    >
+                      <HiDownload className="mr-2 h-5 w-5" />
+                      Download Report
+                    </Button>
                     {selectedBooking.status !== "Cancelled" &&
                       selectedBooking.status !== "Completed" &&
                       selectedBooking.status !== "In Consultation" && (
@@ -1286,6 +1491,7 @@ export default function DashBooking() {
               </Button>
             </Modal.Footer>
           </Modal>
+          
         </>
       )}
     </div>
