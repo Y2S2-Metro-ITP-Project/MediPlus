@@ -266,7 +266,7 @@ export const forgetPassword = async (req, res, next) => {
           subject: "Welcome to Ismails Pvt Hospital!",
           html: `
           <p>Dear User,</p>
-          <p>Your account password is successfully resetted. Here are your new password Login:</p>
+          <p>Your account password is successfully resetted.Here is your new password.</p>
           <ul>
             <li><strong>Password:</strong>${password}</li>
           </ul>
