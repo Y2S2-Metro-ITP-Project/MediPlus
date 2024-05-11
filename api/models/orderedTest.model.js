@@ -62,6 +62,11 @@ const orderedTestSchema = new mongoose.Schema(
       type:String,
       default:"no special advice assigned",
     },
+
+    // results:{
+    //   type: String,
+    //   default:" results not uploaded!",
+    // },
   },
   { timestamps: true }
 );

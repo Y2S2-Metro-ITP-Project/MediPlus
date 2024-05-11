@@ -133,8 +133,7 @@ export default function DashTestManager() {
   const handleTestSubmit = async (e) => {
     e.preventDefault();
 
-    console.log(formData)
-
+   
     const name = formData.name ? formData.name.trim() : "";
     const sampleType = formData.sampleType;
     const sampleVolume = formData.sampleVolume
