@@ -12,6 +12,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import LabDashBoard from "./pages/LabDashBoard";
 import CollectionCentre from "./pages/CollectionCentre";
 import TestProfileManager from "./pages/TestProfileManager";
+import ForgetPassword from "./pages/ForgetPassword";
 export default function App() {
   return (
     <BrowserRouter>
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
         <Route element={<PrivateRoute/>}>
         <Route path="/dashboard" element={<Dashboard />} />
         </Route>

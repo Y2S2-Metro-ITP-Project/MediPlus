@@ -27,6 +27,7 @@ export default function DashInPatientPayment() {
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [orderIdToDelete, setOrderIdToDelete] = useState(null);
+  const [DeleteshowModal, setDeleteShowModal] = useState(false);
   const paymentOrdersPerPage = 5;
   const [totalPaymentOrdersLastMonth, setTotalPaymentOrdersLastMonth] =
     useState(0);
@@ -185,7 +186,7 @@ export default function DashInPatientPayment() {
           <Table.Cell>
             <span
               onClick={() => {
-                setShowModal(true);
+                setDeleteShowModal(true);
                 setOrderIdToDelete(order._id);
               }}
               className="font-medium text-red-500 hover:underline cursor-pointer ml-4"
@@ -432,7 +433,7 @@ export default function DashInPatientPayment() {
       ) : (
         <p>No payment Orders found</p>
       )}
-      {/** Delete Order Modal */}
+      {/** wardshow Modal */}
       {ward && ward.bed && ward.ward && (
         <Modal
           show={showModal}
@@ -489,6 +490,31 @@ export default function DashInPatientPayment() {
           </Modal.Body>
         </Modal>
       )}
+      {/** Delete Order Modal */}
+      <Modal
+        show={DeleteshowModal}
+        onClose={() => setDeleteShowModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
+              Are you sure you want to delete this Order?
+            </h3>
+          </div>
+          <div className="flex justify-center gap-4">
+            <Button color="failure" onClick={() => handlePaymentOrderDelete()}>
+              Yes,I am sure
+            </Button>
+            <Button color="gray" onClick={() => setShowModal(false)}>
+              No,cancel
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

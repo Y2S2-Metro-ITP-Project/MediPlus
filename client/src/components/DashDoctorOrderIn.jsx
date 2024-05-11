@@ -34,6 +34,67 @@ export default function DashDoctorOrderIn() {
   const [seleactedDoctor, setSeleactedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(
+        `/api/prescriptionOrder/getInpatientPrescriptionOrder`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        const filteredOrders = data.prescriptionOrders.filter(
+          (order) =>
+            order.doctorId.username
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            order.patientId.name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
+        );
+        const uniqueDoctors = [
+          ...new Set(
+            data.prescriptionOrders.map((order) =>
+              JSON.stringify({
+                doctorId: order.doctorId._id,
+                username: order.doctorId.username,
+              })
+            )
+          ),
+        ].map((str) => JSON.parse(str));
+
+        const uniqueDates = [
+          ...new Set(
+            data.prescriptionOrders.map((order) =>
+              format(new Date(order.date), "yyyy-MM-dd")
+            )
+          ),
+        ];
+
+        const uniquePatients = [
+          ...new Set(
+            data.prescriptionOrders.map((order) =>
+              JSON.stringify({
+                patientId: order.patientId._id,
+                name: order.patientId.name,
+              })
+            )
+          ),
+        ].map((str) => JSON.parse(str));
+
+        setDoctors(uniqueDoctors);
+        setDates(uniqueDates);
+        setUniquePatients(uniquePatients);
+        setTotalOrders(data.totalOrders);
+        setTotalCompletedOrders(data.totalCompletedOrders);
+        setTotalPendingOrders(data.totalPendingOrders);
+        setTotalRejectedOrders(data.totalRejectedOrders);
+        setOrders(filteredOrders);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.log(error);
+    }
+  };
   useEffect(() => {
     setIsLoading(true);
     const fetchOrders = async () => {
@@ -126,20 +187,26 @@ export default function DashDoctorOrderIn() {
   const [wardToShow, setWardToShow] = useState({});
   const [showWardModal, setWardShowModal] = useState(false);
   const [wardDetails, setWardDetails] = useState({
-    Bed_Number:false,
-    WardName:false,
-    WardType:false,
-    DoctorName:false,
-    NurseName:false,
+    Bed_Number: false,
+    WardName: false,
+    WardType: false,
+    DoctorName: false,
+    NurseName: false,
   });
-  const handleWardToshow = (number,wardName,wardType,doctorName,nurseName) => {
+  const handleWardToshow = (
+    number,
+    wardName,
+    wardType,
+    doctorName,
+    nurseName
+  ) => {
     setWardDetails({
-        Bed_Number:number,
-        WardName:wardName,
-        WardType:wardType,
-        DoctorName:doctorName,
-        NurseName:nurseName,
-    })
+      Bed_Number: number,
+      WardName: wardName,
+      WardType: wardType,
+      DoctorName: doctorName,
+      NurseName: nurseName,
+    });
   };
   const displayPrescriptionOrders = orders
     .slice(
@@ -169,7 +236,13 @@ export default function DashDoctorOrderIn() {
                 className="text-blue-500 cursor-pointer"
                 onClick={() => {
                   setWardShowModal(true);
-                  handleWardToshow(order.patientId.bed.number,order.patientId.bed.ward.WardName,order.patientId.bed.ward.WardType,order.patientId.bed.ward.doctorName,order.patientId.bed.ward.nurseName);
+                  handleWardToshow(
+                    order.patientId.bed?.number || "Unknown",
+                    order.patientId.bed?.ward?.WardName || "Unknown",
+                    order.patientId.bed?.ward?.WardType || "Unknown",
+                    order.patientId.bed?.ward?.doctorName || "Unknown",
+                    order.patientId.bed?.ward?.nurseName || "Unknown"
+                  );
                 }}
               />
             ) : (
@@ -294,7 +367,7 @@ export default function DashDoctorOrderIn() {
     if (selectedDate !== null) {
       try {
         const res = await fetch(
-          `/api/prescriptionOrder/downloadPatientOrderDate/${selectedDate.value}`,
+          `/api/prescriptionOrder/downloadInPatientOrderDate/${selectedDate.value}`,
           {
             method: "POST",
             headers: {
@@ -323,7 +396,7 @@ export default function DashDoctorOrderIn() {
     if (seleactedDoctor !== null) {
       try {
         const res = await fetch(
-          `/api/prescriptionOrder/downloadDoctorOrderReport/${seleactedDoctor.value}`,
+          `/api/prescriptionOrder/downloadInDoctorOrderReport/${seleactedDoctor.value}`,
           {
             method: "POST",
             headers: {
@@ -730,32 +803,32 @@ export default function DashDoctorOrderIn() {
                 </label>
                 <p>{wardDetails.Bed_Number}</p>
               </div>
-                <>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 dark:text-gray-400">
-                      Ward Name:
-                    </label>
-                    <p>{wardDetails.WardName}</p>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 dark:text-gray-400">
-                      Ward Type:
-                    </label>
-                    <p>{wardDetails.WardType}</p>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 dark:text-gray-400">
-                      Doctor Name:
-                    </label>
-                    <p>{wardDetails.DoctorName}</p>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 dark:text-gray-400">
-                      Nurse Name:
-                    </label>
-                    <p>{wardDetails.NurseName}</p>
-                  </div>
-                </>
+              <>
+                <div className="flex flex-col">
+                  <label className="text-gray-600 dark:text-gray-400">
+                    Ward Name:
+                  </label>
+                  <p>{wardDetails.WardName}</p>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-gray-600 dark:text-gray-400">
+                    Ward Type:
+                  </label>
+                  <p>{wardDetails.WardType}</p>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-gray-600 dark:text-gray-400">
+                    Doctor Name:
+                  </label>
+                  <p>{wardDetails.DoctorName}</p>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-gray-600 dark:text-gray-400">
+                    Nurse Name:
+                  </label>
+                  <p>{wardDetails.NurseName}</p>
+                </div>
+              </>
             </div>
           </Modal.Body>
         </Modal>
