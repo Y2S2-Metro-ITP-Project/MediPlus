@@ -37,7 +37,7 @@ export const getSupplierData = async (req, res, next) => {
 };
 
 export const addSupplierData = async (req, res, next) => {
-  const { supplierName, supplierEmail, supplierPhone } = req.body;
+  const { supplierName, supplierEmail, supplierPhone,itemName } = req.body;
   console.log(req.body);
   try {
     const existingItem = await Supplier.findOne({ supplierName });
@@ -46,9 +46,11 @@ export const addSupplierData = async (req, res, next) => {
     }
 
     const supplier = new Supplier({
+        
       supplierName,
       supplierEmail,
       supplierPhone,
+      itemName,
     });
     await supplier.save();
 
@@ -74,12 +76,12 @@ export const deleteSupplierData = async (req, res, next) => {
 
 export const updateSupplierData = async (req, res, next) => {
     const { supplierId } = req.params;
-    const { supplierName, supplierEmail, supplierPhone, itemNames } = req.body;
+    const { supplierName, supplierEmail, supplierPhone, itemName } = req.body;
 
     try {
         const updatedSupplier = await Supplier.findByIdAndUpdate(
             supplierId,
-            { supplierName, supplierEmail, supplierPhone, itemNames },
+            { supplierName, supplierEmail, supplierPhone, itemName },
             { new: true }
         );
         if (!updatedSupplier) {

@@ -9,6 +9,7 @@ import {
   HiChartPie,
 } from "react-icons/hi";
 import { FaUsers } from "react-icons/fa";
+import { FaShippingFast } from "react-icons/fa";
 import { FaUserInjured } from "react-icons/fa";
 import { FaBox } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
@@ -265,6 +266,11 @@ export default function DashSideBar() {
               <Link to="/dashboard?tab=supplier">
                 <Sidebar.Item className="cursor-pointer" icon={FaUsers}>
                   Supplier
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=supplierorder">
+                <Sidebar.Item className="cursor-pointer" icon={FaShippingFast}>
+                  Supplier Orders
                 </Sidebar.Item>
               </Link>
             </>

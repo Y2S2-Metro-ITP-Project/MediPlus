@@ -24,6 +24,7 @@ import DashMedicineDispence from "../components/DashMedicineDispence";
 import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashSupplier from "../components/DashSupplier";
+import DashSupplierOrder from "../components/DashSupplierOrder"
 
 
 
@@ -91,6 +92,8 @@ export default function Dashboard() {
       {tab==="OutPatientPaymentProfile" && <OutPatientPaymentProfile/>}
       {/** <DashSupplier/> */}
       {tab==="supplier" && <DashSupplier/>}
+      {/** <DashSupplierOrder/> */}
+      {tab==="supplierOrder" && <DashSupplierOrder/>}
     </div>
   );
 }

@@ -15,7 +15,11 @@ const  supplierSchema = new mongoose.Schema({
         type: String,
         required: true
 
-    }
+    },  itemName: {
+        type: String,
+        required: true
+
+    },
 },{timestamps:true})
 
 const Supplier = mongoose.model('Supplier', supplierSchema)

@@ -59,6 +59,7 @@ export default function DashOutPatients() {
   const [itemName, setItemName] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [supplierEmail, setSupplierEmail] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
   const [selectedItemDetails, setSelectedItemDetails] = useState({
     itemName: "",
     itemCategory: "",
@@ -110,6 +111,31 @@ export default function DashOutPatients() {
       supplierEmail,
     });
   };
+  const fetchSuppliers = async () => {
+    try {
+      const res = await fetch(`/api/supplier/getSupplier`);
+      const data = await res.json();
+      if (res.ok) {
+        setSuppliers(data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [currentUser._id]);
+
+  const supplierOptions = () => {
+    return suppliers.map((supplier) => {
+      return {
+        value: supplier.supplierName,
+        label: supplier.supplierName,
+      };
+    });
+  };
+
   const fetchInventory = async () => {
     try {
       const res = await fetch(`/api/inventory/getInventory`);
@@ -162,6 +188,10 @@ export default function DashOutPatients() {
   };
   const handleFilterChange = async (e) => {
     setFilterOption(e.target.value);
+  };
+
+  const handleSupplierChange = (value) => {
+    setFormData({ ...formData, supplierName: value });
   };
 
   const handleSearch = async (e) => {};
@@ -1437,6 +1467,10 @@ export default function DashOutPatients() {
                 </div>
                 <div className="mb-4">
                   <Label htmlFor="itemName">Supplier Name</Label>
+                  {/* <Select
+                    id="supplierName"
+                   value={supplierOptions.value} */}
+                  {/* /> */}
                   <TextInput
                     type="text"
                     id="itemName"
@@ -1451,6 +1485,16 @@ export default function DashOutPatients() {
                     type="text"
                     id="itemName"
                     value={supplierEmail}
+                    className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
+                    disabled
+                  />
+                </div>
+                <div className="mb-4">
+                  <Label htmlFor="itemName">Supplier Phone Number</Label>
+                  <TextInput
+                    type="number"
+                    id="itemName"
+                    value=""
                     className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
                     disabled
                   />
