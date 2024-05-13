@@ -27,6 +27,12 @@ import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashInPateintProfile from "../components/DashInPateintProfile";
 import DashDoctorInpatient from "../components/DashDoctorInpatient";
+import DashWardProfile from "../components/DashWardProfile";
+import DashDiseases from "../components/DashDiseases";
+import DashInPatientPayment from "../components/DashInPatientPayment";
+import DashDoctorOrderIn from "../components/DashDoctorOrderIn";
+import DashSupplier from "../components/DashSupplier";
+import DashSupplierOrder from "../components/DashSupplierOrder"
 import DoctorsList from "../components/DoctorList";
 import PatientDashboard from "../components/PatientDashBoard";
 import DoctorProfile from "../components/DoctorProfile";
@@ -112,6 +118,18 @@ export default function Dashboard() {
       {tab==="InpatientProfile" && <DashInPateintProfile/>}
       {/** <DashDoctorInpatient/> */}
       {tab==="DoctorInpatient" && <DashDoctorInpatient/>}
+      {/** <DashWardProfile/> */}
+      {tab==="WardProfile" && <DashWardProfile/>}
+      {/** <Diesease/> */}
+      {tab==="disease" && <DashDiseases/>}
+      {/** <DashInpatienPayment/> */}
+      {tab==="InpatientPayment" && <DashInPatientPayment/>}
+      {/** <DashDoctorsorderIn/> */}
+      {tab==="DoctorOrderIn" && <DashDoctorOrderIn/>}
+      {/** <DashSupplier/> */}
+      {tab==="supplier" && <DashSupplier/>}
+      {/** <DashSupplierOrder/> */}
+      {tab==="supplierOrder" && <DashSupplierOrder/>}
     </div>
 
   );

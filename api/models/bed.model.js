@@ -15,10 +15,13 @@ const bedSchema = new mongoose.Schema(
         type: String,
         default: "Available"
         },
-    
     patient: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Patient',
+    },
+    ward: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Ward',
     },
   },
   { timestamps: true }
