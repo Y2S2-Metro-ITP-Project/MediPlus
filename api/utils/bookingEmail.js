@@ -5,7 +5,11 @@ import { authenticate } from '@google-cloud/local-auth';
 import { google } from 'googleapis';
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const SCOPES = ['https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/meetings.space.created','https://www.googleapis.com/auth/calendar'];
+
+// The file token.json stores the user's access and refresh tokens, and is
+// created automatically when the authorization flow completes for the first
+// time.
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), '\\api\\utils\\credentials.json');
 
@@ -47,7 +51,7 @@ async function saveCredentials(client) {
  * Load or request or authorization to call APIs.
  *
  */
-async function authorize() {
+export async function authorize() {
   let client = await loadSavedCredentialsIfExist();
   if (client) {
     return client;
@@ -63,28 +67,33 @@ async function authorize() {
 }
 
 /**
- * Lists the next 10 events on the user's primary calendar.
+ * Send an email using the Gmail API.
+ *
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+ * @param {string} to The recipient's email address.
+ * @param {string} subject The email subject.
+ * @param {string} body The email body.
  */
-async function listEvents(auth) {
-  const calendar = google.calendar({version: 'v3', auth});
-  const res = await calendar.events.list({
-    calendarId: 'primary',
-    timeMin: new Date().toISOString(),
-    maxResults: 10,
-    singleEvents: true,
-    orderBy: 'startTime',
-  });
-  const events = res.data.items;
-  if (!events || events.length === 0) {
-    console.log('No upcoming events found.');
-    return;
-  }
-  console.log('Upcoming 10 events:');
-  events.map((event, i) => {
-    const start = event.start.dateTime || event.start.date;
-    console.log(`${start} - ${event.summary}`);
-  });
-}
+ export async function sendEmail(auth, to, subject, body) {
+  const gmail = google.gmail({ version: 'v1', auth });
+  const message = `From: Ismails Hospital Pvt Ltd <mnfalahahamad@gmail.com>
+To: ${to}
+Subject: ${subject}
 
-authorize().then(listEvents).catch(console.error);
+${body}`;
+
+  const encodedMessage = Buffer.from(message)
+    .toString('base64')
+    .replace(/\//g, '_')
+    .replace(/\+/g, '-')
+    .replace(/=+$/, '');
+
+  const response = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: encodedMessage,
+    },
+  });
+
+  console.log(`Email sent to ${to} with messageId: ${response.data.id}`);
+}

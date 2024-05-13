@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
+  Button,
+  Table,
+  Select,
+  TextInput,
+  Card,
+  Badge,
+  Modal,
+} from "flowbite-react";
+import {
   HiPrinter,
   HiCheckCircle,
   HiXCircle,
@@ -8,8 +17,11 @@ import {
   HiDocumentText,
   HiClipboardCheck,
   HiOutlineX,
+  HiSearch,
+  HiFilter,
+  HiEye,
+  HiDocumentReport,
 } from "react-icons/hi";
-import { AiOutlineSearch } from "react-icons/ai";
 import { HiCalendarDays } from "react-icons/hi2";
 import {
   format,
@@ -29,14 +41,6 @@ import {
 } from "date-fns";
 import html2pdf from "html2pdf.js";
 import { useSelector } from "react-redux";
-import {
-  Modal,
-  Button,
-  Table,
-  Select,
-  TextInput,
-  Pagination,
-} from "flowbite-react";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "./LoadingSpinner";
 import { ToastContainer, toast } from "react-toastify";
@@ -59,10 +63,6 @@ const PatientBooking = () => {
   const bookingsPerPage = 10;
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const handleNewAppointment = () => {
-    navigate("/appointment");
-  };
 
   useEffect(() => {
     fetchBookings();
@@ -290,16 +290,6 @@ const PatientBooking = () => {
     }
   };
 
-  const viewBookingDetails = (booking) => {
-    setSelectedBooking(booking);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedBooking(null);
-  };
-
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchTerm(query);
@@ -472,8 +462,14 @@ const PatientBooking = () => {
     }
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const viewBookingDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedBooking(null);
   };
 
   const openLinkModal = (booking) => {
@@ -487,53 +483,50 @@ const PatientBooking = () => {
   };
 
   const generateReport = () => {
-    console.log("Generating report...");
     const content = `
- <div style="padding: 20px; font-family: Arial, sans-serif;">
-   <h2 style="text-align: center; margin-bottom: 20px;">Ismail Hospitals - Booking Report</h2>
-   <p style="text-align: center; margin-bottom: 10px;">Generated on ${new Date().toLocaleDateString()}</p>
-   <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 20px;" />
-   <table style="width: 100%; border-collapse: collapse;">
-     <thead>
-       <tr>
-         <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Date</th>
-         <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Time</th>
-         <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Doctor</th>
-         <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Type</th>
-         <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Status</th>
-       </tr>
-     </thead>
-     <tbody>
-       ${filteredBookings
-         .map(
-           (booking) => `
-         <tr>
-           <td style="padding: 10px; border: 1px solid #ccc;">${format(
-             new Date(booking.date),
-             "yyyy-MM-dd"
-           )}</td>
-           <td style="padding: 10px; border: 1px solid #ccc;">${
-             booking.time
-           }</td>
-           <td style="padding: 10px; border: 1px solid #ccc;">${
-             booking.doctorName
-           }</td>
-           <td style="padding: 10px; border: 1px solid #ccc;">${
-             booking.type
-           }</td>
-           <td style="padding: 10px; border: 1px solid #ccc;">${getStatusText(
-             booking.status
-           )}</td>
-         </tr>
-       `
-         )
-         .join("")}
-     </tbody>
-   </table>
- </div>
-`;
-
-    console.log("Content:", content);
+      <div style="padding: 20px; font-family: Arial, sans-serif;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Ismail Hospitals - Booking Report</h2>
+        <p style="text-align: center; margin-bottom: 10px;">Generated on ${new Date().toLocaleDateString()}</p>
+        <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 20px;" />
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Date</th>
+              <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Time</th>
+              <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Doctor</th>
+              <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Type</th>
+              <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredBookings
+              .map(
+                (booking) => `
+              <tr>
+                <td style="padding: 10px; border: 1px solid #ccc;">${format(
+                  new Date(booking.date),
+                  "yyyy-MM-dd"
+                )}</td>
+                <td style="padding: 10px; border: 1px solid #ccc;">${
+                  booking.time
+                }</td>
+                <td style="padding: 10px; border: 1px solid #ccc;">${
+                  booking.doctorName
+                }</td>
+                <td style="padding: 10px; border: 1px solid #ccc;">${
+                  booking.type
+                }</td>
+                <td style="padding: 10px; border: 1px solid #ccc;">${getStatusText(
+                  booking.status
+                )}</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
 
     const options = {
       filename: `booking_report_${new Date().toISOString()}.pdf`,
@@ -543,7 +536,6 @@ const PatientBooking = () => {
     };
 
     html2pdf().set(options).from(content).save();
-    console.log("Report generated successfully.");
   };
 
   const indexOfLastBooking = currentPage * bookingsPerPage;
@@ -559,124 +551,92 @@ const PatientBooking = () => {
         <LoadingSpinner />
       ) : (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold mb-4">
-              <HiCalendarDays className="inline-block mr-1 align-middle" />
-              This Week's Appointments
-            </h1>
-            <Button color="blue" onClick={handleNewAppointment}>
-              <HiCalendarDays className="inline-block mr-1 align-middle" /> Book
-              Appointment
-            </Button>
-          </div>
-          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar-thumb-slate-300 scrollbar-track-slate-100 dark:scrollbar-thumb-slate-500 dark:scrollbar-track-slate-700">
-            <div className="flex gap-4 min-w-max">
-              {weekBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex flex-col p-3 bg-gray-100 dark:bg-slate-800 gap-2 md:w-96 w-full rounded-md shadow-md mr-4"
-                  style={{ minWidth: "350px", minHeight: "200px" }}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-gray-500 text-sm uppercase">
-                        {booking.type}
-                      </p>
-                    </div>
-                    <div
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-gray-500 cursor-pointer ${
-                        booking.status === "Booked"
-                          ? "bg-green-200 text-green-500"
-                          : booking.status === "Cancelled"
-                          ? "bg-red-200 text-red-500"
-                          : "bg-gray-200"
-                      }`}
-                      title={getStatusText(booking.status)}
-                    >
-                      {getStatusIcon(booking.status)}
-                      <span className="ml-2 text-sm font-semibold">
-                        {booking.status}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-2xl font-semibold">
-                        {format(new Date(booking.date), "MMM d, yyyy")}
-                      </p>
-                      <p className="text-gray-500 text-sm">{booking.time}</p>
-                      <p className="text-gray-500 text-sm">
-                        {booking.doctorName}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end mt-auto">
-                    <Button
-                      color="red"
-                      size="xs"
-                      onClick={() => cancelBooking(booking._id)}
-                      disabled={isAfter(new Date(), new Date(booking.date))}
-                      className="w-20 h-8 text-sm"
-                    >
-                      <HiOutlineX className="inline-block mr-1 align-middle" />{" "}
-                      Cancel
-                    </Button>
-                    <Button
-                      color="blue"
-                      size="xs"
-                      onClick={() => viewBookingDetails(booking)}
-                      className="w-20 h-8 text-sm mx-2"
-                    >
-                      View
-                    </Button>
-                    <Button
-                      color="gray"
-                      size="xs"
-                      onClick={() => generateAppointmentCard(booking)}
-                      className="w-20 h-8 text-sm"
-                    >
-                      <HiPrinter className="inline-block mr-1 align-middle" />{" "}
-                      Print
-                    </Button>
-                  </div>
-                </div>
-              ))}
+          <div className="flex flex-col md:flex-row justify-between items-start mb-8 px-4">
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold mb-0 mr-4">
+                <HiCalendarDays className="inline-block mr-1 align-middle" />
+                My Appointments
+              </h1>
+            </div>
+            <div className="flex items-center">
+              <Button
+                color="blue"
+                className="mr-4"
+              >
+                <HiCalendarDays className="inline-block mr-1 align-middle" />{" "}
+                Book Appointment
+              </Button>
             </div>
           </div>
-
-          <h1 className="text-3xl font-bold my-6">
-            <HiCalendar className="inline-block mr-1 align-middle" /> All
-            Appointments
-          </h1>
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4 flex flex-wrap gap-4">
+            <Card>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Total Bookings
+                </h5>
+                <Badge color="info" className="text-2xl font-bold">
+                  {totalBookings}
+                </Badge>
+              </div>
+            </Card>
+            <Card>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Completed Bookings
+                </h5>
+                <Badge color="success" className="text-2xl font-bold">
+                  {completedBookings}
+                </Badge>
+              </div>
+            </Card>
+            <Card>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Cancelled Bookings
+                </h5>
+                <Badge color="failure" className="text-2xl font-bold">
+                  {cancelledBookings}
+                </Badge>
+              </div>
+            </Card>
+          </div>
+          <div className="mb-4 flex flex-wrap gap-4">
             <div className="flex items-center">
               <TextInput
                 type="text"
-                placeholder="Search..."
-                rightIcon={AiOutlineSearch}
-                className="hidden lg:inline"
-                id="search"
+                placeholder="Search by doctor name, patient name, type, date, or time"
+                value={searchTerm}
                 onChange={handleSearch}
-                style={{ width: "300px" }}
+                className="mr-2"
               />
+              <Button color="gray" onClick={() => setSearchTerm("")}>
+                <HiSearch className="mr-2 h-5 w-5" />
+                Search
+              </Button>
             </div>
             <div className="flex items-center">
               <Select
-                id="typeFilter"
+                value={typeFilter}
                 onChange={handleTypeFilter}
-                className="ml-4 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                className="mr-2"
               >
-                <option value="">Filter by Type</option>
+                <option value="">All Types</option>
                 <option value="Hospital Booking">Hospital Booking</option>
                 <option value="Online Appointment">Online Appointment</option>
                 <option value="MACS">MACS</option>
               </Select>
+              <Button color="gray" onClick={() => setTypeFilter("")}>
+                <HiFilter className="mr-2 h-5 w-5" />
+                Filter by Type
+              </Button>
+            </div>
+            <div className="flex items-center">
               <Select
-                id="dateFilter"
+                value={dateFilter}
                 onChange={handleDateFilter}
-                className="ml-4 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                className="mr-2"
               >
-                <option value="">Filter by Date</option>
+                <option value="">All Dates</option>
                 <option value="today">Today</option>
                 <option value="tomorrow">Tomorrow</option>
                 <option value="thisWeek">This Week</option>
@@ -687,81 +647,79 @@ const PatientBooking = () => {
                 <option value="lastMonth">Last Month</option>
                 <option value="beforeThat">Before That</option>
               </Select>
+              <Button color="gray" onClick={() => setDateFilter("")}>
+                <HiFilter className="mr-2 h-5 w-5" />
+                Filter by Date
+              </Button>
             </div>
           </div>
-          <Table className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
-            <Table.Head>
-              <Table.HeadCell>Date</Table.HeadCell>
-              <Table.HeadCell>Time</Table.HeadCell>
-              <Table.HeadCell>Doctor</Table.HeadCell>
-              <Table.HeadCell>Type</Table.HeadCell>
-              <Table.HeadCell>Status</Table.HeadCell>
-              <Table.HeadCell>Actions</Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="bg-white dark:border-gray-700 dark:bg-gray-800">
-              {currentBookings.map((booking) => {
-                const bookingDate = new Date(booking.date);
-                const formattedDate = bookingDate.toLocaleDateString();
-
-                return (
+          <div className="overflow-x-auto">
+            <Table>
+              <Table.Head>
+                <Table.HeadCell>Date</Table.HeadCell>
+                <Table.HeadCell>Time</Table.HeadCell>
+                <Table.HeadCell>Doctor</Table.HeadCell>
+                <Table.HeadCell>Type</Table.HeadCell>
+                <Table.HeadCell>Status</Table.HeadCell>
+                <Table.HeadCell>Actions</Table.HeadCell>
+              </Table.Head>
+              <Table.Body className="divide-y">
+                {currentBookings.map((booking) => (
                   <Table.Row
-                    key={booking.id}
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                    key={booking._id}
+                    className="bg-white dark:border-gray-700 dark:bg-gray-800"
                   >
-                    <Table.Cell>{formattedDate}</Table.Cell>
+                    <Table.Cell>
+                      {format(new Date(booking.date), "yyyy-MM-dd")}
+                    </Table.Cell>
                     <Table.Cell>{booking.time}</Table.Cell>
                     <Table.Cell>{booking.doctorName}</Table.Cell>
                     <Table.Cell>{booking.type}</Table.Cell>
                     <Table.Cell>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-gray-500 cursor-pointer ${
+                      <Badge
+                        color={
                           booking.status === "Booked"
-                            ? "bg-green-200 text-green-500"
+                            ? "success"
                             : booking.status === "Cancelled"
-                            ? "bg-red-200 text-red-500"
-                            : "bg-gray-200"
-                        }`}
-                        title={getStatusText(booking.status)}
+                            ? "failure"
+                            : "gray"
+                        }
                       >
                         {getStatusIcon(booking.status)}
-                        <span className="ml-2">{booking.status}</span>
-                      </span>
+                        {getStatusText(booking.status)}
+                      </Badge>
                     </Table.Cell>
                     <Table.Cell>
-                      <div className="flex justify-end gap-2">
+                      <div className="flex items-center space-x-4">
                         <Button
-                          color="red"
-                          size="xs"
-                          onClick={() => cancelBooking(booking.id)}
-                          disabled={isAfter(new Date(), new Date(booking.date))}
-                        >
-                          <HiOutlineX className="inline-block mr-1 align-middle" />{" "}
-                          Cancel
-                        </Button>
-                        <Button
-                          color="blue"
-                          size="xs"
+                          size="sm"
+                          color="gray"
                           onClick={() => viewBookingDetails(booking)}
                         >
+                          <HiEye className="mr-2 h-5 w-5" />
                           View
                         </Button>
                         <Button
+                          size="sm"
                           color="gray"
-                          size="xs"
                           onClick={() => generateAppointmentCard(booking)}
                         >
-                          <HiPrinter className="inline-block mr-1 align-middle" />{" "}
+                          <HiPrinter className="mr-2 h-5 w-5" />
                           Print
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="failure"
+                          onClick={() => cancelBooking(booking._id)}
+                        >
+                          <HiOutlineX className="mr-2 h-5 w-5" />
+                          Cancel
                         </Button>
                         {booking.type === "Online Appointment" && (
                           <Button
-                            color="green"
-                            size="xs"
+                            size="sm"
+                            color="blue"
                             onClick={() => openLinkModal(booking)}
-                            disabled={isAfter(
-                              new Date(),
-                              new Date(booking.date)
-                            )}
                           >
                             Open Link
                           </Button>
@@ -769,89 +727,99 @@ const PatientBooking = () => {
                       </div>
                     </Table.Cell>
                   </Table.Row>
-                );
-              })}
-            </Table.Body>
-          </Table>
-          <div className="mt-4 flex justify-between items-center">
-            <Button color="blue" onClick={generateReport}>
-              Generate Report
-            </Button>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredBookings.length / bookingsPerPage)}
-              onPageChange={handlePageChange}
-            />
+                ))}
+              </Table.Body>
+            </Table>
+            <div className="mt-4 flex justify-between items-center">
+              <Button color="blue" onClick={generateReport}>
+                <HiDocumentReport className="mr-2 h-5 w-5" />
+                Generate Report
+              </Button>
+              <div className="flex justify-center mt-4">
+                <Button
+                  color="gray"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  color="gray"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={
+                    currentPage === Math.ceil(bookings.length / bookingsPerPage)
+                  }
+                  className="ml-4"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
-          <Modal show={showModal} onClose={closeModal}>
-  <Modal.Header>Booking Details</Modal.Header>
-  <Modal.Body>
-    {selectedBooking && (
-      <div>
-        <p className="text-gray-500">
-          <HiDocumentText className="inline-block mr-2" />
-          Patient Name: {selectedBooking.patientName}
-        </p>
-        <p className="text-gray-500">
-          <HiDocumentText className="inline-block mr-2" />
-          Doctor Name: {selectedBooking.doctorName}
-        </p>
-        <p className="text-gray-500">
-          <HiCalendar className="inline-block mr-2" />
-          {format(new Date(selectedBooking.date), "yyyy-MM-dd")}
-        </p>
-        <p className="text-gray-500">
-          <HiClock className="inline-block mr-2" />
-          Time: {selectedBooking.time}
-        </p>
-        <p className="text-gray-500">
-          <span className="font-bold">Type:</span> {selectedBooking.type}
-        </p>
-        <p className="text-gray-500">
-          <span className="font-bold">Status:</span>{" "}
-          {getStatusText(selectedBooking.status)}
-        </p>
-      </div>
-    )}
-  </Modal.Body>
-  <Modal.Footer>
-    <div className="flex justify-end">
-      <Button color="blue" onClick={closeModal}>
-        Close
-      </Button>
+          <Modal show={showModal} onClose={closeModal} size="xl">
+            <Modal.Header>Booking Details</Modal.Header>
+            <Modal.Body>
+              {selectedBooking && (
+                <div>
+                  <p>
+                    <strong>Patient Name:</strong> {selectedBooking.patientName}
+                  </p>
+                  <p>
+                    <strong>Doctor Name:</strong> {selectedBooking.doctorName}
+                  </p>
+                  <p>
+                    <strong>Date:</strong>{" "}
+                    {format(new Date(selectedBooking.date), "yyyy-MM-dd")}
+                  </p>
+                  <p>
+                    <strong>Time:</strong> {selectedBooking.time}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> {selectedBooking.type}
+                  </p>
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {getStatusText(selectedBooking.status)}
+                  </p>
+                </div>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button color="gray" onClick={closeModal}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+          <Modal show={showLinkModal} onClose={closeLinkModal}>
+            <Modal.Header>Online Appointment Link</Modal.Header>
+            <Modal.Body>
+              {selectedBooking && (
+                <div>
+                  <p>
+                    Please open the following link at the time of your
+                    appointment:
+                  </p>
+                  <a
+                    href={selectedBooking.meetLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {selectedBooking.meetLink}
+                  </a>
+                </div>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button color="blue" onClick={closeLinkModal}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+          <ToastContainer />
+        </>
+      )}
     </div>
-  </Modal.Footer>
-</Modal>
-         <Modal show={showLinkModal} onClose={closeLinkModal}>
-           <Modal.Header>Online Appointment Link</Modal.Header>
-           <Modal.Body>
-             {selectedBooking && (
-               <div>
-                 <p>
-                   Please open the following link at the time of your
-                   appointment:
-                 </p>
-                 <a
-                   href={selectedBooking.meetLink}
-                   target="_blank"
-                   rel="noopener noreferrer"
-                 >
-                   {selectedBooking.meetLink}
-                 </a>
-               </div>
-             )}
-           </Modal.Body>
-           <Modal.Footer>
-             <Button color="blue" onClick={closeLinkModal}>
-               Close
-             </Button>
-           </Modal.Footer>
-         </Modal>
-         <ToastContainer />
-       </>
-     )}
-   </div>
- );
+  );
 };
 
 export default PatientBooking;

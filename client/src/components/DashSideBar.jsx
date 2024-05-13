@@ -72,6 +72,7 @@ export default function DashSideBar() {
                 Dashboard
               </Sidebar.Item>
             </Link>
+
           )}
           {currentUser && currentUser.isAdmin && (
             <Link to="#">
@@ -83,7 +84,7 @@ export default function DashSideBar() {
               >
                 Dashboard
               </Sidebar.Item>
-            </Link>
+            </Link>     
           )}
           <Link to="/dashboard?tab=profile">
             <Sidebar.Item
@@ -239,7 +240,21 @@ export default function DashSideBar() {
                   Add Employee
                 </Sidebar.Item>
               </Link>
-
+              <Link to="/dashboard?tab=rooms">
+              <Sidebar.Item
+                active={tab === "rooms"}
+                icon={HiDocument}
+                labelColor="dark"
+                as="div"
+              >
+                Rooms
+              </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=slots">
+              <Sidebar.Item active={tab === "slots"} icon={HiDocumentText} as="div">  
+                Slots
+              </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
                   active={tab === "leave"}
