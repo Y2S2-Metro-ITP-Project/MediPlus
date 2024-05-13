@@ -4,9 +4,7 @@ const leaveSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',   
-
     },
-    
     startDate: {
         type: Date,
         required: true

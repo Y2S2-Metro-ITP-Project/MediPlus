@@ -9,6 +9,7 @@ import inventoryRoutes from "./routes/inventory.route.js";
 import suplierroutes from "./routes/supplier.route.js";
 import vitalRoutes from "./routes/vitals.route.js";
 import cookieParser from "cookie-parser";
+import empsalaryRoutes from "./routes/empsalary.route.js"
 import empleaveRoutes from "./routes/empleave.route.js";
 import bookingRoutes  from "./routes/booking.route.js";
 import employeeRoutes from "./routes/employee.route.js"
@@ -55,6 +56,7 @@ app.use("/api/leaves", empleaveRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/employee", employeeRoutes);
+app.use("/api/salary", empsalaryRoutes);
 app.use("/api/vital", vitalRoutes);
 app.use("/api/prescription", prescriptionRoutes);
 app.use("/api/disease", dieseaseRoutes);

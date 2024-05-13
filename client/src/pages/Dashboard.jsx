@@ -23,6 +23,8 @@ import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
 import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
 import DashMedicineDispence from "../components/DashMedicineDispence";
+import Dashstaff_dashboard from "../components/Dashstaff_dashboard";
+import DashEmpsalary from "../components/DashEmpsalary";
 import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashInPateintProfile from "../components/DashInPateintProfile";
@@ -96,6 +98,14 @@ export default function Dashboard() {
        {tab==="EMPleave" && <DashEMPLeave/>}
       {/**<AddEmployee/> */}
       {tab==="Add_staff" && <DashaddEmp/>}
+
+      {/**<Dashstaff_dashboard/> */}
+      {tab==="staff_dashbord" && <Dashstaff_dashboard/>}
+
+      {/**<DashEmpsalary/> */}
+      {tab==="Empsalary" && <DashEmpsalary/>}
+  
+
       {/** <DashBedManagement/> */}
       {tab === "beds" && <DashBedManagement />}
       {/** <DashWards/> */}
