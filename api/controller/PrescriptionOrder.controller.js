@@ -1323,10 +1323,13 @@ export const getFilteredOrderByPaymentStatusData = async (req, res) => {
             path: "payment",
           });
 
-        const prescriptionOrders = prescriptionOrders1.filter((order) => {
-          // Ensure that the order has a payment and its status matches the filterOption
+        const prescriptionOrders2 = prescriptionOrders1.filter((order) => {
           return order.payment && order.payment.status === filterOption;
         });
+
+        const prescriptionOrders = prescriptionOrders2.filter(
+          (order) => order.patientId !== null
+        );
 
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
@@ -1362,9 +1365,12 @@ export const getInFilteredOrderByPaymentStatusData = async (req, res) => {
             path: "payment",
           });
 
-        const prescriptionOrders = prescriptionOrders1.filter((order) => {
+        const prescriptionOrders2 = prescriptionOrders1.filter((order) => {
           return order.payment && order.payment.status === filterOption;
         });
+        const prescriptionOrders = prescriptionOrders2.filter(
+          (order) => order.patientId !== null
+        );
 
         res.status(200).json({ prescriptionOrders });
       } catch (error) {
