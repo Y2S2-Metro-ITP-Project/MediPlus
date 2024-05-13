@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import { createSpace } from "../utils/googleMeet.js";
 import generatePDFFromHtml from "../utils/generatePDF.js";
 import { authorize, sendEmail } from "../utils/bookingEmail.js";
+import Slot from "../models/slot.model.js";
 
 let isProcessing = false;
 
@@ -1122,5 +1123,28 @@ export const sendEmails = async (req, res, next) => {
     res.status(200).json({ message: "Email sent successfully" });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getBookingsBySlot = async (req, res) => {
+  try {
+    const { slotId } = req.params;
+    console.log("Slot ID:", slotId);
+    // Find the slot by ID
+    const slot = await Slot.findById(slotId);
+    if (!slot) {
+      return res.status(404).json({ error: "Slot not found" });
+    }
+
+    // Find all bookings associated with the slot
+    const bookings = await Booking.find({ slotId })
+      .populate("patientId", "username")
+      .populate("doctorId", "username");
+    
+    console.log(bookings)
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to retrieve bookings by slot" });
   }
 };

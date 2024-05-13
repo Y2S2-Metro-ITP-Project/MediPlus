@@ -33,7 +33,7 @@ import DoctorProfile from "../components/DoctorProfile";
 import PatientBooking  from "../components/PatientBooking";
 import DashRoom from "../components/DashRoom";
 import DashSlots from "../components/DashSlots";
-
+import DashSlotBooking from "../components/DashSlotBooking";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -71,6 +71,7 @@ export default function Dashboard() {
       {tab === "rooms" && <DashRoom />}
       {/** <DashSlots /> */}
       {tab === "slots" && <DashSlots />}
+      {tab.startsWith("slotbooking") && <DashSlotBooking />}
       {/** <DashInquiries /> */}
       {tab === "inquiries" && <DashInquiries />}
       {/** <DashInventory /> */}
