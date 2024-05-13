@@ -86,7 +86,7 @@ export const deleteUser = async (req, res, next) => {
 
 
 export const getusers = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isHRM) {
+  if (!req.user.isAdmin && !req.user.isHRM && !req.user.isReceptionist && !req.user.isDoctor && !req.user.isNurse && !req.user.isPharmacist && !req.user.isLabTech && !req.user.isHeadNurse) {
     return next(
       errorHandler(
         403,

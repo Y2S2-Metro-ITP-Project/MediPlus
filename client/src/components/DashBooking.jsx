@@ -1,1425 +1,1192 @@
 import React, { useEffect, useState } from "react";
-import { Button, Label, Modal, Select, Table, TextInput } from "flowbite-react";
-import { HiArrowNarrowUp, HiOutlineExclamationCircle } from "react-icons/hi";
+import {
+  Button,
+  Label,
+  Modal,
+  Select,
+  Table,
+  TextInput,
+  Card,
+  Badge,
+  Spinner,
+  Pagination,
+} from "flowbite-react";
+import {
+  HiSearch,
+  HiFilter,
+  HiTrash,
+  HiEye,
+  HiDocumentReport,
+  HiMail,
+  HiIdentification,
+  HiPencil,
+  HiDownload,
+} from "react-icons/hi";
+import { HiCalendarDays } from "react-icons/hi2";
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
-import { AiOutlineSearch } from "react-icons/ai";
-import { FaCalendar } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import TextArea from "./TextArea";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import {
+  BsBookmarkXFill,
+  BsBookmarkDashFill,
+  BsBookmarkCheckFill,
+  BsBookmarkFill,
+  BsBookmarkPlus,
+  BsBookmarkStar,
+} from "react-icons/bs";
 import html2pdf from "html2pdf.js";
 
-export default function Booking() {
+export default function DashBooking() {
   const { currentUser } = useSelector((state) => state.user);
   const [bookings, setBookings] = useState([]);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [bookingIdToDelete, setBookingIdToDelete] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [filterOption, setFilterOption] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookModal, setShowBookModal] = useState(false);
-  const [bookingData, setBookingData] = useState([]);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const [patientOptions, setPatientOptions] = useState([]);
-  const [reason, setReason] = useState("");
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [sortColumn, setSortColumn] = useState(null);
+  const [sortDirection, setSortDirection] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterPatient, setFilterPatient] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
+  const [formData, setFormData] = useState({});
   const [selectedPatientId, setSelectedPatientId] = useState("");
-  const [totalBookings, setTotalBookings] = useState(0);
-  const [pendingBookings, setPendingBookings] = useState(0);
-  const [completedBookings, setCompletedBookings] = useState(0);
-  const [cancelledBookings, setCancelledBookings] = useState(0);
-  const [filteredBookings, setFilteredBookings] = useState([]);
-  const [showBookingDetailsModal, setShowBookingDetailsModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showViewBookingModal, setShowViewBookingModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [updateFormData, setUpdateFormData] = useState({});
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isRebooking, setIsRebooking] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGeneratingAppointmentCard, setIsGeneratingAppointmentCard] =
+    useState(false);
 
-  // Pagination
-  const bookingsPerPage = 5;
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const indexOfLastBooking = currentPage * bookingsPerPage;
-  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
-  const currentBookings = filteredBookings.slice(
-    indexOfFirstBooking,
-    indexOfLastBooking
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    const timeSlots = generateTimeSlots();
-    setTimeSlots(timeSlots);
-    if (
-      currentUser.isAdmin ||
-      currentUser.isDoctor ||
-      currentUser.isReceptionist
-    ) {
-      fetchBookings();
-      fetchPatient();
-    }
-  }, [currentUser._id]);
+    fetchBookings();
+    fetchPatients();
+    fetchStatusOptions();
+  }, []);
 
   const fetchBookings = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch("/api/booking/getBookings");
       const data = await res.json();
 
       if (res.ok) {
-        // Filter bookings based on user role (doctor or patient)
-        const filteredBookings = data.bookings.filter((booking) => {
-          if (currentUser.isDoctor) {
-            return booking.doctorId === currentUser._id;
-          } else if (currentUser.isOutPatient) {
-            return booking.patientId === currentUser._id;
-          } else {
-            return true; // Allow all bookings for non-doctor and non-patient users
-          }
-        });
-
-        // Update filtered bookings with doctor and patient names
-        const updatedBookings = await Promise.all(
-          filteredBookings.map(async (booking) => {
-            const doctorName = await fetchDoctorName(booking.doctorId);
-            const patientName = await fetchPatientName(booking.patientId);
-
-            // Format date with time
-            const date = new Date(booking.date);
-            const formattedDate = `${date.toLocaleDateString()} ${
-              booking.time
-            }`;
-
-            return { ...booking, doctorName, patientName, formattedDate };
-          })
-        );
-
-        const currentDate = new Date().toLocaleDateString();
-
-        const bookingsForToday = filteredBookings.filter((booking) => {
-          const bookingDate = new Date(booking.date).toLocaleDateString();
-          return bookingDate === currentDate;
-        });
-
-        const total = bookingsForToday.length;
-        const pending = bookingsForToday.filter(
-          (booking) => booking.status === "Pending Payment"
-        ).length;
-        const completed = bookingsForToday.filter(
-          (booking) => booking.status === "Completed"
-        ).length;
-        const cancelled = bookingsForToday.filter(
-          (booking) => booking.status === "Cancelled"
-        ).length;
-
-        setTotalBookings(total);
-        setPendingBookings(pending);
-        setCompletedBookings(completed);
-        setCancelledBookings(cancelled);
-
-        // Sort the bookings in ascending order based on date and time
-        updatedBookings.sort((a, b) => {
-          // Parse the date strings into Date objects
-          const datePartsA = a.date.split("/");
-          const dateA = new Date(
-            datePartsA[2],
-            datePartsA[1] - 1,
-            datePartsA[0]
-          );
-
-          const datePartsB = b.date.split("/");
-          const dateB = new Date(
-            datePartsB[2],
-            datePartsB[1] - 1,
-            datePartsB[0]
-          );
-
-          // Compare the dates
-          if (dateA < dateB) return -1;
-          if (dateA > dateB) return 1;
-
-          // If the dates are equal, compare the times
-          const timePartsA = a.time.split(":");
-          const timeA = parseInt(timePartsA[0]) * 60 + parseInt(timePartsA[1]);
-
-          const timePartsB = b.time.split(":");
-          const timeB = parseInt(timePartsB[0]) * 60 + parseInt(timePartsB[1]);
-
-          return timeA - timeB;
-        });
-
-        setBookings(updatedBookings);
-        setFilteredBookings(updatedBookings);
+        setBookings(data.bookings);
       }
     } catch (error) {
       console.error(error);
+      toast.error("Failed to fetch bookings. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const fetchPatient = async () => {
+  const fetchPatients = async () => {
     try {
-      const response = await fetch("/api/patient/getPatientsforBooking");
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message);
-      }
-      const options = data.map((patient) => ({
-        value: patient._id,
-        label: patient.name,
-      }));
-      console.log("Patient Options:", options); // Log patient options
-      setPatientOptions(options);
-    } catch (error) {
-      console.error("Error fetching Patients:", error);
-    }
-  };
-
-  const fetchDoctorName = async (doctorId) => {
-    try {
-      const res = await fetch(`/api/user/${doctorId}`);
+      const res = await fetch("/api/patient/getPatientsforBooking");
       const data = await res.json();
+
       if (res.ok) {
-        return data.username;
+        const options = data.map((patient) => ({
+          value: patient._id,
+          label: patient.name,
+        }));
+        setPatientOptions(options);
       }
-      return "Unknown";
     } catch (error) {
       console.error(error);
-      return "Unknown";
+      toast.error("Failed to fetch patients. Please try again later.");
     }
   };
 
-  const fetchPatientName = async (patientId) => {
-    try {
-      const res = await fetch(`/api/patient/getPatient/${patientId}`);
-      const data = await res.json();
-      if (res.ok) {
-        console.log("Patient Name:", data.name);
-        return data.name;
-      }
-      return "Not Assigned";
-    } catch (error) {
-      console.error(error);
-      return "Not Assigned";
+  const fetchStatusOptions = () => {
+    const statusOptions = [
+      { value: "Completed", label: "Completed" },
+      { value: "Pending", label: "Pending" },
+      { value: "Cancelled", label: "Cancelled" },
+      { value: "Not Booked", label: "Not Booked" },
+      { value: "Booked", label: "Booked" },
+      { value: "ReBooked", label: "Rebooked" },
+      { value: "In Consultation", label: "In Consultation" },
+    ];
+    setStatusOptions(statusOptions);
+  };
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
     }
   };
 
-  const handleBookModal = (booking) => {
-    setBookingData(booking);
+  const handleViewBooking = (booking) => {
     setSelectedBooking(booking);
-    console.log("Selected Booking:", booking);
-    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
+    setShowViewModal(true);
+  };
 
-    let roomName; // Declare roomName variable without assignment
+  const handleDeleteBooking = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/booking/delete/${selectedBooking._id}`, {
+        method: "DELETE",
+      });
 
-    if (booking.roomNo == "1") {
-      roomName = "Consultation";
-    } else if (booking.roomNo == "2") {
-      roomName = "OPD";
-    } else if (booking.roomNo == "3") {
-      roomName = "Emergency Room";
+      if (res.ok) {
+        toast.success("Booking deleted successfully.");
+        setShowDeleteModal(false);
+        setSelectedBooking(null);
+        await fetchBookings();
+      } else {
+        toast.error("Failed to delete the booking. Please try again later.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "An error occurred while deleting the booking. Please try again later."
+      );
+    } finally {
+      setIsDeleting(false);
     }
+  };
 
-    setFormData({
-      type: booking.type,
-      roomNo: roomName,
-      date: formattedDate,
-      time: booking.time,
-      doctorName: booking.doctorName,
-    });
-
-    console.log("Booking Data:", roomName);
-
-    setShowBookModal(true); // Show the book modal
+  const handleCancelBooking = () => {
+    setShowCancelModal(true);
   };
 
   const handleBookAppointment = async (e) => {
     e.preventDefault();
+    setIsBooking(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
+    const patientName = selectedBooking.patientName;
+    console.log();
+
+    if (!selectedPatientId) {
+      toast.error("Please select a patient.");
+      setIsBooking(false);
+      return;
+    }
+
     try {
-      if (!selectedPatientId || !bookingData._id) {
-        toast.error("Patient ID and Booking ID are required");
-        return;
-      }
+      const url = isRebooking
+        ? `/api/booking/rebookAppointment/${selectedBooking._id}`
+        : `/api/booking/bookAppointment/${selectedBooking._id}`;
 
-      const booking = {
-        _id: bookingData._id,
-        patientId: selectedPatientId,
-      };
-
-      console.log("Booking data:", booking);
-
-      const res = await fetch(`/api/booking/bookAppointment/${booking._id}`, {
+      const res = await fetch(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(booking),
+        body: JSON.stringify({
+          patientId: selectedPatientId,
+          doctorName,
+          roomName,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to book appointment");
+      if (res.ok) {
+        toast.success(
+          isRebooking
+            ? "Appointment rebooked successfully."
+            : "Appointment booked successfully."
+        );
+        setShowBookModal(false);
+        setSelectedPatientId("");
+        setIsRebooking(false);
+        await fetchBookings();
+      } else {
+        toast.error(
+          isRebooking
+            ? "Failed to rebook the appointment. Please try again later."
+            : "Failed to book the appointment. Please try again later."
+        );
       }
-
-      setFormData({});
-      setSelectedTimeSlots([]);
-      setShowBookModal(false);
-      toast.success("Appointment Booked Successfully");
-      fetchBookings(); // Assuming fetchBookings fetches the updated list of bookings
     } catch (error) {
-      toast.error(error.message || "Failed to book appointment");
       console.error(error);
+      toast.error(
+        isRebooking
+          ? "An error occurred while rebooking the appointment. Please try again later."
+          : "An error occurred while booking the appointment. Please try again later."
+      );
+    } finally {
+      setIsBooking(false);
     }
   };
 
-  const handleUpdateBooking = (booking) => {
-    setSelectedBooking(booking);
-    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
-    setFormData({
-      type: booking.type,
-      roomNo: booking.roomNo,
-      date: formattedDate,
-      patient: booking.patientId,
-      time: booking.time,
-      status: booking.status,
-      selectedPatientId: booking.patientId, // Set the selected patient ID here
-    });
-    setSelectedPatientId(booking.patientId); // Set the selected patient ID here
-    setShowUpdateModal(true);
+  const confirmCancellation = async () => {
+    if (!cancellationReason) {
+      toast.error("Please provide a cancellation reason.");
+      return;
+    }
+    setIsCancelling(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
+
+    try {
+      const res = await fetch(`/api/booking/cancel/${selectedBooking._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reason: cancellationReason,
+          doctorName,
+          roomName,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Booking cancelled successfully.");
+        setShowCancelModal(false);
+        setShowViewModal(false);
+        setSelectedBooking(null);
+        setCancellationReason("");
+        await fetchBookings();
+      } else {
+        toast.error("Failed to cancel the booking. Please try again later.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "An error occurred while cancelling the booking. Please try again later."
+      );
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
-  const handleUpdateSubmit = async (e) => {
+  const handleUpdateBooking = async (e) => {
     e.preventDefault();
+    setIsUpdating(true);
+
+    const doctorName = selectedBooking.doctorName;
+    const roomName = selectedBooking.roomName;
+
+    if (!selectedStatus) {
+      toast.error("Please select a status.");
+      setIsUpdating(false);
+      return;
+    }
+
     try {
-      const { type, date, roomNo, status, time } = formData; // Remove 'patient' from here
-
-      // Add patient to formData with selectedPatientId
-      const updatedBooking = {
-        _id: selectedBooking._id,
-        type,
-        date,
-        time,
-        roomNo,
-        status,
-        patientId: selectedPatientId, // Use selectedPatientId here
-      };
-
-      if (!type || !date || !time || !selectedPatientId || !status) {
-        // Change 'patient' to 'selectedPatientId'
-        toast.error("Type, date, time, patient, and status are required"); // Change 'patient' to 'selectedPatientId'
-        return;
-      }
-
-      console.log("Updated Booking:", updatedBooking);
-
       const res = await fetch(`/api/booking/update/${selectedBooking._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedBooking),
+        body: JSON.stringify({
+          patientId:
+            selectedPatientId ||
+            updateFormData.patientId ||
+            selectedBooking.patientId,
+          status: selectedStatus,
+          doctorName,
+          roomName,
+        }),
       });
 
       const data = await res.json();
 
-      console.log("Response:", data);
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to update booking");
-      }
-
-      setFormData({});
-      setSelectedTimeSlots([]);
-      setShowUpdateModal(false);
-      setSelectedBooking(null);
-      toast.success("Booking Updated Successfully");
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.message || "Failed to update booking");
-      console.error(error);
-    }
-  };
-
-  const handleViewBookingDetails = (booking) => {
-    setSelectedBooking(booking);
-    const formattedDate = new Date(booking.date).toISOString().split("T")[0];
-
-    let roomName; // Declare roomName variable without assignment
-
-    if (booking.roomNo == "1") {
-      roomName = "Consultation";
-    } else if (booking.roomNo == "2") {
-      roomName = "OPD";
-    } else if (booking.roomNo == "3") {
-      roomName = "Emergency Room";
-    }
-
-    setFormData({
-      type: booking.type,
-      roomNo: roomName || "",
-      date: formattedDate || "",
-      doctorName: booking.doctorName || "", // Set doctorName
-      patientName: booking.patientName || "", // Set patientName
-      time: booking.time || "",
-      status: booking.status || "",
-      selectedPatientId: booking.patientId || "",
-    });
-    setShowViewBookingModal(true);
-  };
-
-  const handleBookingDelete = async (bookingId) => {
-    try {
-      const res = await fetch(`/api/booking/delete/${bookingId}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
       if (res.ok) {
-        setBookings((prev) =>
-          prev.filter((booking) => booking._id !== bookingId)
+        toast.success(data.message);
+        setShowUpdateModal(false);
+        setSelectedPatientId("");
+        setSelectedStatus("");
+        await fetchBookings();
+      } else {
+        toast.error(
+          data.message ||
+            "Failed to update the booking. Please try again later."
         );
-        toast.success(data.message);
-      } else {
-        console.log(data.message);
       }
     } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const onChange = (e) => {
-    const { id, value } = e.target;
-    setFormData({ ...formData, [id]: value });
-    if (id === "selectedPatientId") {
-      console.log("Selected Patient ID:", value);
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const searchQuery = e.target.value.toLowerCase();
-    const filteredBookings = bookings.filter((booking) => {
-      // Customize this condition based on your search requirements
-      return (
-        booking.doctorName.toLowerCase().includes(searchQuery) ||
-        booking.patientName.toLowerCase().includes(searchQuery) ||
-        booking.type.toLowerCase().includes(searchQuery) ||
-        new Date(booking.date).toLocaleDateString().includes(searchQuery) ||
-        booking.time.includes(searchQuery)
-      );
-    });
-    setFilteredBookings(filteredBookings);
-  };
-
-  const handleFilterChange = async (e) => {
-    e.preventDefault();
-    const selectedOption = e.target.value;
-    try {
-      const res = await fetch("/api/booking/filterBookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ filterOption: selectedOption }),
-      });
-      const data = await res.json();
-      setBookings(data);
-      setShowMore(data.bookings.length > 9);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
-
-  const handleStatusFilterChange = async (e) => {
-    e.preventDefault();
-    const selectedStatus = e.target.value;
-    const filteredBookings = bookings.filter(
-      (booking) => booking.status === selectedStatus
-    );
-
-    // Update filtered bookings with doctor and patient names
-    const updatedBookings = await Promise.all(
-      filteredBookings.map(async (booking) => {
-        const doctorName = await fetchDoctorName(booking.doctorId);
-        const patientName = await fetchPatientName(booking.patientId);
-
-        // Format date with time
-        const date = new Date(booking.date);
-        const formattedDate = `${date.toLocaleDateString()} ${booking.time}`;
-
-        return { ...booking, doctorName, patientName, formattedDate };
-      })
-    );
-
-    setFilteredBookings(updatedBookings);
-  };
-
-  const toggleSelectAll = () => {
-    setSelectAll(!selectAll);
-    const updatedBookings = bookings.map((booking) => {
-      return { ...booking, isSelected: !selectAll };
-    });
-    setBookings(updatedBookings);
-  };
-
-  const handleSelectBooking = (index) => {
-    const updatedBookings = [...bookings];
-    updatedBookings[index].isSelected = !updatedBookings[index].isSelected;
-    setBookings(updatedBookings);
-  };
-
-  const handleCancelSelected = async () => {
-    try {
-      const selectedIds = bookings
-        .filter((booking) => booking.isSelected)
-        .map((booking) => booking._id);
-
-      // Make an API call to cancel the selected bookings
-      const res = await fetch("/api/booking/cancelSelected", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingIds: selectedIds }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(data.message);
-
-        // Clear the isSelected property of each booking
-        const updatedBookings = bookings.map((booking) => ({
-          ...booking,
-          isSelected: false,
-        }));
-        setBookings(updatedBookings);
-        fetchBookings();
-      } else {
-        toast.error(data.error || "Failed to cancel selected bookings");
-      }
-    } catch (error) {
-      toast.error("Failed to cancel selected bookings");
       console.error(error);
+      toast.error(
+        "An error occurred while updating the booking. Please try again later."
+      );
+    } finally {
+      setIsUpdating(false);
     }
-  };
-
-  const generateTimeSlots = () => {
-    const timeSlots = [];
-    const startTime = 9; // Start time in 24-hour format (9 AM)
-    const endTime = 24; // End time in 24-hour format (12 AM)
-
-    for (let hour = startTime; hour <= endTime; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const formattedHour = hour < 10 ? `0${hour}` : hour;
-        const formattedMinute = minute === 0 ? "00" : minute;
-        const timeSlot = `${formattedHour}:${formattedMinute}`;
-        timeSlots.push(timeSlot);
-      }
-    }
-
-    return timeSlots;
   };
 
   const generateReport = () => {
-    const marginLeft = 20;
-    const marginRight = 20;
-    const marginTop = 20;
-    const marginBottom = 20;
-
-    const contentWidth = document.body.clientWidth - marginLeft - marginRight;
-    const contentHeight = document.body.clientHeight - marginTop - marginBottom;
-
-    const currentDate = new Date().toISOString().slice(0, 10); // Get current date in "YYYY-MM-DD" format
-
-    const filename = `AppointmentReport_${currentDate}.pdf`; // Construct filename with current date
-
-
-    let report = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Report</title>
-    <style>
-    .top_rw{ background-color:#f4f4f4; }
-    .td_w{ }
-    button{ padding:5px 10px; font-size:14px;}
-    .invoice-box {
-        max-width: 890px;
-        margin: auto;
-        padding:10px;
-        border: 1px solid #eee;
-        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
-        font-size: 14px;
-        line-height: 24px;
-        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-        color: #555;
-    }
-    .invoice-box table {
-        width: 100%;
-        line-height: inherit;
-        text-align: left;
-        border-bottom: solid 1px #ccc;
-    }
-    .invoice-box table td {
-        padding: 5px;
-        vertical-align:top; /* Adjusted vertical alignment */
-    }
-    .invoice-box table tr td:nth-child(2) {
-        text-align: left; /* Adjusted text alignment */
-    }
-    .invoice-box table tr.top table td {
-        padding-bottom: 20px;
-    }
-    .invoice-box table tr.top table td.title {
-        font-size: 45px;
-        line-height: 45px;
-        color: #333;
-    }
-    .invoice-box table tr.information table td {
-        padding-bottom: 10px; /* Adjusted padding */
-    }
-    .invoice-box table tr.heading td {
-        background: #eee;
-        border-bottom: 1px solid #ddd;
-        font-weight: bold;
-        font-size:12px;
-    }
-    .invoice-box table tr.details td {
-        padding-bottom: 10px; /* Adjusted padding */
-    }
-    .invoice-box table tr.item td{
-        border-bottom: 1px solid #eee;
-    }
-    .invoice-box table tr.item.last td {
-        border-bottom: none;
-    }
-    .invoice-box table tr.total td:nth-child(2) {
-        border-top: 2px solid #eee;
-        font-weight: bold;
-    }
-    @media only screen and (max-width: 600px) {
-        .invoice-box table tr.top table td {
-            width: 100%;
-            display: block;
-            text-align: center;
-        }
-        .invoice-box table tr.information table td {
-            width: 100%;
-            display: block;
-            text-align: center;
-        }
-    }
-    /** RTL **/
-    .rtl {
-        direction: rtl;
-        font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-    }
-    .rtl table {
-        text-align: right;
-    }
-    .rtl table tr td:nth-child(2) {
-        text-align: left;
-    }
-    </style>
-    </head>
-    <body>
-    
-    <div class="invoice-box">
-        <table cellpadding="0" cellspacing="0">
-            <tr class="top_rw">
-                <td colspan="2">
-                    <h2 style="margin-bottom: 0px;"> Isamils Hospital Pvt Ltd </h2>
-                    <span style=""> Booking Report </span>
-                </td>
-            </tr>
-            <tr class="information">
-                <td colspan="2">
-                    <b>Hospital Information:</b> <br>
-                    <b>Hospital Name:</b> Isamils Hospital Pvt Ltd <br>
-                    <b>Address:</b> 123, Sample Street, City, Country <br>
-                    <b>Phone:</b> +1234567890 <br>
-                    <b>Email:</b> info@example.com <br>
-                </td>
-            </tr>
-        </table>
-        <h2 style="margin-bottom: 20px;">Booking Details</h2>
-        <table cellpadding="0" cellspacing="0">
-          <tr class="heading">
-          <td style="width:15%;">Date</td>
-          <td style="width:15%;">Type</td>
-          <td style="width:15%;">Room</td>
-          <td style="width:20%;">Doctor</td>
-          <td style="width:25%;">Patient</td>
-          <td style="width:15%;">Status</td>
-      </tr>
-      <tbody>
-                ${filteredBookings.map(
-                  (booking) => {
-                    let roomName;
-
-                    if (booking.roomNo == "1") {
-                      roomName = "Consultation";
-                    } else if (booking.roomNo == "2") {
-                      roomName = "OPD";
-                    } else if (booking.roomNo == "3") {
-                      roomName = "Emergency Room";
-                    }
-
-                    return `
-                    <tr class="item">
-                        <td>${booking.formattedDate}</td>
-                        <td>${booking.type}</td>
-                        <td>${roomName}</td>
+    setIsGeneratingReport(true);
+    try {
+      const reportContent = `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                font-size: 12px;
+              }
+              h1 {
+                text-align: center;
+                color: #333;
+                font-size: 18px;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+              }
+              th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+              }
+              th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+              }
+              tr:nth-child(even) {
+                background-color: #f9f9f9;
+              }
+              .logo {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .logo img {
+                max-width: 150px;
+              }
+              .report-title {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .report-date {
+                text-align: right;
+                font-style: italic;
+                margin-bottom: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="logo">
+              <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
+            </div>
+            <div class="report-title">
+              <h1>Hospital Booking Report</h1>
+            </div>
+            <div class="report-date">
+              Report Generated on ${new Date().toLocaleDateString()}
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking Date</th>
+                  <th>Booking Time</th>
+                  <th>Doctor</th>
+                  <th>Patient</th>
+                  <th>Room/Location</th>
+                  <th>Booking Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredBookings
+                  .map(
+                    (booking) => `
+                      <tr>
+                        <td>${new Date(booking.date).toLocaleDateString()}</td>
+                        <td>${booking.time}</td>
                         <td>${booking.doctorName}</td>
-                        <td>${booking.patientName}</td>
+                        <td>${booking.patientName || "-"}</td>
+                        <td>${booking.roomName}</td>
                         <td>${booking.status}</td>
-                    </tr>
-                    `;
-                  }
-                ).join('')}
-      </tbody>
-        </table>
-    </div>
-    
-    </body>
-    </html>
-    
-    `;
+                      </tr>
+                    `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
 
-    html2pdf().from(report).toPdf().save(filename);
+      const options = {
+        filename: "bookings_report.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+      };
+
+      html2pdf().set(options).from(reportContent).save();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate the report. Please try again later.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
-  const generateDoctorsReport = () => {
-    const marginLeft = 20;
-    const marginRight = 20;
-    const marginTop = 20;
-    const marginBottom = 20;
-
-    const contentWidth = document.body.clientWidth - marginLeft - marginRight;
-    const contentHeight = document.body.clientHeight - marginTop - marginBottom;
-
-    let roomName = ''; // Initialize roomName variable
-
-    if (filteredBookings.length > 0) {
-        // Get room name from the first booking
-        const firstBooking = filteredBookings[0];
-        if (firstBooking.roomNo == "1") {
-            roomName = "Consultation";
-        } else if (firstBooking.roomNo == "2") {
-            roomName = "OPD";
-        } else if (firstBooking.roomNo == "3") {
-            roomName = "Emergency Room";
+  const generateAppointmentCard = async (booking) => {
+    setIsGeneratingAppointmentCard(true);
+    try {
+      const response = await fetch(
+        `/api/booking/generateAppointmentCard/${booking._id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "appointment_card.pdf");
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+      } else {
+        toast.error(
+          "Failed to generate appointment card. Please try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error generating appointment card:", error);
+      toast.error(
+        "An error occurred while generating the appointment card. Please try again later."
+      );
+    } finally {
+      setIsGeneratingAppointmentCard(false);
     }
+  };
 
-    // Generate a filename based on doctor's name, date, and starting time
-    const doctorName = filteredBookings[0]?.doctorName || '';
-    const date = new Date().toLocaleDateString().replace(/\//g, '-'); // Replace slashes with hyphens for safe filename
-    const startingTime = filteredBookings.length > 0 ? filteredBookings[0].time : '';
+  const sendEmail = async () => {
+    setIsSendingEmail(true);
+    try {
+      const { date, time, doctorName, roomName } = selectedBooking;
+      const contactEmail = selectedBooking.patientId.contactEmail;
+      console.log(contactEmail);
+      const emailContent = `
+      Dear ${selectedBooking.patientName},
 
-    const filename = `${doctorName}_${date}_${startingTime}.pdf`;
+      Here are the details of your upcoming appointment:
 
-    let report = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Doctor's Daily Schedule</title>
-        <style>
-        .top_rw{ background-color:#f4f4f4; }
-      .td_w{ }
-      button{ padding:5px 10px; font-size:14px;}
-      .invoice-box {
-          max-width: 890px;
-          margin: auto;
-          padding:10px;
-          border: 1px solid #eee;
-          box-shadow: 0 0 10px rgba(0, 0, 0, .15);
-          font-size: 14px;
-          line-height: 24px;
-          font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-          color: #555;
-      }
-      .invoice-box table {
-          width: 100%;
-          line-height: inherit;
-          text-align: left;
-          border-bottom: solid 1px #ccc;
-      }
-      .invoice-box table td {
-          padding: 5px;
-          vertical-align:top; /* Adjusted vertical alignment */
-      }
-      .invoice-box table tr td:nth-child(2) {
-          text-align: left; /* Adjusted text alignment */
-      }
-      .invoice-box table tr.top table td {
-          padding-bottom: 20px;
-      }
-      .invoice-box table tr.top table td.title {
-          font-size: 45px;
-          line-height: 45px;
-          color: #333;
-      }
-      .invoice-box table tr.information table td {
-          padding-bottom: 10px; /* Adjusted padding */
-      }
-      .invoice-box table tr.heading td {
-          background: #eee;
-          border-bottom: 1px solid #ddd;
-          font-weight: bold;
-          font-size:12px;
-      }
-      .invoice-box table tr.details td {
-          padding-bottom: 10px; /* Adjusted padding */
-      }
-      .invoice-box table tr.item td{
-          border-bottom: 1px solid #eee;
-      }
-      .invoice-box table tr.item.last td {
-          border-bottom: none;
-      }
-      .invoice-box table tr.total td:nth-child(2) {
-          border-top: 2px solid #eee;
-          font-weight: bold;
-      }
-      @media only screen and (max-width: 600px) {
-          .invoice-box table tr.top table td {
-              width: 100%;
-              display: block;
-              text-align: center;
-          }
-          .invoice-box table tr.information table td {
-              width: 100%;
-              display: block;
-              text-align: center;
-          }
-      }
-      /** RTL **/
-      .rtl {
-          direction: rtl;
-          font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-      }
-      .rtl table {
-          text-align: right;
-      }
-      .rtl table tr td:nth-child(2) {
-          text-align: left;
-      }
-        </style>
-        </head>
-        <body>
+      <h3 style="color: #4CAF50; font-family:'Roboto', sans-serif;">Appointment Details</h3>
+      <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+    <strong>Date:</strong> ${new Date(date).toLocaleDateString()}<br>
+    <strong>Time:</strong> ${time}<br>
+    <strong>Doctor:</strong> ${doctorName}<br>
+    <strong>Room:</strong> ${roomName}<br>
+    <strong>Status:</strong> Booked
+  </p>
 
-        <div class="invoice-box">
-            <table cellpadding="0" cellspacing="0">
-                <tr class="top_rw">
-                    <td colspan="2">
-                        <h2 style="margin-bottom: 0px;"> Isamils Hospital Pvt Ltd </h2>
-                        <span style=""> Doctor's Daily Schedule </span><br>
-                        <b>Doctor:</b> ${doctorName} <br>
-                        <b>Date:</b> ${new Date().toLocaleDateString()} <br>
-                        <b>Room:</b> ${roomName} <br>
-                    </td>
-                </tr>
-            </table>
+  <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+    Please arrive 30 minutes before your appointment for check-in and registration.
+  </p>
 
-            <table cellpadding="0" cellspacing="0">
-                <tr class="heading">
-                    <td style="width:20%;">Time</td>
-                    <td style="width:20%;">Type</td>
-                    <td style="width:60%;">Patient</td>
-                </tr>
-                <tbody>
-                    ${filteredBookings.map(
-                        (booking) => {
-                            return `
-                            <tr class="item">
-                                <td>${booking.time}</td>
-                                <td>${booking.type}</td>
-                                <td>${booking.patientName}</td>
-                            </tr>
-                            `;
-                        }
-                    ).join('')}
-                </tbody>
-            </table>
-        </div>
+  <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+    Thank you for choosing our healthcare services. If you have any questions or need to reschedule, please don't hesitate to contact us.
+  </p>
 
-        </body>
-        </html>
+  <p style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 1.5;">
+    Best regards,<br>
+    Your Healthcare Provider
+  </p>
+  `;
 
-    `;
+  await fetch("/api/booking/sendEmail", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: contactEmail,
+      subject: "Appointment Details",
+      html: emailContent,
+    }),
+  });
 
-    html2pdf().from(report).toPdf().save(filename);
+  toast.success("Email sent successfully.");
+} catch (error) {
+  console.error("Error sending email:", error);
+  toast.error("Failed to send email. Please try again later.");
+} finally {
+  setIsSendingEmail(false);
+}
 };
 
+const generateBookingReport = async (booking) => {
+  try {
+  const reportContent =`         <html>           <head>             <style>               body {                 font-family: Arial, sans-serif;                 margin: 0;                 padding: 20px;               }               h1 {                 color: #333;               }               table {                 width: 100%;                 border-collapse: collapse;                 margin-top: 20px;               }               th, td {                 padding: 8px;                 text-align: left;                 border-bottom: 1px solid #ddd;               }               th {                 background-color: #f2f2f2;               }               .logo {                 text-align: center;                 margin-bottom: 20px;               }               .logo img {                 max-width: 150px;               }             </style>           </head>           <body>             <div class="logo">               <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">             </div>             <h1>Booking Report</h1>             <table>               <tr>                 <th>Booking Date</th>                 <td>${new Date(booking.date).toLocaleDateString()}</td>               </tr>               <tr>                 <th>Booking Time</th>                 <td>${booking.time}</td>               </tr>               <tr>                 <th>Doctor</th>                 <td>${booking.doctorName}</td>               </tr>               <tr>                 <th>Patient</th>                 <td>${booking.patientName || "-"}</td>               </tr>               <tr>                 <th>Room/Location</th>                 <td>${booking.roomName}</td>               </tr>               <tr>                 <th>Booking Status</th>                 <td>${booking.status}</td>               </tr>             </table>             <h2>Booking History</h2>             <table>               <thead>                 <tr>                   <th>Action</th>                   <th>Timestamp</th>                   <th>User</th>                   <th>Details</th>                 </tr>               </thead>               <tbody>                 ${booking.history                   .map(                     (entry) =>
+  <tr>
+  <td>${entry.action}</td>
+  <td>${new Date(entry.timestamp).toLocaleString()}</td>
+  <td>${entry.user ? entry.user.username : "-"}</td>
+  <td>${entry.details || "-"}</td>
+  </tr>
+                    )                   .join("")}               </tbody>             </table>           </body>         </html>      `;
 
+                    const options = {
+                      filename: `booking_report_${booking._id}.pdf`,
+                      image: { type: "jpeg", quality: 0.98 },
+                      html2canvas: { scale: 2 },
+                      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+                    };
+                  
+                    html2pdf().set(options).from(reportContent).save();
+                  } catch (error) {
+                    console.error("Error generating booking report:", error);
+                    toast.error(
+                      "Failed to generate the booking report. Please try again later."
+                    );
+                  }
+                };
 
-  const handleReasonChange = (newValue) => {
-    setReason(newValue);
-  };
-
-  const handleDeleteSelected = async () => {
-    try {
-      const selectedIds = bookings
-        .filter((booking) => booking.isSelected)
-        .map((booking) => booking._id);
-      const promises = selectedIds.map((id) => handleBookingDelete(id));
-      await Promise.all(promises);
-      toast.success("Selected bookings deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete selected bookings");
-      console.error(error);
-    }
-  };
-
-  const handleAddBooking = async (e) => {
-    e.preventDefault();
-    try {
-      const { type, date, roomNo } = formData;
-      const doctorId = currentUser._id;
-
-      if (!type || !date || selectedTimeSlots.length === 0) {
-        toast.error("Type, date, and at least one time slot are required");
-        return;
-      }
-
-      for (const time of selectedTimeSlots) {
-        const newBooking = {
-          type,
-          doctorId,
-          date,
-          time,
-          roomNo,
-        };
-
-        const res = await fetch("/api/booking/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newBooking),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to add booking");
-        }
-      }
-
-      setFormData({});
-      setSelectedTimeSlots([]);
-      setShowAddModal(false);
-      toast.success("Bookings Added Successfully");
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.message || "Failed to add bookings");
-      console.error(error);
-    }
-  };
-
-  const handleReset = async () => {
-    try {
-      const res = await fetch("/api/booking/getBookings");
-      const data = await res.json();
-      if (res.ok) {
-        setBookings(data.bookings);
-        setFilteredBookings(data.bookings); // Reset filtered bookings
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
-  return (
-    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
-      <ToastContainer />
-      <div className="p-3 md:mx-auto">
-        <h1 className="text-3xl font-bold mb-4 ">Todays Bookings</h1>
-        <div className="flex-wrap flex gap-4 justify-center">
-          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-            <div className="flex justify-between">
-              <div className="">
-                <h3 className="text-gray-500 text-md uppercase">
+                const filteredBookings = bookings.filter((booking) => {
+                  const matchesSearch =
+                  booking.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (booking.patientName &&
+                  booking.patientName.toLowerCase().includes(searchTerm.toLowerCase()));
+                  const matchesDate = filterDate
+                  ? new Date(booking.date).toLocaleDateString() ===
+                  new Date(filterDate).toLocaleDateString()
+                  : true;
+                  const matchesPatient = filterPatient
+                  ? booking.patientId === filterPatient
+                  : true;
+                  const matchesType = filterType ? booking.type === filterType : true;
+                  const matchesRoom = filterRoom ? booking.roomName === filterRoom : true;
+                  return (
+                  matchesSearch &&
+                  matchesDate &&
+                  matchesPatient &&
+                  matchesType &&
+                  matchesRoom
+                  );
+                  });
+                  const totalCompletedBookings = bookings.filter(
+                  (booking) => booking.status === "Completed"
+                  ).length;
+                  const totalPendingBookings = bookings.filter(
+                  (booking) => booking.status === "Pending"
+                  ).length;
+                  const totalCancelledBookings = bookings.filter(
+                  (booking) => booking.status === "Cancelled"
+                  ).length;
+                  const totalNotBookedBookings = bookings.filter(
+                  (booking) => booking.status === "Not Booked"
+                  ).length;
+                  const indexOfLastItem = currentPage * itemsPerPage;
+                  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                  const currentItems = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+                  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+                  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+                  return (
+                  <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+                  {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                  <Spinner color="info" aria-label="Loading spinner" />
+                  </div>
+                  ) : (
+                  <>
+                  <ToastContainer />
+                  <div className="flex flex-col md:flex-row justify-between items-start mb-8 px-4">
+                  <div className="flex items-center">
+                  <h1 className="text-3xl font-bold mb-0 mr-4">
+                  <HiCalendarDays className="inline-block mr-1 align-middle" />
+                  Bookings
+                  </h1>
+                  </div>
+                  </div>
+                  <div className="mb-4 flex flex-wrap gap-4">
+                  <Card>
+                  <div className="flex items-center justify-between">
+                  <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
                   Total Bookings
-                </h3>
-                <p className="text-2xl">{totalBookings}</p>
-              </div>
-              <FaCalendar className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
-            </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-            <div className="flex justify-between">
-              <div className="">
-                <h3 className="text-gray-500 text-md uppercase">
-                  Pending Bookings
-                </h3>
-                <p className="text-2xl">{pendingBookings}</p>
-              </div>
-              <FaCalendar className="bg-yellow-600 text-white rounded-full text-5xl p-3 shadow-lg" />
-            </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-            <div className="flex justify-between">
-              <div className="">
-                <h3 className="text-gray-500 text-md uppercase">
+                  </h5>
+                  <Badge color="info" className="text-2xl font-bold">
+                  {bookings.length}
+                  </Badge>
+                  </div>
+                  </Card>
+                  <Card>
+                  <div className="flex items-center justify-between">
+                  <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
                   Completed Bookings
-                </h3>
-                <p className="text-2xl">{completedBookings}</p>
-              </div>
-              <FaCalendar className="bg-green-600 text-white rounded-full text-5xl p-3 shadow-lg" />
-            </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
-            <div className="flex justify-between">
-              <div className="">
-                <h3 className="text-gray-500 text-md uppercase">
+                  </h5>
+                  <Badge color="success" className="text-2xl font-bold">
+                  {totalCompletedBookings}
+                  </Badge>
+                  </div>
+                  </Card>
+                  <Card>
+                  <div className="flex items-center justify-between">
+                  <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Pending Bookings
+                  </h5>
+                  <Badge color="warning" className="text-2xl font-bold">
+                  {totalPendingBookings}
+                  </Badge>
+                  </div>
+                  </Card>
+                  <Card>
+                  <div className="flex items-center justify-between">
+                  <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
                   Cancelled Bookings
-                </h3>
-                <p className="text-2xl">{cancelledBookings}</p>
-              </div>
-              <FaCalendar className="bg-red-600 text-white rounded-full text-5xl p-3 shadow-lg" />
-            </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex mb-2">
-        <h1 className="text-3xl font-bold mb-4 ">
-          {" "}
-          {currentUser.isDoctor
-            ? "Doctors Appointments"
-            : "Patient Appointments"}
-        </h1>
-      </div>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          <form onSubmit={(e) => handleSearch(e)}>
-            <TextInput
-              type="text"
-              placeholder="Search...."
-              rightIcon={AiOutlineSearch}
-              className="hidden lg:inline"
-              id="search"
-              onChange={handleSearch}
-              style={{ width: "300px" }}
-            />
-          </form>
-        </div>
-        <Button
-          className="w-200 h-10 ml-6lg:ml-0 lg:w-32"
-          color="gray"
-          onClick={() => fetchBookings()}
-        >
-          Reset
-        </Button>
-        <select
-          id="filter"
-          onChange={handleFilterChange}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue">Choose a filter option</option>
-          <option value="today">Today</option>
-          <option value="tomorrow">Tomorrow</option>
-          <option value="comingweek">Coming Week</option>
-          <option value="comingmonth">Coming Month</option>
-          <option value="lastmonth">Last Month</option>
-          <option value="lastyear">Last Year</option>
-          <option value="Bydate">By Date</option>
-        </select>
-        <select
-          id="statusFilter"
-          onChange={handleStatusFilterChange}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="">Filter by Status</option>
-          <option value="Not Booked">Not Booked</option>
-          <option value="Pending Payment">Pending Payment</option>
-          <option value="Cancelled">Cancelled</option>
-          <option value="Booked">Booked</option>
-        </select>
-        <Button color="purple" onClick={generateReport}>
-          Generate Report
-        </Button>
-        <Button color="purple" onClick={generateDoctorsReport}>
-          Doctors Report
-        </Button>
-      </div>
-      {(currentUser.isAdmin ||
-        currentUser.isDoctor ||
-        currentUser.isReceptionist) &&
-      bookings.length > 0 ? (
-        <>
-          <Table hoverable className="shadow-md">
-            <Table.Head>
-              <Table.HeadCell>
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={toggleSelectAll}
-                />
-              </Table.HeadCell>
-              <Table.HeadCell>Date</Table.HeadCell>
-              <Table.HeadCell>Time</Table.HeadCell>
-              <Table.HeadCell>Type</Table.HeadCell>
-              <Table.HeadCell>Doctor</Table.HeadCell>
-              <Table.HeadCell>Patient</Table.HeadCell>
-              <Table.HeadCell>Status</Table.HeadCell>
-              <Table.HeadCell>Book</Table.HeadCell>
-              <Table.HeadCell>Update</Table.HeadCell>
-              <Table.HeadCell>Delete</Table.HeadCell>
-            </Table.Head>
-            {currentBookings.map((booking, index) => (
-              <Table.Body className="divide-y" key={booking._id}>
-                <Table.Row
-                  className={`bg-white dar:border-gray-700 dark:bg-gray-800 ${
-                    booking.isSelected ? "bg-gray-200" : ""
-                  }`}
-                >
+                  </h5>
+                  <Badge color="failure" className="text-2xl font-bold">
+                  {totalCancelledBookings}
+                  </Badge>
+                  </div>
+                  </Card>
+                  <Card>
+                  <div className="flex items-center justify-between">
+                  <h5 className="text-xl font-bold leading-none text-gray-900 dark:text-white">
+                  Not Booked
+                  </h5>
+                  <Badge color="gray" className="text-2xl font-bold">
+                  {totalNotBookedBookings}
+                  </Badge>
+                  </div>
+                  </Card>
+                  </div>
+                  <div className="mb-4 flex flex-wrap gap-4">
+                  <div className="flex items-center">
+                  <TextInput
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="mr-2"
+                  />
+                  <Button color="gray" onClick={() => setSearchTerm("")}>
+                  <HiSearch className="mr-2 h-5 w-5" />
+                  Search
+                  </Button>
+                  </div>
+                  <div className="flex items-center">
+                  <TextInput
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="mr-2"
+                  />
+                  <Button color="gray" onClick={() => setFilterDate("")}>
+                  <HiFilter className="mr-2 h-5 w-5" />
+                  Filter by Date
+                  </Button>
+                  </div>
+                  <div className="flex items-center">
+                  <Select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="mr-2"
+                  >
+                  <option value="">All Types</option>
+                  <option value="Online Appointment">Online Appointment</option>
+                  <option value="Hospital Booking">Hospital Booking</option>
+                  </Select>
+                  <Button color="gray" onClick={() => setFilterType("")}>
+                  <HiFilter className="mr-2 h-5 w-5" />
+                  Filter by Type
+                  </Button>
+                  </div>
+                  <div className="flex items-center">
+                  <Select
+                  value={filterRoom}
+                  onChange={(e) => setFilterRoom(e.target.value)}
+                  className="mr-2"
+                  >
+                  <option value="">All Rooms</option>
+                  {/* Add room options based on your data */}
+                  </Select>
+                  <Button color="gray" onClick={() => setFilterRoom("")}>
+                  <HiFilter className="mr-2 h-5 w-5" />
+                  Filter by Room
+                  </Button>
+                  </div>
+                  </div>
+                  {currentItems.length > 0 ? (
+                  <>
+                  <Table hoverable className="shadow-md">
+                  <Table.Head>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "date" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("date")}
+                  >
+                  Date
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "time" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("time")}
+                  >
+                  Time
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "doctorName" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("doctorName")}
+                  >
+                  Doctor
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "patientName" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("patientName")}
+                  >
+                  Patient
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "roomName" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("roomName")}
+                  >
+                  Room
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                  <span
+                  className={`cursor-pointer ${                         sortColumn === "status" ? "text-blue-500" : ""                       }`}
+                  onClick={() => handleSort("status")}
+                  >
+                  Status
+                  </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>Actions</Table.HeadCell>
+                  </Table.Head>
+                  <Table.Body className="divide-y">
+                  {currentItems.map((booking) => (
+                  <Table.Row
+                  key={booking._id}
+                  className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                  >
                   <Table.Cell>
-                    <input
-                      type="checkbox"
-                      checked={booking.isSelected}
-                      onChange={() => handleSelectBooking(index)}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    {new Date(booking.date).toLocaleDateString()}
+                  {new Date(booking.date).toLocaleDateString()}
                   </Table.Cell>
                   <Table.Cell>{booking.time}</Table.Cell>
-                  <Table.Cell>{booking.type}</Table.Cell>
                   <Table.Cell>{booking.doctorName}</Table.Cell>
-                  <Table.Cell>{booking.patientName}</Table.Cell>
                   <Table.Cell>
-                    <Table.Cell>
-                      {booking.status === "Not Booked" ? (
-                        <span className="text-yellow-500">Not Booked</span>
-                      ) : booking.status === "Pending Payment" ? (
-                        <span className="text-orange-500">Pending Payment</span>
-                      ) : booking.status === "Cancelled" ? (
-                        <span className="text-red-500">Cancelled</span>
-                      ) : (
-                        <span className="text-green-500">Booked</span>
-                      )}
-                    </Table.Cell>
+                  {booking.patientName ? booking.patientName : "-"}
+                  </Table.Cell>
+                  <Table.Cell>{booking.roomName}</Table.Cell>
+                  <Table.Cell>
+                  {booking.status === "Completed" && (
+                  <Badge color="success">
+                  <BsBookmarkFill className="mr-1" />
+                  Completed
+                  </Badge>
+                  )}
+                  {booking.status === "Pending" && (
+                  <Badge color="warning">
+                  <BsBookmarkCheckFill className="mr-1" />
+                  Pending
+                  </Badge>
+                  )}
+                  {booking.status === "Cancelled" && (
+                  <Badge color="failure">
+                  <BsBookmarkXFill className="mr-1" />
+                  Cancelled
+                  </Badge>
+                  )}
+                  {booking.status === "Not Booked" && (
+                  <Badge color="gray">
+                  <BsBookmarkDashFill className="mr-1" />
+                  Not Booked
+                  </Badge>
+                  )}
+                  {booking.status === "Booked" && (
+                  <Badge color="info">
+                  <BsBookmarkPlus className="mr-1" />
+                  Booked
+                  </Badge>
+                  )}
+                  {booking.status === "ReBooked" && (
+                  <Badge color="purple">
+                  <BsBookmarkStar className="mr-1" />
+                  Rebooked
+                  </Badge>
+                  )}
+                  {booking.status === "In Consultation" && (
+                  <Badge color="indigo">
+                  <HiIdentification className="mr-1" />
+                  In Consultation
+                  </Badge>
+                  )}
                   </Table.Cell>
                   <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      {booking.status === "Cancelled" ? (
-                        <span>
-                          <HiOutlineExclamationCircle className="inline-block w-5 h-5 mr-1 text-red-500" />
-                        </span>
-                      ) : booking.status === "Booked" ? (
-                        <span onClick={() => handleViewBookingDetails(booking)}>
-                          View
-                        </span>
-                      ) : booking.status === "Pending Payment" ? (
-                        <span>
-                          <HiOutlineExclamationCircle className="inline-block w-5 h-5 mr-1 text-red-500" />
-                        </span>
-                      ) : booking.status === "Completed" ? (
-                        <span onClick={() => handleGenerateBooking(booking)}>
-                          Generate Booking
-                        </span>
-                      ) : (
-                        <span onClick={() => handleBookModal(booking)}>
-                          Book
-                        </span>
-                      )}
-                    </Link>
+                  <div className="flex items-center space-x-4">
+                  <Button
+                  size="sm"
+                  color="gray"
+                  onClick={() => handleViewBooking(booking)}
+                  >
+                  <HiEye className="mr-2 h-5 w-5" />
+                  View
+                  </Button>
+                  {booking.status === "Not Booked" && (
+                  <Button
+                  size="sm"
+                  color="blue"
+                  onClick={() => {
+                  setSelectedBooking(booking);
+                  setFormData({
+                  type: booking.type,
+                  date: booking.date,
+                  time: booking.time,
+                  doctorName: booking.doctorName,
+                  roomNo: booking.roomName,
+                  });
+                  setIsRebooking(false);
+                  setShowBookModal(true);
+                  }}
+                  disabled={isBooking}
+                  >
+                  {isBooking ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                  ) : (
+                  <>
+                  <HiIdentification className="mr-2 h-5 w-5" />
+                  Book
+                  </>
+                  )}
+                  </Button>
+                  )}
+                  {booking.status === "Cancelled" && (
+                  <Button
+                  size="sm"
+                  color="purple"
+                  onClick={() => {
+                  setSelectedBooking(booking);
+                  setFormData({
+                  type: booking.type,
+                  date: booking.date,
+                  time: booking.time,
+                  doctorName: booking.doctorName,
+                  roomNo: booking.roomName,
+                  });
+                  setIsRebooking(true);
+                  setShowBookModal(true);
+                  }}
+                  disabled={isBooking}
+                  >
+                  {isBooking ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                  ) : (
+                  <>
+                  <BsBookmarkStar className="mr-2 h-5 w-5" />
+                  Rebook
+                  </>
+                  )}
+                  </Button>
+                  )}
+                  <Button
+                  size="sm"
+                  color="yellow"
+                  onClick={() => {
+                  setSelectedBooking(booking);
+                  setUpdateFormData({
+                  type: booking.type,
+                  date: booking.date,
+                  time: booking.time,
+                  doctorName: booking.doctorName,
+                  roomNo: booking.roomName,
+                  patientName: booking.patientName,
+                  status: booking.status,
+                  });
+                  setShowUpdateModal(true);
+                  }}
+                  disabled={isUpdating}
+                  >
+                  {isUpdating ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                  ) : (
+                  <>
+                  <HiPencil className="mr-2 h-5 w-5" />
+                  Update
+                  </>
+                  )}
+                  </Button>
+                  <Button
+                  size="sm"
+                  color="failure"
+                  onClick={() => {
+                  setSelectedBooking(booking);
+                  setShowDeleteModal(true);
+                  }}
+                  disabled={isDeleting}
+                  >
+                  {isDeleting ? (
+                  <Spinner size="sm" aria-label="Loading spinner" />
+                  ) : (
+                  <>
+                  <HiTrash className="mr-2 h-5 w-5" />
+                  Delete
+                  </>
+                  )}
+                  </Button>
+                  </div>
                   </Table.Cell>
-                  <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      <span
-                        onClick={() => {
-                          handleUpdateBooking(booking);
-                        }}
-                      >
-                        Update
-                      </span>
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        setShowDeleteModal(true);
-                        setBookingIdToDelete(booking._id);
-                      }}
-                      className="font-medium text-red-500 hover:underline cursor-pointer"
-                    >
-                      Delete
-                    </span>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            ))}
-          </Table>
-          <div className="flex justify-end">
-            <Button color="red" onClick={handleCancelSelected}>
-              Cancel Selected
-            </Button>
-          </div>
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-l"
-            >
-              Prev
-            </button>
-            {[
-              ...Array(Math.ceil(filteredBookings.length / bookingsPerPage)),
-            ].map((_, index) => (
-              <button
-                key={index}
-                onClick={() => paginate(index + 1)}
-                className={`mx-1 px-3 py-2 rounded-md ${
-                  currentPage === index + 1
-                    ? "bg-gray-800 text-white"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-                }`}
-              >
-                {index + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => paginate(currentPage + 1)}
-              disabled={
-                currentPage ===
-                Math.ceil(filteredBookings.length / bookingsPerPage)
-              }
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-r"
-            >
-              Next
-            </button>
+                  </Table.Row>
+                  ))}
+                  </Table.Body>
+                  </Table>
+                  <div className="mt-4 flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={paginate}
+              showIcons
+            />
           </div>
         </>
       ) : (
-        <p>You have no Bookings</p>
+        <p className="px-4">No bookings found.</p>
       )}
+      <div className="mt-4">
+        <Button onClick={generateReport} disabled={isGeneratingReport}>
+          {isGeneratingReport ? (
+            <Spinner size="sm" aria-label="Loading spinner" />
+          ) : (
+            <>
+              <HiDocumentReport className="mr-2 h-5 w-5" />
+              Generate Report
+            </>
+          )}
+        </Button>
+      </div>
+      <Modal show={showViewModal} onClose={() => setShowViewModal(false)}>
+        <Modal.Header>
+          <h3 className="text-xl font-semibold">Booking Details</h3>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Date:</p>
+                <p>{new Date(selectedBooking.date).toLocaleDateString()}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Time:</p>
+                <p>{selectedBooking.time}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Doctor:</p>
+                <p>{selectedBooking.doctorName}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Patient:</p>
+                <p>{selectedBooking.patientName || "-"}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Room:</p>
+                <p>{selectedBooking.roomName}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Status:</p>
+                <Badge
+                  color={
+                    selectedBooking.status === "Completed"
+                      ? "success"
+                      : selectedBooking.status === "Pending"
+                      ? "warning"
+                      : selectedBooking.status === "Cancelled"
+                      ? "failure"
+                      : selectedBooking.status === "Not Booked"
+                      ? "gray"
+                      : selectedBooking.status === "Booked"
+                      ? "info"
+                      : selectedBooking.status === "ReBooked"
+                      ? "purple"
+                      : "indigo"
+                  }
+                >
+                  {selectedBooking.status}
+                </Badge>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  color="gray"
+                  onClick={() => generateBookingReport(selectedBooking)}
+                  className="mr-2"
+                >
+                  <HiDownload className="mr-2 h-5 w-5" />
+                  Download Report
+                </Button>
+                {selectedBooking.status !== "Cancelled" &&
+                  selectedBooking.status !== "Completed" &&
+                  selectedBooking.status !== "In Consultation" && (
+                    <Button
+                      color="failure"
+                      onClick={handleCancelBooking}
+                      className="mr-2"
+                      disabled={
+                        selectedBooking.status === "Not Booked" ||
+                        isCancelling
+                      }
+                    >
+                      {isCancelling ? (
+                        <Spinner size="sm" aria-label="Loading spinner" />
+                      ) : (
+                        "Cancel Booking"
+                      )}
+                    </Button>
+                  )}
+                {selectedBooking.status !== "Not Booked" &&
+                  selectedBooking.status !== "Cancelled" && (
+                    <Button
+                      color="purple"
+                      onClick={() =>
+                        generateAppointmentCard(selectedBooking)
+                      }
+                      className="mr-2"
+                      disabled={isGeneratingAppointmentCard}
+                    >
+                      {isGeneratingAppointmentCard ? (
+                        <Spinner size="sm" aria-label="Loading spinner" />
+                      ) : (
+                        <>
+                          <HiIdentification className="mr-2 h-5 w-5" />
+                          Appointment Card
+                        </>
+                      )}
+                    </Button>
+                  )}
+                {selectedBooking.status !== "Not Booked" &&
+                  selectedBooking.status !== "Cancelled" && (
+                    <Button
+                      color="blue"
+                      onClick={sendEmail}
+                      disabled={isSendingEmail}
+                    >
+                      {isSendingEmail ? (
+                        <Spinner size="sm" aria-label="Loading spinner" />
+                      ) : (
+                        <>
+                          <HiMail className="mr-2 h-5 w-5" />
+                          Send Email
+                        </>
+                      )}
+                    </Button>
+                  )}
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold mb-2">
+                  Booking History
+                </h4>
+                <ul className="space-y-2">
+                  {selectedBooking.history.map((entry, index) => (
+                    <li key={index} className="border-b pb-2">
+                      <p className="font-semibold">{entry.action}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </p>
+                      {entry.user && (
+                        <p className="text-sm text-gray-500">
+                          User: {entry.user.username}
+                        </p>
+                      )}
+                      {entry.details && (
+                        <p className="text-sm text-gray-500">
+                          Details: {entry.details}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="gray" onClick={() => setShowViewModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <Modal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        popup
-        size="md"
       >
-        <Modal.Header />
+        <Modal.Header>Confirm Delete</Modal.Header>
         <Modal.Body>
-          <div className="text-center">
-            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
-            <h3 className="mb- text-lg text-gray-500 dark:text-gray-400">
-              Are you sure you want to delete this booking?
-            </h3>
-          </div>
-          <div className="flex justify-center gap-4">
-            <Button
-              color="failure"
-              onClick={() => handleBookingDelete(bookingIdToDelete)}
-            >
-              Yes, I am sure
-            </Button>
-            <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-              No, cancel
-            </Button>
-          </div>
+          Are you sure you want to delete this booking?
         </Modal.Body>
-      </Modal>
-
-      <Modal
-        show={showUpdateModal}
-        onClose={() => setShowUpdateModal(false)}
-        popup
-        size="md"
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
-              Update Booking
-            </h3>
-          </div>
-          <form onSubmit={handleUpdateSubmit}>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="flex flex-col items-center">
-                <div className="w-full">
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    id="type"
-                    onChange={onChange}
-                    className="input-field"
-                    value={formData.type || ""}
-                  >
-                    <option value="">Select Type</option>
-                    <option value="MACS">MACS</option>
-                    <option value="Online Appointment">
-                      Online Appointment
-                    </option>
-                    <option value="Hospital Booking">Hospital Booking</option>
-                  </Select>
-                </div>
-                {formData.type === "Hospital Booking" && (
-                  <div className="w-full">
-                    <Label htmlFor="roomNo">Room No.</Label>
-                    <Select
-                      id="roomNo"
-                      onChange={onChange}
-                      className="input-field"
-                      value={formData.roomNo || ""}
-                    >
-                      <option value="">Select Room </option>
-                      <option value="1">Consultaion</option>
-                      <option value="2">OPD</option>
-                      <option value="3">Emergency Room </option>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="w-full">
-                  <Label htmlFor="date">Date</Label>
-                  <TextInput
-                    type="date"
-                    id="date"
-                    onChange={onChange}
-                    className="input-field"
-                    value={formData.date || ""}
-                  />
-                </div>
-                <div className="w-full">
-                  <Label htmlFor="time">Time</Label>
-                  <Select
-                    id="time"
-                    onChange={(e) =>
-                      setFormData({ ...formData, time: e.target.value })
-                    }
-                    className="input-field"
-                    value={formData.time || ""}
-                  >
-                    <option value="">Select Time</option>
-                    {timeSlots.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {slot}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="w-full">
-                  <Label htmlFor="selectedPatientId" className="mr-2">
-                    Select Patient:
-                  </Label>
-                  <Select
-                    id="selectedPatientId"
-                    className="mt-1"
-                    value={selectedPatientId}
-                    onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
-                    required
-                  >
-                    <option value="">Select Patient</option>
-                    {patientOptions.map((patient) => (
-                      <option key={patient.value} value={patient.value}>
-                        {patient.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="w-full">
-                  <Label htmlFor="status" className="mr-2">
-                    Select Status:
-                  </Label>
-                  <Select
-                    id="status"
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    className="input-field"
-                    value={formData.status || ""}
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Not Booked" className="text-yellow-500">
-                      Not Booked
-                    </option>
-                    <option value="Pending Payment" className="text-orange-500">
-                      Pending Payment
-                    </option>
-                    <option value="Cancelled" className="text-red-500">
-                      Cancelled
-                    </option>
-                    <option value="Booked" className="text-green-500">
-                      Booked
-                    </option>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-center mt-3">
-                <Button color="blue" type="submit" outline>
-                  Update
-                </Button>
-                <Button
-                  className="ml-4"
-                  color="red"
-                  onClick={() => {
-                    setShowUpdateModal(false);
-                    setFormData({});
-                    setSelectedTimeSlots([]);
-                    setSelectedBooking(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Modal.Body>
+        <Modal.Footer>
+          <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="failure"
+            onClick={handleDeleteBooking}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <Spinner size="sm" aria-label="Loading spinner" />
+            ) : (
+              "Delete"
+            )}
+          </Button>
+        </Modal.Footer>
       </Modal>
       <Modal
         show={showBookModal}
         onClose={() => setShowBookModal(false)}
         size="md"
       >
-        <Modal.Header />
+        <Modal.Header>
+          <h3 className="text-xl font-semibold">
+            {isRebooking ? "Rebook An Appointment" : "Book An Appointment"}
+          </h3>
+        </Modal.Header>
         <Modal.Body>
           <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500">Book Appointment</h3>
+            <h3 className="mb-4 text-lg text-gray-500"></h3>
             <form onSubmit={handleBookAppointment} className="space-y-6">
-              <div className="grid grid-cols-1gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="flex items-center">
                   <Label htmlFor="type" className="mr-2">
                     Type:
                   </Label>
-                  <span className="text-gray-700">{formData.type || ""}</span>
+                  <span className="text-gray-700">
+                    {formData.type || ""}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <Label htmlFor="date" className="mr-2">
                     Date:
                   </Label>
-                  <span className="text-gray-700">{formData.date || ""}</span>
+                  <span className="text-gray-700">
+                    {new Date(formData.date).toLocaleDateString() || ""}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <Label htmlFor="time" className="mr-2">
                     Time:
                   </Label>
-                  <span className="text-gray-700">{formData.time || ""}</span>
+                  <span className="text-gray-700">
+                    {formData.time || ""}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <Label htmlFor="doctorName" className="mr-2">
@@ -1434,10 +1201,11 @@ export default function Booking() {
                     <Label htmlFor="roomNo" className="mr-2">
                       Room:
                     </Label>
-                    <span className="text-gray-700">{formData.roomNo}</span>
+                    <span className="text-gray-700">
+                      {formData.roomNo || ""}
+                    </span>
                   </div>
                 )}
-
                 <div className="flex items-center">
                   <Label htmlFor="selectedPatientId" className="mr-2">
                     Select Patient:
@@ -1445,7 +1213,7 @@ export default function Booking() {
                   <Select
                     id="selectedPatientId"
                     className="mt-1"
-                    onChange={(e) => setSelectedPatientId(e.target.value)} // Update the selectedPatientId state here
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
                     required
                   >
                     <option value="">Select Patient</option>
@@ -1458,15 +1226,27 @@ export default function Booking() {
                 </div>
               </div>
               <div className="flex justify-center mt-6 space-x-4">
-                <Button color="blue" type="submit" outline>
-                  Book
+                <Button
+                  color="blue"
+                  type="submit"
+                  outline
+                  disabled={isBooking}
+                >
+                  {isBooking ? (
+                    <Spinner size="sm" aria-label="Loading spinner" />
+                  ) : isRebooking ? (
+                    "Rebook"
+                  ) : (
+                    "Book"
+                  )}
                 </Button>
                 <Button
                   color="red"
                   onClick={() => {
                     setShowBookModal(false);
                     setFormData({});
-                    setSelectedTimeSlots([]);
+                    setSelectedPatientId("");
+                    setIsRebooking(false);
                   }}
                 >
                   Cancel
@@ -1477,59 +1257,155 @@ export default function Booking() {
         </Modal.Body>
       </Modal>
       <Modal
-        show={showViewBookingModal}
-        onClose={() => setShowViewBookingModal(false)}
+        show={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
         size="md"
-      >
-        <Modal.Header />
+        >
+        <Modal.Header>
+        <h3 className="text-xl font-semibold">Update Booking</h3>
+        </Modal.Header>
         <Modal.Body>
-          <div className="text-center">
-            <h3 className="mb-4 text-lg text-gray-500">View Booking Details</h3>
-            <div className="space-y-6">
-              <div className="flex items-center">
-                <Label htmlFor="type" className="mr-2">
-                  Type:
-                </Label>
-                <span className="text-gray-700">{formData.type || ""}</span>
-              </div>
-              <div className="flex items-center">
-                <Label htmlFor="date" className="mr-2">
-                  Date:
-                </Label>
-                <span className="text-gray-700">{formData.date || ""}</span>
-              </div>
-              <div className="flex items-center">
-                <Label htmlFor="time" className="mr-2">
-                  Time:
-                </Label>
-                <span className="text-gray-700">{formData.time || ""}</span>
-              </div>
-              <div className="flex items-center">
-                <Label htmlFor="doctorName" className="mr-2">
-                  Doctor Name:
-                </Label>
-                <span className="text-gray-700">
-                  {formData.doctorName || ""}
-                </span>
-              </div>
-              {formData.type === "Hospital Booking" && (
-                <div className="flex items-center">
-                  <Label htmlFor="roomNo" className="mr-2">
-                    Room:
-                  </Label>
-                  <span className="text-gray-700">{formData.roomNo}</span>
-                </div>
-              )}
-              <div className="flex items-center">
-                <Label htmlFor="patientName" className="mr-2">
-                  Patient Name:
-                </Label>
-                <span className="text-gray-700">{formData.patientName}</span>
-              </div>
-            </div>
-          </div>
+        <div className="text-center">
+        <form onSubmit={handleUpdateBooking} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+        <div className="flex items-center">
+        <p className="font-bold mr-2">Type:</p>
+        <p>{updateFormData.type || ""}</p>
+        </div>
+        <div className="flex items-center">
+        <p className="font-bold mr-2">Date:</p>
+        <p>
+        {new Date(updateFormData.date).toLocaleDateString() ||
+        ""}
+        </p>
+        </div>
+        <div className="flex items-center">
+        <p className="font-bold mr-2">Time:</p>
+        <p>{updateFormData.time || ""}</p>
+        </div>
+        <div className="flex items-center">
+        <p className="font-bold mr-2">Doctor Name:</p>
+        <p>{updateFormData.doctorName || ""}</p>
+        </div>
+        {updateFormData.type === "Hospital Booking" && (
+        <div className="flex items-center">
+        <p className="font-bold mr-2">Room:</p>
+        <p>{updateFormData.roomNo || ""}</p>
+        </div>
+        )}
+        <div className="flex items-center">
+        <Label htmlFor="selectedPatientId" className="mr-2">
+        Select Patient:
+        </Label>
+        <Select
+        id="selectedPatientId"
+        className="mt-1"
+        value={selectedPatientId || updateFormData.patientId}
+        onChange={(e) => setSelectedPatientId(e.target.value)}
+        required
+        >
+        <option value={updateFormData.patientId}>
+        {updateFormData.patientName || ""}
+        </option>
+        {patientOptions
+        .filter(
+        (patient) =>
+        patient.value !== updateFormData.patientId
+        )
+        .map((patient) => (
+        <option key={patient.value} value={patient.value}>
+        {patient.label}
+        </option>
+        ))}
+        </Select>
+        </div>
+        <div className="flex items-center">
+        <Label htmlFor="selectedStatus" className="mr-2">
+        Select Status:
+        </Label>
+        <Select
+        id="selectedStatus"
+        className="mt-1"
+        value={selectedStatus}
+        onChange={(e) => setSelectedStatus(e.target.value)}
+        required
+        >
+        <option value="">Select Status</option>
+        {statusOptions.map((status) => (
+        <option key={status.value} value={status.value}>
+        {status.label}
+        </option>
+        ))}
+        </Select>
+        </div>
+        </div>
+        <div className="flex justify-center mt-6 space-x-4">
+        <Button
+                           color="blue"
+                           type="submit"
+                           outline
+                           disabled={isUpdating}
+                         >
+        {isUpdating ? (
+        <Spinner size="sm" aria-label="Loading spinner" />
+        ) : (
+        "Update"
+        )}
+        </Button>
+        <Button
+        color="red"
+        onClick={() => {
+        setShowUpdateModal(false);
+        setUpdateFormData({});
+        setSelectedPatientId("");
+        setSelectedStatus("");
+        }}
+        >
+        Cancel
+        </Button>
+        </div>
+        </form>
+        </div>
         </Modal.Body>
-      </Modal>
-    </div>
-  );
-}
+        </Modal>
+        <Modal
+        show={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        >
+        <Modal.Header>
+        <h3 className="text-xl font-semibold">Cancel Booking</h3>
+        </Modal.Header>
+        <Modal.Body>
+        <div className="mb-4">
+        <Label htmlFor="cancellationReason">Cancellation Reason:</Label>
+        <TextInput
+        id="cancellationReason"
+        type="text"
+        value={cancellationReason}
+        onChange={(e) => setCancellationReason(e.target.value)}
+        required
+        />
+        </div>
+        </Modal.Body>
+        <Modal.Footer>
+        <Button color="gray" onClick={() => setShowCancelModal(false)}>
+        Close
+        </Button>
+        <Button
+                     color="failure"
+                     onClick={confirmCancellation}
+                     disabled={isCancelling}
+                   >
+        {isCancelling ? (
+        <Spinner size="sm" aria-label="Loading spinner" />
+        ) : (
+        "Cancel Booking"
+        )}
+        </Button>
+        </Modal.Footer>
+        </Modal>
+        </>
+        )}
+        </div>
+        );
+        }
