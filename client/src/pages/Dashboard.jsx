@@ -27,19 +27,16 @@ import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashInPateintProfile from "../components/DashInPateintProfile";
 import DashDoctorInpatient from "../components/DashDoctorInpatient";
-<<<<<<< HEAD
 import DashWardProfile from "../components/DashWardProfile";
 import DashDiseases from "../components/DashDiseases";
 import DashInPatientPayment from "../components/DashInPatientPayment";
 import DashDoctorOrderIn from "../components/DashDoctorOrderIn";
 import DashSupplier from "../components/DashSupplier";
 import DashSupplierOrder from "../components/DashSupplierOrder"
-=======
 import DoctorsList from "../components/DoctorList";
 import PatientDashboard from "../components/PatientDashBoard";
 import DoctorProfile from "../components/DoctorProfile";
 import PatientBooking  from "../components/PatientBooking";
->>>>>>> 51a510bd14cf9ca88284f37a577e4da3ac0044a6
 
 
 
