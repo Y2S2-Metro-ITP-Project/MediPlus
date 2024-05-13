@@ -423,88 +423,119 @@ export const DownloadPDFEmployee = async (req, res, next) => {
               userData.isPharmacist ? 'Pharmacist' :
                 userData.isReceptionist ? 'Receptionist' :
                   userData.isHeadNurse ? 'Head Nurse' :
+                  userData.isCashier ? 'Cashier ' :
+                  userData.isLabTech ? 'Lab Tech ' :
+
                     'Unknown';
 
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Employee Details Report</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-                text-align: center; 
-            }
-            h1, h2 {
-                margin-bottom: 10px;
-                color: #333;
-            }
-            p {
-                margin-bottom: 5px;
-                color: #666;
-                font-weight: bold;
-                font-size: 18px;
-            }
-            .section {
-                margin-bottom: 20px;
-                text-align: left;
-                display: inline-block; 
-                width: 80%; 
-            }
-            .header {
-                border-bottom: 2px solid #ccc;
-                padding-bottom: 10px;
-                margin: 0 auto; 
-                width: 80%;
-            }
-            .section-title {
-                border-bottom: 1px solid #ccc;
-                padding-bottom: 5px;
-            }
-            .subsection {
-                margin-left: 20px;
-            }
-          .patient-picture {
-              width: 200px;
-              height: auto;
-              border: 1px solid #ccc;
-              margin: 0 auto; /* Center the picture */
-              display: block; /* Ensure the picture is displayed as a block element */
-          }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>Employee Report</h1>
-        </div>
-        <br/>
-        <div class="section">
-            <div class="subsection">
-            <img class="patient-picture" src="${employee.employeeImage}" alt="Patient Picture"> <br/><br/>
-                <p><strong>Name:</strong> ${userData.username}</p>
-                <p><strong>Email:</strong> ${userData.email}</p>
-                <p><strong>Role:</strong> ${roleDetails}</p>
-                <p><strong>Salary:</strong> ${employee.salary}</p>
-            </div>
-        </div><br/><br/><br/><br/>
-        <div class="section">
-            <div class="section-title">
-                <h2>Employee Personal Details</h2>
-            </div>
-            <div class="subsection">
-                <p><strong>Name:</strong> ${employee.Name}</p>
-                <p><strong>Date of Birth:</strong> ${employee.dateOfBirth}</p>
-                <p><strong>Gender:</strong> ${employee.gender}</p>
-                <p><strong>Address:</strong> ${employee.address}</p>
-                <p><strong>Contact Phone:</strong> ${employee.contactPhone}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-  `;
-
+                    const htmlContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Employee Details Report</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 20px;
+                                text-align: center; 
+                            }
+                            h1, h2 {
+                                color: #333;
+                            }
+                            p {
+                                color: #666;
+                                font-size: 16px;
+                            }
+                            .section {
+                                margin-bottom: 40px;
+                                text-align: left;
+                                width: 80%;
+                                margin: 0 auto;
+                                border-bottom: 2px solid #ccc;
+                                padding-bottom: 20px;
+                            }
+                            .header {
+                                margin-bottom: 40px;
+                                text-align: center;
+                                border-bottom: 2px solid #ccc;
+                                padding-bottom: 20px;
+                            }
+                            .subsection {
+                                margin-left: 20px;
+                            }
+                            .patient-picture {
+                                width: 200px;
+                                height: auto;
+                                border: 1px solid #ccc;
+                                margin: 0 auto; /* Center the picture */
+                                display: block; /* Ensure the picture is displayed as a block element */
+                                margin-bottom: 20px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                    <div style="border: 1px solid #d1d1d1; padding: 20px;">
+                    <table>
+                      <tr>
+                        <td class="logo">
+                          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgQ_m4DUpDZtd5CnGPtFUpGMXXEoPWNSVnAA&usqp=CAU" alt="Logo">
+                          <span class="whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white">
+                            <span class="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white">Medi</span>
+                            Plus
+                          </span>
+                        </td>
+                        <td align="left" bgcolor="#ffe77b" style="background-color: #fff;">
+                          <h1 style="font-weight: 900;color: brown;">Ismail's Pvt Hospital</h1>
+                          <p> Masjid Rd, Puttalam 61300 <br/> 
+                            http://mediplus/home | mediplus@hospital.com +94 74 043 1333
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                        <hr/>
+                        <h1>Employee Report</h1>
+                        <div class="section">
+                            <h2>Employee Information</h2>
+                            <img class="patient-picture" src="${employee.employeeImage}" alt="Employee Picture"> <br/><br/>
+                            <div class="subsection">
+                                <p><strong>Name:</strong> ${userData.username}</p>
+                                <p><strong>Email:</strong> ${userData.email}</p>
+                                <p><strong>Role:</strong> ${roleDetails}</p>
+                                <p><strong>Salary:</strong> ${employee.salary}</p>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>Personal Details</h2>
+                            <div class="subsection">
+                                <p><strong>Name:</strong> ${employee.Name}</p>
+                                <p><strong>Date of Birth:</strong> ${employee.dateOfBirth}</p>
+                                <p><strong>Gender:</strong> ${employee.gender}</p>
+                                <p><strong>Address:</strong> ${employee.address}</p>
+                                <p><strong>Contact Phone:</strong> ${employee.contactPhone}</p>
+                            </div>
+                        </div>
+                        ${userData.isDoctor ? `
+                        <div class="section">
+                            <h2>Doctor Details</h2>
+                            <div class="subsection">
+                                <p><strong>Specialization:</strong> ${employee.specialization}</p>
+                                <p><strong>Experience:</strong> ${employee.experience} years</p>
+                                <p><strong>Qualifications:</strong> ${employee.qualifications}</p>
+                                <p><strong>Consultation Fee:</strong> ${employee.consultationFee}</p>
+                                <p><strong>Bio:</strong> ${employee.bio}</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                        </div>
+                    </body>
+                    </html>
+                    `;
+                    
+                    
+                    
+                    
+                    
     const pdfBuffer = await generatePdfFromHtml(htmlContent);
     res.set({
       "Content-Type": "application/pdf",

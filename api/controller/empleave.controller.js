@@ -241,6 +241,8 @@ export const deleteOldLeaves = async (req, res, next) => {
   }
 };
 
+
+
 export const PDFEmployeeLeave = async (req, res, next) => {
   try {
     const { leaves, selectedMonth } = req.body;
@@ -291,7 +293,7 @@ export const PDFEmployeeLeave = async (req, res, next) => {
 
         return `
           <h3>Employee: ${employeeLeaves[0].user ? employeeLeaves[0].user.username : 'Unknown Employee'}</h3>
-          <table>
+          <table  border: 1px solid #ddd;>
             <thead>
               <tr>
                 <th>Employee</th>
@@ -309,6 +311,7 @@ export const PDFEmployeeLeave = async (req, res, next) => {
       }).join('');
 
       return `
+        <br/>
         <h2>Role: ${role}</h2>
         ${roleHtmlContent}
       `;
@@ -327,17 +330,50 @@ export const PDFEmployeeLeave = async (req, res, next) => {
             border-collapse: collapse;
           }
           th, td {
-            border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
           }
-          th {
+          td {
             background-color: #f2f2f2;
+            color: #c0c0c0;
           }
+          th {
+            color: #a2a2a2 ;
+            font-weight: bold;
+          }
+          h1{
+            font-weight: bold;
+            color: brown ;
+        }
+          h2 {
+            font-weight: bold;
+            color: #a2a2a2 ;
+        }
         </style>
       </head>
       <body>
+      <div style="border: 1px solid #d1d1d1; padding: 30px;">
+        <table>
+          <tr>
+            <td class="logo">
+              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgQ_m4DUpDZtd5CnGPtFUpGMXXEoPWNSVnAA&usqp=CAU" alt="Logo">
+              <span class="whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white">
+                <span class="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white">Medi</span>
+                Plus
+              </span>
+            </td>
+            <td align="left" bgcolor="#ffe77b" style="background-color: #fff;">
+              <h1 style="font-weight: 900;color: brown;">Ismail's Pvt Hospital</h1>
+              <p> Masjid Rd, Puttalam 61300 <br/> 
+                http://mediplus/home | mediplus@hospital.com +94 74 043 1333
+              </p>
+            </td>
+          </tr>
+        </table>
+        <hr/> 
+        <h1>Employee Leave Report</h1>
         ${htmlContent}
+        </div>
       </body>
       </html>
     `;
