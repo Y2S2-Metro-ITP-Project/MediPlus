@@ -23,12 +23,17 @@ import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecri
 import DashMedicineDispence from "../components/DashMedicineDispence";
 import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
+<<<<<<< HEAD
 import DashInPateintProfile from "../components/DashInPateintProfile";
 import DashDoctorInpatient from "../components/DashDoctorInpatient";
 import DashWardProfile from "../components/DashWardProfile";
 import DashDiseases from "../components/DashDiseases";
 import DashInPatientPayment from "../components/DashInPatientPayment";
 import DashDoctorOrderIn from "../components/DashDoctorOrderIn";
+=======
+import DashSupplier from "../components/DashSupplier";
+import DashSupplierOrder from "../components/DashSupplierOrder"
+>>>>>>> 4d45304e7624a11c23b6e4c7a67cf1f21a2eb165
 
 
 
@@ -94,6 +99,7 @@ export default function Dashboard() {
       {tab==="OutPatientBilling" && <DashOutPatientBilling/>}
       {/** <DashOutPatientPaymentProfile/> */}
       {tab==="OutPatientPaymentProfile" && <OutPatientPaymentProfile/>}
+<<<<<<< HEAD
       {/** <DashInpatientProfile/> */}
       {tab==="InpatientProfile" && <DashInPateintProfile/>}
       {/** <DashDoctorInpatient/> */}
@@ -106,6 +112,12 @@ export default function Dashboard() {
       {tab==="InpatientPayment" && <DashInPatientPayment/>}
       {/** <DashDoctorsorderIn/> */}
       {tab==="DoctorOrderIn" && <DashDoctorOrderIn/>}
+=======
+      {/** <DashSupplier/> */}
+      {tab==="supplier" && <DashSupplier/>}
+      {/** <DashSupplierOrder/> */}
+      {tab==="supplierOrder" && <DashSupplierOrder/>}
+>>>>>>> 4d45304e7624a11c23b6e4c7a67cf1f21a2eb165
     </div>
 
   );

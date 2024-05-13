@@ -3,6 +3,9 @@ import { Table, Button, Modal } from "flowbite-react";
 import { FaEye, FaTimes, FaCheck } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 
+import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
+
+
 export default function DashLeave() {
   const [showModal1, setShowModal1] = useState(false);
   const [showModal2, setShowModal2] = useState(false);
@@ -13,22 +16,43 @@ export default function DashLeave() {
   const [leaves, setLeaves] = useState([]);
   const [deletingLeaveId, setDeletingLeaveId] = useState(null);
 
+  const [totalPendingLeaves, setTotalPendingLeaves] = useState(0);
+  const [todaysTotalLeave, setTodaysTotalLeave] = useState(0);
+
   useEffect(() => {
-    async function fetchLeaves() {
+    async function fetchData() {
       try {
-        const response = await fetch(`/api/leaves/getAllLeaves`);
-        if (!response.ok) {
+        // Fetch leaves
+        const leavesResponse = await fetch(`/api/leaves/getAllLeaves`);
+        if (!leavesResponse.ok) {
           throw new Error('Failed to fetch leaves');
         }
-        const data = await response.json();
-        setLeaves(data);
+        const leavesData = await leavesResponse.json();
+        setLeaves(leavesData);
+  
+        // Fetch total pending leaves
+        const pendingLeavesResponse = await fetch(`/api/leaves/getTotalPendingLeave`);
+        if (!pendingLeavesResponse.ok) {
+          throw new Error('Failed to fetch total pending leaves');
+        }
+        const pendingLeavesData = await pendingLeavesResponse.json();
+        setTotalPendingLeaves(pendingLeavesData.totalPendingLeave);
+
+        // Fetch today's total leave
+        const todaysLeaveResponse = await fetch(`/api/leaves/getTodaysTotalLeave`);
+        if (!todaysLeaveResponse.ok) {
+          throw new Error('Failed to fetch today\'s total leave');
+        }
+        const todaysLeaveData = await todaysLeaveResponse.json();
+        setTodaysTotalLeave(todaysLeaveData.todaysTotalLeave);
       } catch (error) {
-        console.error('Error fetching leaves:', error);
+        console.error('Error fetching data:', error);
       }
     }
-
-    fetchLeaves();
+  
+    fetchData();
   }, []);
+  
 
   const handleViewReason = (reason) => {
     setSelectedLeaveReason(reason);
@@ -120,7 +144,40 @@ export default function DashLeave() {
   };
 
   return (
-    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+   
+   <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+           <div className="flex justify-between">
+        {/* <div>
+          <h3 className="text-lg text-gray-500">Total Pending Leaves: {totalPendingLeaves}</h3>
+        </div>
+        <div>
+          <h3 className="text-lg text-gray-500">Today's Total Leaves: {todaysTotalLeave}</h3>
+        </div> */}
+      </div>
+      <div className="flex-wrap flex gap-4 justify-center">
+        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex justify-between">
+            <div>
+              <h3 className="text-gray-500 text-md uppercase">
+                Total Pending Leaves
+              </h3>
+              <p className="text-2xl">{totalPendingLeaves}</p>
+            </div>
+            <HiAnnotation className="bg-red-700 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+        </div>
+        <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
+          <div className="flex justify-between">
+            <div>
+              <h3 className="text-gray-500 text-md uppercase">
+                Today's Leaves
+              </h3>
+              <p className="text-2xl">{todaysTotalLeave}</p>
+            </div>
+            <HiAnnotation className="bg-yellow-500 text-white rounded-full text-5xl p-3 shadow-lg" />
+          </div>
+        </div>
+      </div> <br />
       <Table hoverable className="shadow-md">
         <Table.Head>
           <Table.HeadCell>Employee</Table.HeadCell>

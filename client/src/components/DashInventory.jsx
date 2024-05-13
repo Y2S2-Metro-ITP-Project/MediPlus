@@ -59,6 +59,7 @@ export default function DashOutPatients() {
   const [itemName, setItemName] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [supplierEmail, setSupplierEmail] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
   const [selectedItemDetails, setSelectedItemDetails] = useState({
     itemName: "",
     itemCategory: "",
@@ -110,6 +111,31 @@ export default function DashOutPatients() {
       supplierEmail,
     });
   };
+  const fetchSuppliers = async () => {
+    try {
+      const res = await fetch(`/api/supplier/getSupplier`);
+      const data = await res.json();
+      if (res.ok) {
+        setSuppliers(data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [currentUser._id]);
+
+  const supplierOptions = () => {
+    return suppliers.map((supplier) => {
+      return {
+        value: supplier.supplierName,
+        label: supplier.supplierName,
+      };
+    });
+  };
+
   const fetchInventory = async () => {
     try {
       const res = await fetch(`/api/inventory/getInventory`);
@@ -162,6 +188,10 @@ export default function DashOutPatients() {
   };
   const handleFilterChange = async (e) => {
     setFilterOption(e.target.value);
+  };
+
+  const handleSupplierChange = (value) => {
+    setFormData({ ...formData, supplierName: value });
   };
 
   const handleSearch = async (e) => {};
@@ -220,6 +250,19 @@ export default function DashOutPatients() {
       }
     );
   };
+  // Define state variables for update
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedItemToUpdate, setSelectedItemToUpdate] = useState(null);
+  const [updatedItemData, setUpdatedItemData] = useState({
+    itemName: false,
+    itemCategory: false,
+    itemDescription: false,
+    itemPrice: false,
+    itemQuantity: false,
+    itemMinValue: false,
+    itemImage: false,
+    itemExpireDate: false,
+  });
 
   const handleInventoryItemSubmit = async (e) => {
     e.preventDefault();
@@ -294,6 +337,34 @@ export default function DashOutPatients() {
     });
     setShowItemDetailsModal(true);
   };
+  // Add this function to handle the update
+  const handleUpdate = (item) => {
+    setSelectedItemToUpdate(item);
+    setShowUpdateModal(true);
+  };
+
+  const handlesetItemDetails = (
+    itemName,
+    itemCategory,
+    itemDescription,
+    itemPrice,
+    itemQuantity,
+    itemMinValue,
+    itemImage,
+    itemExpireDate
+  ) => {
+    setUpdatedItemData({
+      itemName,
+      itemCategory,
+      itemDescription,
+      itemPrice,
+      itemQuantity,
+      itemMinValue,
+      itemImage,
+      itemExpireDate,
+    });
+  };
+
   const handleItemDelete = async () => {
     try {
       const res = await fetch(`/api/inventory/deleteItem/${itemId}`, {
@@ -689,7 +760,7 @@ export default function DashOutPatients() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -723,7 +794,7 @@ export default function DashOutPatients() {
                 <h3 className="text-gray-500 text-md uppercase">
                   Low Stock Items
                 </h3>
-                <p className="text-2xl">{inventoryItemsInStock}</p>
+                <p className="text-2xl">{inventoryItemsLowStock}</p>
               </div>
               <FaBox className="bg-yellow-600 text-white  text-5xl p-3 shadow-lg" />
             </div>
@@ -1394,6 +1465,10 @@ export default function DashOutPatients() {
                 </div>
                 <div className="mb-4">
                   <Label htmlFor="itemName">Supplier Name</Label>
+                  {/* <Select
+                    id="supplierName"
+                   value={supplierOptions.value} */}
+                  {/* /> */}
                   <TextInput
                     type="text"
                     id="itemName"
@@ -1408,6 +1483,16 @@ export default function DashOutPatients() {
                     type="text"
                     id="itemName"
                     value={supplierEmail}
+                    className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
+                    disabled
+                  />
+                </div>
+                <div className="mb-4">
+                  <Label htmlFor="itemName">Supplier Phone Number</Label>
+                  <TextInput
+                    type="number"
+                    id="itemName"
+                    value=""
                     className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
                     disabled
                   />

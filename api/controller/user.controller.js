@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 import bdcrpytjs from "bcryptjs";
+
 export const test = (req, res) => {
   res.json({ message: "API is working!!!!!" });
 };
@@ -140,99 +141,30 @@ export const getUser = async (req, res, next) => {
 
 }
 
-export const getemployee = async (req, res, next) => {
-  try {
-    // Check if the user is an admin or HR manager
-    if (!req.user.isAdmin && !req.user.isHRM) {
-      return next(
-        errorHandler(
-          403,
-          "You are not allowed to access employee data"
-        )
-      );
-    }
-
-    const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 9;
-    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
-
-    // Construct query to filter users with isAdmin or isHRM role
-    const query = {
-      $or: [
-        { isAdmin: true },
-        { isHRM: true },
-        { isHeadNurse: true },
-        { isNurse: true },
-        { isPharmacist: true },
-        { isReceptionist: true },
-        { isDoctor: true }
-      ]
-    };
-
-    // Find users based on the query
-    const users = await User.find(query)
-      .sort({ createdAt: sortDirection })
-      .skip(startIndex)
-      .limit(limit);
-
-    // Remove password field from users
-    const usersWithoutPassword = users.map((user) => {
-      const { password, ...rest } = user._doc;
-      return rest;
-    });
-
-    // Count total users
-    const totalUser = await User.countDocuments(query);
-
-    // Count users created last month
-    const now = new Date();
-    const oneMonthAgo = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      now.getDate()
+export const searchUsers = async (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return next(
+      errorHandler(
+        403,
+        "You are not allowed to access all the users of the database"
+      )
     );
-    const lastMonthUser = await User.countDocuments({
-      ...query,
-      createdAt: { $gte: oneMonthAgo }
+  }
+  const searchTerm = req.body.search;
+  try {
+    const users = await User.find({
+      $or: [
+        { username: { $regex: new RegExp(searchTerm, "i") } },
+        { email: { $regex: new RegExp(searchTerm, "i") } },
+      ],
     });
-
-    // Send response with filtered users
-    res.status(200).json({ users: usersWithoutPassword, totalUser, lastMonthUser });
+    if (!users || users.length === 0) {
+      return next(errorHandler(404, "User not found"));
+    }
+    res.status(200).json(users);
   } catch (error) {
     next(error);
   }
-};
-
-
-
-
-
-import bcryptjs from "bcryptjs";
-
-// Controller function to add a new employee
-export const addEMP = async (req, res, next) => {
-  try {
-    // Extract data from the request body
-    const { username, email, password, role } = req.body;
-
-    // Hash the password using bcrypt.js
-    const hashedPassword = await bcryptjs.hash(password, 10);
-
-    // Create a new user record using the mongoose model
-    const newUser = await User.create({
-      username,
-      email,
-      password: hashedPassword, // Store the hashed password
-      [role]: true, // Set the selected role as true
-      isUser: false
-
-    });
-
-    // Send a success response to the client
-    res.status(201).json({ message: "Employee created successfully", newUser });
-  } catch (error) {
-    next(error);
-};
 }
 
 export const filterUsers = async (req, res, next) => {
@@ -291,6 +223,7 @@ export const filterUsers = async (req, res, next) => {
   }
 };
 
+<<<<<<< HEAD
   
 // Controller function to update employee information
 export const updateEmp = async (req, res, next) => {
@@ -418,3 +351,5 @@ export const getNurses = async (req, res, next) => {
   }
 }
 
+=======
+>>>>>>> 4d45304e7624a11c23b6e4c7a67cf1f21a2eb165
