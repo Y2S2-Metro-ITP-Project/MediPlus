@@ -16,12 +16,9 @@ import dieseaseRoutes from "./routes/diesease.route.js";
 import diagnosisRoutes from "./routes/diagnosis.route.js";
 import PrescriptionOrderRoutes from "./routes/PrecriptionOrder.route.js";
 import paymentOrderRoutes from "./routes/paymentOrder.route.js";
-<<<<<<< HEAD
 import bedRoutes from "./routes/bed.route.js";
 import wardRoutes from "./routes/ward.route.js";
-=======
 import Supplier from "./models/Supplier.model.js";
->>>>>>> 4d45304e7624a11c23b6e4c7a67cf1f21a2eb165
 dotenv.config();
 
 mongoose
@@ -53,12 +50,9 @@ app.use("/api/disease", dieseaseRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api/prescriptionOrder", PrescriptionOrderRoutes);
 app.use("/api/paymentOrder", paymentOrderRoutes);
-<<<<<<< HEAD
 app.use('/api/bed', bedRoutes);
 app.use('/api/ward', wardRoutes);
-=======
 app.use("/api/supplier", suplierroutes);
->>>>>>> 4d45304e7624a11c23b6e4c7a67cf1f21a2eb165
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
