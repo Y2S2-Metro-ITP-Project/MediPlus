@@ -75,7 +75,7 @@ export const getInventoryData = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+}
 
 export const addInventoryData = async (req, res, next) => {
   if (!req.user.isAdmin && !req.user.isPharmacist) {
@@ -99,11 +99,10 @@ export const addInventoryData = async (req, res, next) => {
     supplierEmail,
   } = req.body;
   try {
-    const existingItem = await Inventory.findOne({ itemName, supplier });
-    if (existingItem) {
+    const existingItem = await Inventory.find({ itemName, supplierEmail });
+    if (existingItem.length>0) {
       return next(errorHandler(400, "Item already exists"));
     }
-    console.log(req.body);
     const inventory = new Inventory({
       itemName,
       itemCategory,

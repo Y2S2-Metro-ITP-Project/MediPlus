@@ -60,17 +60,21 @@ const patientSchema = new mongoose.Schema(
       },
       contactInfo: {
         type: String,
+        default: "N/A",
       },
     },
     emergencyContact: {
       name: {
         type: String,
+        default: "N/A",
       },
       relationship: {
         type: String,
+        default: "N/A", 
       },
       phoneNumber: {
         type: String,
+        default: "N/A",
       },
     },
     roomPreferences: {
@@ -88,12 +92,19 @@ const patientSchema = new mongoose.Schema(
     },
     patientType: {
       type: String,
-      enum: ["inpatient", "outpatient"],
+    },
+    dicharged: {
+      type: Boolean,
+      default: false,
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-    }
+    },
+    bed: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bed',
+    },
   },
   { timestamps: true }
 );
