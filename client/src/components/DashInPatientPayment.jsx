@@ -42,6 +42,7 @@ export default function DashInPatientPayment() {
   const [completedPaymentOrder, setCompletedPaymentOrder] = useState([]);
   const [rejectedPaymentOrder, setRejectedPaymentOrder] = useState([]);
   const [pendingPaymentOrder, setPendingPaymentOrder] = useState([]);
+  const [patientOrders, setPatientOrders] = useState([]);
   const [showWardModal, setShowWardModal] = useState(false);
   const getStatusColor = (status) => {
     switch (status) {
@@ -71,6 +72,18 @@ export default function DashInPatientPayment() {
             )
           ),
         ];
+        const uniquePatients = [
+          ...new Set(
+            data.paymentOrders.map((order) =>
+              JSON.stringify({
+                patientId: order.patient[0]._id,
+                name: order.patient[0].name,
+              })
+            )
+          ),
+        ].map((str) => JSON.parse(str));
+
+        setPatientOrders(uniquePatients);
         setDates(uniqueDates);
         setPaymentOrders(filteredOrders);
         setTotalPaymentOrders(data.totalPaymentOrders);
@@ -106,6 +119,20 @@ export default function DashInPatientPayment() {
               )
             ),
           ];
+
+          const uniquePatients = [
+            ...new Set(
+              data.paymentOrders.map((order) =>
+                JSON.stringify({
+                  patientId: order.patient[0]._id,
+                  name: order.patient[0].name,
+                })
+              )
+            ),
+          ].map((str) => JSON.parse(str));
+
+          setPatientOrders(uniquePatients);
+
           setDates(uniqueDates);
           setPaymentOrders(filteredOrders);
           setTotalPaymentOrders(data.totalPaymentOrders);
@@ -153,13 +180,13 @@ export default function DashInPatientPayment() {
           </Table.Cell>
           <Table.Cell>{order.PatientName}</Table.Cell>
           <Table.Cell
-            style={{ color: order.patient[0].dicharged ? "green" : "red" }}
+            style={{ color: order.patient[0].discharged ? "green" : "red" }}
           >
-            {order.patient[0].dicharged ? "Yes" : "No"}
+            {order.patient[0].discharged ? "Yes" : "No"}
           </Table.Cell>
           <Table.Cell>{order.patient[0].contactPhone}</Table.Cell>
           <Table.Cell>
-            {!order.patient[0].dicharged ? (
+            {!order.patient[0].discharged ? (
               <HiEye
                 className="text-blue-500 cursor-pointer"
                 onClick={() => {
@@ -201,34 +228,6 @@ export default function DashInPatientPayment() {
     setSelectedDate(selectedOption);
   };
   console.log(selectedDate);
-  const handleDownloadReport = async () => {
-    try {
-      const res = await fetch(`/api/paymentOrder/downloadInPaymentReport`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: selectedDate,
-        }),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-      const pdfBlob = await res.blob();
-
-      const url = window.URL.createObjectURL(pdfBlob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${selectedDate.value}-Payment-Report`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (error) {
-      toast.error("Failed to download report");
-    }
-  };
   const handlePaymentOrderDelete = async () => {
     try {
       const res = await fetch(
@@ -243,11 +242,145 @@ export default function DashInPatientPayment() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Order deleted successfully");
-        setShowModal(false);
+        setDeleteShowModal(false);
         fetchPaymentOrders();
       }
     } catch (error) {
       toast.error("Failed to delete order");
+    }
+  };
+  const handleFilterByPaymentStatus = async (e) => {
+    const filterValue = e.target.value;
+    try {
+      const res = await fetch(`/api/paymentOrder/getByPayment/${filterValue}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filterValue,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPaymentOrders(data.paymentOrders);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleFilterByDischargeStatus = async (e) => {
+    const filterValue = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/paymentOrder/getPaymentByDischargeStatus/${filterValue}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filterValue,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setPaymentOrders(data.paymentOrders);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleFilterByDate = async (e) => {
+    const filterValue = e.target.value;
+    try {
+      const res = await fetch(
+        `/api/paymentOrder/getPaymentByDate/${filterValue}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filterValue,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setPaymentOrders(data.paymentOrders);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleReset = async () => {
+    fetchPaymentOrders();
+  };
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const handlePatientChange = (selectedOption) => {
+    setSelectedPatient(selectedOption);
+  };
+  const handleDownloadReport = async () => {
+    if (selectedDate !== null) {
+      try {
+        const res = await fetch(`/api/paymentOrder/downloadInPaymentReport`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            date: selectedDate,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${selectedDate.value}-Payment-Report`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        toast.error("Failed to download report");
+      }
+    }
+    if (selectedPatient !== null) {
+      try {
+        const res = await fetch(
+          `/api/paymentOrder/downloadInPatientPaymentReport`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              patientId: selectedPatient.value,
+            }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+        const pdfBlob = await res.blob();
+
+        const url = window.URL.createObjectURL(pdfBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${selectedPatient.label}-Payment-Report`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        toast.error("Failed to download report");
+      }
     }
   };
   return (
@@ -265,13 +398,6 @@ export default function DashInPatientPayment() {
               </div>
               <IoReceiptOutline className="bg-indigo-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-                {totalPaymentOrdersLastMonth}
-              </span>
-              <div className="text-gray-500">Last Month</div>
-            </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
             <div className="flex justify-between">
@@ -282,12 +408,6 @@ export default function DashInPatientPayment() {
                 <p className="text-2xl">{pendingPaymentOrder}</p>
               </div>
               <IoReceiptOutline className="bg-yellow-600 text-white rounded-full text-5xl p-3 shadow-lg" />
-            </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-              <div className="text-gray-500">Last Month</div>
             </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
@@ -300,12 +420,6 @@ export default function DashInPatientPayment() {
               </div>
               <IoReceiptOutline className="bg-green-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-              <div className="text-gray-500">Last Month</div>
-            </div>
           </div>
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">
             <div className="flex justify-between">
@@ -317,16 +431,55 @@ export default function DashInPatientPayment() {
               </div>
               <IoReceiptOutline className="bg-red-600 text-white rounded-full text-5xl p-3 shadow-lg" />
             </div>
-            <div className="flex gap-2 text-sm">
-              <span className="text-green-500 flex items-center">
-                <HiArrowNarrowUp className="w-5 h-5 text-green-500" />
-              </span>
-              <div className="text-gray-500">Last Month</div>
-            </div>
           </div>
         </div>
       </div>
       <div>
+        <div className="flex mb-2">
+          <select
+            id="filter"
+            onChange={handleFilterByPaymentStatus}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Payment status
+            </option>
+            <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <select
+            id="filter"
+            onChange={handleFilterByDate}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Time
+            </option>
+            <option value="Last Month">Last Month</option>
+            <option value="Last Week">Last Week</option>
+            <option value="This Week">This Week</option>
+            <option value="Today">Today</option>
+          </select>
+          <select
+            id="filter"
+            onChange={handleFilterByDischargeStatus}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Discharge Status
+            </option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          <Button
+            className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
+            color="gray"
+            onClick={() => handleReset()}
+          >
+            Reset
+          </Button>
+        </div>
         <div className=" flex items-center mb-2">
           <TextInput
             type="text"
@@ -369,6 +522,12 @@ export default function DashInPatientPayment() {
             placeholder="Select Patient"
             isSearchable
             isClearable
+            onChange={handlePatientChange}
+            value={selectedPatient}
+            options={patientOrders.map((patient) => ({
+              value: patient.patientId,
+              label: patient.name,
+            }))}
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -389,7 +548,10 @@ export default function DashInPatientPayment() {
             gradientDuoTone="greenToBlue"
             className=" ml-4"
             onClick={handleDownloadReport}
-            disabled={!selectedDate}
+            disabled={
+              (selectedDate && selectedPatient) ||
+              (!selectedDate && !selectedPatient)
+            }
           >
             Download Payment Order Report
           </Button>
@@ -509,7 +671,7 @@ export default function DashInPatientPayment() {
             <Button color="failure" onClick={() => handlePaymentOrderDelete()}>
               Yes,I am sure
             </Button>
-            <Button color="gray" onClick={() => setShowModal(false)}>
+            <Button color="gray" onClick={() => setDeleteShowModal(false)}>
               No,cancel
             </Button>
           </div>

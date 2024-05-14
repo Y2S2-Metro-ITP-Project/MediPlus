@@ -231,7 +231,7 @@ export default function DashDoctorOrderIn() {
           </Table.Cell>
           <Table.Cell>{order.patientId.contactPhone}</Table.Cell>
           <Table.Cell>
-            {!order.patientId.dicharged ? (
+            {order.patientId.dicharged ? (
               <HiEye
                 className="text-blue-500 cursor-pointer"
                 onClick={() => {
@@ -499,6 +499,29 @@ export default function DashDoctorOrderIn() {
       console.log(error);
     }
   };
+  const handleInventoryFilterByDischargeStatus=async(e)=>{
+    const filterValue=e.target.value;
+    try {
+      const res = await fetch(
+        `/api/prescriptionOrder/getInprescriptionOrderByDischargeStatus/${filterValue}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filterValue,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setOrders(data.prescriptionOrders);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -576,6 +599,17 @@ export default function DashDoctorOrderIn() {
             <option value="Completed">Completed</option>
             <option value="Rejected">Rejected</option>
             <option value="Pending">Pending</option>
+          </select>
+          <select
+            id="filter"
+            onChange={handleInventoryFilterByDischargeStatus}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Discharge Status
+            </option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select>
           <Button
             className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"

@@ -101,9 +101,15 @@ export default function DashMedicineDispence() {
         }
       );
       if (res.ok) {
-        toast.success("Order Confirmed Successfully");
-        window.location.href =
-          "http://localhost:5173/dashboard?tab=orderPrescritions";
+        if (orders.patientId.patientType == "Outpatient") {
+          toast.success("Order Confirmed Successfully");
+          window.location.href =
+            "http://localhost:5173/dashboard?tab=orderPrescritions";
+        }else if(orders.patientId.patientType="Inpatient"){
+          toast.success("Order Confirmed Successfully");
+          window.location.href =
+            "http://localhost:5173/dashboard?tab=DoctorOrderIn";
+        }
       }
     } catch (error) {
       console.log(error);
@@ -134,7 +140,7 @@ export default function DashMedicineDispence() {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
-      {orders.patientId.patientType=="Outpatient" ? (
+      {orders.patientId.patientType == "Outpatient" ? (
         <a href="dashboard?tab=orderPrescritions">
           <Button outline gradientDuoTone="purpleToPink" className="mb-5">
             Go Back

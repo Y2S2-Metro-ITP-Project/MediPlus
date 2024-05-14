@@ -927,15 +927,653 @@ export const downloadInByDatePaymentReport = async (req, res) => {
   }
 };
 
+export const downloadPatientPaymentReport = async (req, res) => {
+  const { patientId } = req.body;
+  try {
+    const paymentOrders1 = await PaymentOrder.find({
+      PatientID: patientId,
+    })
+      .populate("PatientID")
+      .populate("Payment")
+      .exec();
+
+    // Filter out payment orders where PatientID is null (not matched with patientType: "Outpatient")
+    const paymentOrders = paymentOrders1.filter(
+      (order) => order.PatientID !== null
+    );
+    const seletecPatientName = paymentOrders[0].PatientName;
+    let totalPendingPayments = 0;
+    let totalCompletedPayments = 0;
+    let totalRejectedPayments = 0;
+
+    for (const order of paymentOrders) {
+      // Your existing code to iterate through payment orders...
+
+      // Calculate totals based on order status
+      if (order.status === "Pending") {
+        totalPendingPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Completed") {
+        totalCompletedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Rejected") {
+        totalRejectedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      }
+    }
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Patient Prescription Order Report</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          .section {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+          }
+          .section h2 {
+            color: #555;
+            margin-bottom: 10px;
+          }
+          .section p {
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .section p strong {
+            color: #333;
+          }
+          .status {
+            font-weight: bold;
+          }
+          .status.completed {
+            color: green;
+          }
+          .status.rejected {
+            color: red;
+          }
+          ul {
+            list-style-type: none;
+            padding: 0;
+          }
+          ul li {
+            margin-bottom: 10px;
+          }
+          .payment-details {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+          }
+          .status-pending {
+            color: orange;
+          }
+          
+          .status-completed {
+            color: green;
+          }
+          
+          .status-rejected {
+            color: red;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>OutPatient Payment Order Report</h1>
+          <h2>Patient:${seletecPatientName}</h2>
+          <p><strong>Total Pending Payments:</strong> <span class="status-pending">${totalPendingPayments}</span></p>
+          <p><strong>Total Completed Payments:</strong> <span class="status-completed">${totalCompletedPayments}</span></p>
+          <p><strong>Total Rejected Payments:</strong> <span class="status-rejected">${totalRejectedPayments}</span></p>
+        </div>
+      
+        ${paymentOrders
+          .map(
+            (order, index) => `
+          <div class="section">
+            <h2>Order ${index + 1}</h2>
+            <h3>Date: ${new Date(order.date).toLocaleString()}</h3>
+            <p><strong>Patient Name:</strong> ${order.PatientName || "N/A"}</p>
+            <p><strong>Patient Email:</strong> ${
+              order.PatientEmail || "N/A"
+            }</p>
+            <p><strong>Status:</strong> <span class="status ${order.status.toLowerCase()}">${
+              order.status || "N/A"
+            }</span></p>
+            <p><strong>Payment Type:</strong> ${order.paymentType || "N/A"}</p>
+            <p><strong>Payment Orders:</strong></p>
+            <ul>
+              ${order.Payment.map(
+                (payment) => `
+                <li class="payment-details">
+                  <p><strong>Date:</strong> ${payment.dateAndTime}</p>
+                  <p><strong>Order Type:</strong> ${payment.OrderType}</p>
+                  <p><strong>Total:</strong> ${payment.totalPayment}</p>
+                  <p><strong>Status:</strong> <span class="status ${payment.status.toLowerCase()}">${
+                  payment.status
+                }</span></p>
+                </li>
+              `
+              ).join("")}
+            </ul>
+            <p><strong>Total Order Value:</strong> ${order.Payment.reduce(
+              (acc, payment) => acc + payment.totalPayment,
+              0
+            ).toFixed(2)}</p>
+          </div>
+        `
+          )
+          .join("")}
+      
+      </body>
+      </html>`;
+
+    try {
+      const pdfBuffer = await generatePdfFromHtml(htmlContent);
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Length": pdfBuffer.length,
+        "Content-Disposition": `attachment; filename="patient-prescription-order-report.pdf"`,
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const downloadInPatientPaymentReport = async (req, res) => {
+  const { patientId } = req.body;
+  try {
+    const paymentOrders1 = await PaymentOrder.find({
+      PatientID: patientId,
+    })
+      .populate("PatientID")
+      .populate("Payment")
+      .exec();
+
+    // Filter out payment orders where PatientID is null (not matched with patientType: "Outpatient")
+    const paymentOrders = paymentOrders1.filter(
+      (order) => order.PatientID !== null
+    );
+
+    // Find the patient by ID and populate the bed information
+    const selectedPatient = await Patient.findById(patientId).populate({
+      path: "bed",
+      populate: {
+        path: "ward",
+        select: "WardName,doctorName,nurseName", // Select only the WardName field
+      },
+    });
+
+    if (!selectedPatient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Extract patient name, bed number, and ward name
+    const selectedPatientName = selectedPatient.name;
+    const selectedBedNumber = selectedPatient.bed
+      ? selectedPatient.bed.bedNumber
+      : "N/A";
+    const selectedWardName =
+      selectedPatient.bed && selectedPatient.bed.ward
+        ? selectedPatient.bed.ward.WardName
+        : "N/A";
+    const selectedDoctorName =
+      selectedPatient.bed && selectedPatient.bed.ward
+        ? selectedPatient.bed.ward.doctorName
+        : "N/A";
+    const selectedNurseName =
+      selectedPatient.bed && selectedPatient.bed.ward
+        ? selectedPatient.bed.ward.nurseName
+        : "N/A";
+    let totalPendingPayments = 0;
+    let totalCompletedPayments = 0;
+    let totalRejectedPayments = 0;
+
+    for (const order of paymentOrders) {
+      // Your existing code to iterate through payment orders...
+
+      // Calculate totals based on order status
+      if (order.status === "Pending") {
+        totalPendingPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Completed") {
+        totalCompletedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      } else if (order.status === "Rejected") {
+        totalRejectedPayments += order.Payment.reduce(
+          (acc, payment) => acc + payment.totalPayment,
+          0
+        );
+      }
+    }
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Patient Prescription Order Report</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          .section {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+          }
+          .section h2 {
+            color: #555;
+            margin-bottom: 10px;
+          }
+          .section p {
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .section p strong {
+            color: #333;
+          }
+          .status {
+            font-weight: bold;
+          }
+          .status.completed {
+            color: green;
+          }
+          .status.rejected {
+            color: red;
+          }
+          ul {
+            list-style-type: none;
+            padding: 0;
+          }
+          ul li {
+            margin-bottom: 10px;
+          }
+          .payment-details {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+          }
+          .status-pending {
+            color: orange;
+          }
+          
+          .status-completed {
+            color: green;
+          }
+          
+          .status-rejected {
+            color: red;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>OutPatient Payment Order Report</h1>
+          <h2>Patient:${selectedPatientName}</h2>
+          <h2>Ward:${selectedWardName}</h2>
+          <h2>Bed:${selectedBedNumber}</h2>
+          <h2>Doctor Assigned :${selectedDoctorName}</h2>
+          <h2>Nurse Assigned :${selectedNurseName}</h2>
+          <p><strong>Total Pending Payments:</strong> <span class="status-pending">${totalPendingPayments}</span></p>
+          <p><strong>Total Completed Payments:</strong> <span class="status-completed">${totalCompletedPayments}</span></p>
+          <p><strong>Total Rejected Payments:</strong> <span class="status-rejected">${totalRejectedPayments}</span></p>
+        </div>
+      
+        ${paymentOrders
+          .map(
+            (order, index) => `
+          <div class="section">
+            <h2>Order ${index + 1}</h2>
+            <h3>Date: ${new Date(order.date).toLocaleString()}</h3>
+            <p><strong>Patient Name:</strong> ${order.PatientName || "N/A"}</p>
+            <p><strong>Patient Email:</strong> ${
+              order.PatientEmail || "N/A"
+            }</p>
+            <p><strong>Status:</strong> <span class="status ${order.status.toLowerCase()}">${
+              order.status || "N/A"
+            }</span></p>
+            <p><strong>Payment Type:</strong> ${order.paymentType || "N/A"}</p>
+            <p><strong>Payment Orders:</strong></p>
+            <ul>
+              ${order.Payment.map(
+                (payment) => `
+                <li class="payment-details">
+                  <p><strong>Date:</strong> ${payment.dateAndTime}</p>
+                  <p><strong>Order Type:</strong> ${payment.OrderType}</p>
+                  <p><strong>Total:</strong> ${payment.totalPayment}</p>
+                  <p><strong>Status:</strong> <span class="status ${payment.status.toLowerCase()}">${
+                  payment.status
+                }</span></p>
+                </li>
+              `
+              ).join("")}
+            </ul>
+            <p><strong>Total Order Value:</strong> ${order.Payment.reduce(
+              (acc, payment) => acc + payment.totalPayment,
+              0
+            ).toFixed(2)}</p>
+          </div>
+        `
+          )
+          .join("")}
+      
+      </body>
+      </html>`;
+
+    try {
+      const pdfBuffer = await generatePdfFromHtml(htmlContent);
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Length": pdfBuffer.length,
+        "Content-Disposition": `attachment; filename="patient-prescription-order-report.pdf"`,
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 export const deletePaymentOrder = async (req, res) => {
   const paymentOrderID = req.params.id;
   console.log(paymentOrderID);
+  if (!req.user.isAdmin && !req.user.isCashier) {
+    return res
+      .status(403)
+      .json({ message: "You are not authorized to perform this action" });
+  }
   try {
     const paymentOrder = await PaymentOrder.findByIdAndDelete(paymentOrderID);
     if (!paymentOrder) {
       return res.status(404).json({ message: "Payment order not found" });
     }
     res.status(200).json({ message: "Payment order deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPaymentOrderByPaymentStatusData = async (req, res) => {
+  const { filterValue } = req.body;
+
+  try {
+    const filterOption = req.body.filterValue;
+    if (
+      filterOption === "Pending" ||
+      filterOption === "Completed" ||
+      filterOption === "Rejected"
+    ) {
+      try {
+        const paymentOrders = await PaymentOrder.aggregate([
+          {
+            $match: { status: filterValue },
+          },
+          {
+            $lookup: {
+              from: "patients",
+              localField: "PatientID",
+              foreignField: "_id",
+              as: "patient",
+            },
+          },
+          {
+            $lookup: {
+              from: "beds",
+              localField: "patient.bed",
+              foreignField: "_id",
+              as: "bed",
+            },
+          },
+          {
+            $lookup: {
+              from: "wards",
+              localField: "bed.ward",
+              foreignField: "_id",
+              as: "ward",
+            },
+          },
+          {
+            $match: { "patient.patientType": "Inpatient" },
+          },
+        ]);
+
+        // Filter out null PatientID
+        const filteredPaymentOrders = paymentOrders.filter(
+          (order) => order.PatientID !== null
+        );
+
+        res.status(200).json({ paymentOrders: filteredPaymentOrders });
+      } catch (error) {
+        res.status(404).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+import moment from "moment"; //
+
+export const getPaymentOrderByDateRange = async (req, res) => {
+  const { filterValue } = req.body;
+  let startDate, endDate;
+
+  switch (filterValue) {
+    case "Last Month":
+      startDate = moment().subtract(1, "month").startOf("month").toDate();
+      endDate = moment().subtract(1, "month").endOf("month").toDate();
+      break;
+    case "Last Week":
+      startDate = moment().subtract(1, "week").startOf("week").toDate();
+      endDate = moment().subtract(1, "week").endOf("week").toDate();
+      break;
+    case "This Week":
+      startDate = moment().startOf("week").toDate();
+      endDate = moment().endOf("week").toDate();
+      break;
+    case "Today":
+      startDate = moment().startOf("day").toDate();
+      endDate = moment().endOf("day").toDate();
+      break;
+    default:
+      return res.status(400).json({ message: "Invalid filter value" });
+  }
+
+  try {
+    const paymentOrders = await PaymentOrder.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $lookup: {
+          from: "patients",
+          localField: "PatientID",
+          foreignField: "_id",
+          as: "patient",
+        },
+      },
+      {
+        $lookup: {
+          from: "beds",
+          localField: "patient.bed",
+          foreignField: "_id",
+          as: "bed",
+        },
+      },
+      {
+        $lookup: {
+          from: "wards",
+          localField: "bed.ward",
+          foreignField: "_id",
+          as: "ward",
+        },
+      },
+      {
+        $match: { "patient.patientType": "Inpatient" },
+      },
+    ]);
+
+    // Filter out null PatientID
+    const filteredPaymentOrders = paymentOrders.filter(
+      (order) => order.PatientID !== null
+    );
+
+    res.status(200).json({ paymentOrders: filteredPaymentOrders });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPaymentByDischargeStatus = async (req, res) => {
+  const { filterValue } = req.body;
+
+  try {
+    if (filterValue === "yes" || filterValue === "no") {
+      let dischargedStatus;
+      if (filterValue === "yes") {
+        dischargedStatus = true;
+      } else if (filterValue === "no") {
+        dischargedStatus = false;
+      }
+
+      const paymentOrders = await PaymentOrder.aggregate([
+        {
+          $lookup: {
+            from: "patients",
+            localField: "PatientID",
+            foreignField: "_id",
+            as: "patient",
+          },
+        },
+        {
+          $lookup: {
+            from: "beds",
+            localField: "patient.bed",
+            foreignField: "_id",
+            as: "bed",
+          },
+        },
+        {
+          $lookup: {
+            from: "wards",
+            localField: "bed.ward",
+            foreignField: "_id",
+            as: "ward",
+          },
+        },
+        {
+          $match: {
+            "patient.patientType": "Inpatient",
+            "patient.discharged": dischargedStatus, // Filter based on the discharge status
+          },
+        },
+      ]);
+
+      // Filter out null PatientID
+      const filteredPaymentOrders = paymentOrders.filter(
+        (order) => order.PatientID !== null
+      );
+
+      res.status(200).json({ paymentOrders: filteredPaymentOrders });
+    } else {
+      res.status(400).json({ message: "Invalid filter value" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPaymentOrderByPaymentType = async (req, res) => {
+  const { filterValue } = req.body;
+
+  try {
+    const filterOption = req.body.filterValue;
+    if (
+      filterOption === "Pending" ||
+      filterOption === "Completed" ||
+      filterOption === "Rejected"
+    ) {
+      try {
+        const paymentOrders = await PaymentOrder.aggregate([
+          {
+            $match: { status: filterValue },
+          },
+          {
+            $lookup: {
+              from: "patients",
+              localField: "PatientID",
+              foreignField: "_id",
+              as: "patient",
+            },
+          },
+          {
+            $lookup: {
+              from: "beds",
+              localField: "patient.bed",
+              foreignField: "_id",
+              as: "bed",
+            },
+          },
+          {
+            $lookup: {
+              from: "wards",
+              localField: "bed.ward",
+              foreignField: "_id",
+              as: "ward",
+            },
+          },
+          {
+            $match: { "patient.patientType": "Outpatient" },
+          },
+        ]);
+
+        // Filter out null PatientID
+        const filteredPaymentOrders = paymentOrders.filter(
+          (order) => order.PatientID !== null
+        );
+
+        res.status(200).json({ paymentOrders: filteredPaymentOrders });
+      } catch (error) {
+        res.status(404).json({ message: error.message });
+      }
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
