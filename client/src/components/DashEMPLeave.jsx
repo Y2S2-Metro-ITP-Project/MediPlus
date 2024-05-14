@@ -35,7 +35,7 @@ export default function DashEMPLeave() {
       console.error("Error fetching leaves:", error);
     }
   };
-  console.log(userLeaves);
+ 
   // useEffect hook to fetch leaves on component mount or when currentUser changes
   useEffect(() => {
     fetchLeaves();
@@ -43,11 +43,9 @@ export default function DashEMPLeave() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
+
 
   const createLeaveApplication = async (userId, formData) => {
     try {
@@ -99,6 +97,17 @@ export default function DashEMPLeave() {
   const confirmDeleteLeave = async () => {
     // Handle confirm delete leave logic here
   };
+  const isFutureDate = (dateString) => {
+    const today = new Date();
+    const selectedDate = new Date(dateString);
+    return selectedDate > today;
+  };
+
+  const isEndDateAfterStartDate = () => {
+    const { startDate, endDate } = formData;
+    if (!startDate || !endDate) return true; // No validation if dates are not selected
+    return new Date(endDate) >= new Date(startDate);
+  };
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3">
@@ -117,68 +126,80 @@ export default function DashEMPLeave() {
 
       {/* Leave Application Modal */}
       <Modal show={showModal} onClose={() => setShowModal(false)} size="md">
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <h3 className="mb- text-lg text-gray-500">
-              Leave Application Form
-            </h3>
-            <form onSubmit={handleCreateLeave}>
-              {/* Leave application form fields */}
-              <div className="mb-4">
-                <label htmlFor="reason" className="block">
-                  Reason for leave
-                </label>
-                <textarea
-                  id="reason"
-                  name="reason"
-                  style={{ width: "350px" }}
-                  placeholder="Reason for leave"
-                  required
-                  value={formData.reason}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="startDate" className="block">
-                  Start Date
-                </label>
-                <TextInput
-                  id="startDate"
-                  name="startDate"
-                  type="date"
-                  placeholder="Start Date"
-                  required
-                  value={formData.startDate}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="endDate" className="block">
-                  End Date
-                </label>
-                <TextInput
-                  id="endDate"
-                  name="endDate"
-                  type="date"
-                  placeholder="End Date"
-                  required
-                  value={formData.endDate}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex justify-center gap-4">
-                <Button type="submit" color="primary">
-                  Submit
-                </Button>
-                <Button onClick={() => setShowModal(false)} color="danger">
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        </Modal.Body>
-      </Modal>
+      <Modal.Header />
+      <Modal.Body>
+        <div className="text-center">
+          <h3 className="mb- text-lg text-gray-500">Leave Application Form</h3>
+          <form onSubmit={handleCreateLeave}>
+            <div className="mb-4">
+              <label htmlFor="reason" className="block">
+                Reason for leave
+              </label>
+              <textarea
+                id="reason"
+                name="reason"
+                style={{ width: "350px" }}
+                placeholder="Reason for leave"
+                required
+                value={formData.reason}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="startDate" className="block">
+                Start Date
+              </label>
+              <TextInput
+                id="startDate"
+                name="startDate"
+                type="date"
+                placeholder="Start Date"
+                required
+                value={formData.startDate}
+                onChange={handleChange}
+                min={new Date().toISOString().split("T")[0]}
+                max={
+                  formData.endDate ? formData.endDate : undefined
+                } // Set max date to end date if it's selected
+              />
+              {!isFutureDate(formData.startDate) && (
+                <p className="text-red-500 text-sm">Start date must be a future date.</p>
+              )}
+            </div>
+            <div className="mb-4">
+              <label htmlFor="endDate" className="block">
+                End Date
+              </label>
+              <TextInput
+                id="endDate"
+                name="endDate"
+                type="date"
+                placeholder="End Date"
+                required
+                value={formData.endDate}
+                onChange={handleChange}
+                min={
+                  formData.startDate
+                    ? formData.startDate
+                    : new Date().toISOString().split("T")[0]
+                } // Set min date to start date if it's selected
+              />
+              {!isEndDateAfterStartDate() && (
+                <p className="text-red-500 text-sm">End date must be on or after start date.</p>
+              )}
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button type="submit" color="primary">
+                Submit
+              </Button>
+              <Button onClick={() => setShowModal(false)} color="danger">
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Modal.Body>
+    </Modal>
 
       {/* Table for displaying leaves */}
       <Table hoverable className="shadow-md">
