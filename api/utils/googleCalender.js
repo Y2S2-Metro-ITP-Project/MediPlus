@@ -5,7 +5,7 @@ import { authenticate } from '@google-cloud/local-auth';
 import { google } from 'googleapis';
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), '\\api\\utils\\credentials.json');
 

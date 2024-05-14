@@ -154,11 +154,14 @@ export const admitPatientToBed = async (req, res, next) => {
 
     const patient = await Patient.findOne({ _id: patientId });
 
+    //Update the patient with bed information
+    patient.bed = bed._id;
     // Update the bed with patient information
     bed.isAvailable = false;
     bed.patient = patientId;
 
     // Save the updated bed to the database
+    await patient.save();
     await bed.save();
 
     res.status(200).json({
@@ -208,7 +211,7 @@ export const updateBedAvailability = async (req, res, next) => {
     if (!bed) {
       return next(errorHandler(404, "Bed not found"));
     }
-    
+    const patient= await Patient.findOne({bed: bed._id});
     // Remove patient ID if the bed is made available
     if (isAvailable) {
       bed.patient= null;

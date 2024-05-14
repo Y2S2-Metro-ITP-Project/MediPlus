@@ -145,6 +145,7 @@ export default function DashWards() {
           <Table.Cell>
             <span className="text-red-500">{calculateOccupiedBeds(wards)}</span>
           </Table.Cell>
+          <Table.Cell>{wards.wardCharge}</Table.Cell>
           <Table.Cell>
             <HiEye
               className="text-blue-500 cursor-pointer"
@@ -285,6 +286,7 @@ export default function DashWards() {
               <Table.HeadCell>Nurse</Table.HeadCell>
               <Table.HeadCell>No of Beds</Table.HeadCell>
               <Table.HeadCell>Beds Occupied</Table.HeadCell>
+              <Table.HeadCell>Ward Charge-LKR</Table.HeadCell>
               <Table.HeadCell>Details</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
@@ -424,6 +426,17 @@ export default function DashWards() {
                   className="input-field"
                 />
               </div>
+              <div>
+                <Label htmlFor="contactEmail">Ward Charge</Label>
+                <TextInput
+                  type="number"
+                  id="wardCharge"
+                  min={1}
+                  onChange={handleChange}
+                  placeholder="Ward Charge per day"
+                  className="input-field"
+                />
+              </div>
             </div>
             <div className="flex justify-center mt-3">
               <Button color="blue" type="submit" outline>
@@ -526,6 +539,17 @@ export default function DashWards() {
                   min={1}
                   onChange={handleChange}
                   placeholder={wardData.WardCapacity}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contactEmail">Ward Charge</Label>
+                <TextInput
+                  type="number"
+                  id="wardCharge"
+                  min={1}
+                  onChange={handleChange}
+                  placeholder={wardData.wardCharge}
                   className="input-field"
                 />
               </div>

@@ -235,6 +235,7 @@ export const searchPateint = async (req, res, next) => {
     !req.user.isAdmin &&
     req.user.id !== req.params.patientId &&
     !req.user.isReceptionist
+    && !req.user.isDoctor
   ) {
     return next(
       errorHandler(403, "you are not allowed to access this resource")
@@ -264,7 +265,7 @@ export const searchPateint = async (req, res, next) => {
 };
 
 export const filterPatients = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist) {
+  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -613,7 +614,7 @@ export const admitPatient = async (req, res, next) => {
       insuranceInformation,
       emergencyContact,
       roomPreferences,
-      patientType: "inpatient",
+      patientType: "Inpatient",
     });
 
     // Save the new patient to the database

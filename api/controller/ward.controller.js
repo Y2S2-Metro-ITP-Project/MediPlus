@@ -19,6 +19,7 @@ export const addWard = async (req, res) => {
     WardName,
     WardType,
     WardCapacity,
+    wardCharge,
   } = req.body;
   const newWard = new ward({
     doctorId,
@@ -28,6 +29,7 @@ export const addWard = async (req, res) => {
     WardName,
     WardType,
     WardCapacity,
+    wardCharge,
   });
   try {
     await newWard.save();
