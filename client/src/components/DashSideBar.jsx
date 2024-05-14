@@ -30,6 +30,7 @@ import { FaHeartbeat } from "react-icons/fa";
 import { FaMoneyBill } from 'react-icons/fa';
 import { IoReceiptOutline } from "react-icons/io5";
 import { FaMedkit } from "react-icons/fa";
+import { FaMoneyBillAlt } from 'react-icons/fa';
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -265,6 +266,27 @@ export default function DashSideBar() {
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+              
+              <Link to="/dashboard?tab=Empsalary">
+                <Sidebar.Item
+                  active={tab === "Empsalary"}
+                  icon={FaMoneyBill}
+                  as="div"
+                >
+                  Salary
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=ConsultPayment">
+                <Sidebar.Item
+                  active={tab === "ConsultPayment"}
+                  icon={FaMoneyBillAlt}
+                  as="div"
+                >
+                  Consultation Payment
+                </Sidebar.Item>
+              </Link>
+
             </>
           )}
           {currentUser.isDoctor && (

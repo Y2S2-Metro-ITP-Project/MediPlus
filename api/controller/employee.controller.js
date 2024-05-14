@@ -621,3 +621,41 @@ export const getDoctorBySpecializationAndId = async (req, res, next) => {
     return res.status(500).json({ message: 'An unexpected error occurred' });
   }
 };
+
+
+
+export const getDoctorDetails = async (req, res, next) => {
+  try {
+    // Find all users who are doctors
+    const doctors = await User.find({ isDoctor: true });
+
+    // If no doctors found, return empty array
+    if (!doctors || doctors.length === 0) {
+      return res.status(404).json({ message: 'No doctors found' });
+    }
+
+    // Extract user IDs of doctors
+    const doctorIds = doctors.map(doctor => doctor._id);
+
+    // Query EmployeeDetails collection to get details of doctors
+    const doctorDetails = await EmployeeDetails.find({ userId: { $in: doctorIds } });
+
+    // Map doctor details and format the data to send to the frontend
+    const formattedDoctors = doctorDetails.map(doctorDetail => {
+      const doctorUser = doctors.find(doctor => doctor._id.equals(doctorDetail.userId));
+      return {
+        name: doctorUser.username,
+        image: doctorDetail.employeeImage,
+        specialization: doctorDetail.specialization,
+        consultationFee: doctorDetail.consultationFee,
+        // Add more fields as needed
+      };
+    });
+
+    // Send the formatted doctor details to the frontend
+    return res.status(200).json(formattedDoctors);
+  } catch (error) {
+    console.error('Error fetching doctor details:', error.message);
+    return res.status(500).json({ message: 'An unexpected error occurred' });
+  }
+};
