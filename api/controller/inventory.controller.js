@@ -210,7 +210,11 @@ export const updateInventoryData = async (req, res) => {
       return next(errorHandler(400, "Item already exists"));
     }
     const inventory = await Inventory.findById(req.params.inventoryId);
+    const supplierId1=inventory.supplierId;
     if (inventory) {
+      const supplier = await Supplier.findById(supplierId1);
+      supplier.item.pull(req.params.inventoryId);
+      await supplier.save();
       const updatedInventoryItem = await Inventory.findByIdAndUpdate(
         req.params.inventoryId,
         {
@@ -231,6 +235,12 @@ export const updateInventoryData = async (req, res) => {
         },
         { new: true }
       );
+      if (!supplier) {
+        return next(errorHandler(404, "Supplier not found"));
+      }
+      const supplier1=await Supplier.findById(supplierId);
+      supplier1.item.push(updatedInventoryItem._id);
+      await supplier1.save();
       res.status(200).json(updatedInventoryItem);
     } else {
       res.status(404).json({ message: "Inventory not found" });

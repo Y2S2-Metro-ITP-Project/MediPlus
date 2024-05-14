@@ -87,6 +87,8 @@ export default function DashOutPatients() {
     itemExpireDate: "",
     supplierName: "",
     supplierEmail: "",
+    supplierPhone: "",
+    supplierId: "",
   });
   const handleInvenoryUpdateData = (
     itemName,
@@ -98,7 +100,9 @@ export default function DashOutPatients() {
     itemImage,
     itemExpireDate,
     supplierName,
-    supplierEmail
+    supplierEmail,
+    supplierPhone,
+    supplierId
   ) => {
     setInventoryData({
       itemName,
@@ -111,8 +115,11 @@ export default function DashOutPatients() {
       itemExpireDate,
       supplierName,
       supplierEmail,
+      supplierPhone,
+      supplierId,
     });
   };
+  console.log(inventoryData);
   const fetchSuppliers = async () => {
     try {
       const res = await fetch(`/api/supplier/getSupplier`);
@@ -521,7 +528,8 @@ export default function DashOutPatients() {
                     item.itemExpireDate,
                     item.supplierName,
                     item.supplierEmail,
-                    item.supplierPhone
+                    item.supplierPhone,
+                    item.supplierId._id
                   );
                   setUpdateInventoryItemModal(true);
                   setInventoryUpdateID(item._id);
@@ -731,7 +739,6 @@ export default function DashOutPatients() {
       document.body.removeChild(a);
     }
   };
-  console.log(filterOption);
   {
     /** Order Item Model */
   }
@@ -1290,11 +1297,12 @@ export default function DashOutPatients() {
                    value={supplierOptions.value} */}
                 {/* /> */}
                 <ReactSelect
-                  options={suppliers}
+                  options={suppliers.filter(
+                    (supplier) => supplier.value !== inventoryData.supplierId
+                  )}
                   id="supplier"
                   required
                   isSearchable
-                  placeholder={inventoryData.supplierEmail}
                   value={supplierName}
                   onChange={handleSupplierChange}
                 />
@@ -1304,7 +1312,7 @@ export default function DashOutPatients() {
                 <TextInput
                   type="text"
                   id="itemName"
-                  placeholder={inventoryData.supplierName}
+                  placeholder={inventoryData.supplierEmail}
                   value={supplierEmail}
                   className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
                   disabled
