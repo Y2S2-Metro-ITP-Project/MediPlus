@@ -416,7 +416,6 @@ export default function DashOutPatientProfile() {
   const handleTestOrderSubmit = async (e) => {
     e.preventDefault();
 
-
     // console.log("tseting testing formdata:", formData)
 
     try {
@@ -2321,15 +2320,22 @@ export default function DashOutPatientProfile() {
                           {orders.testId.map((test) => test.name).join("/")}
                         </TableCell>
                         <TableCell>{orders.DoctorId.username} </TableCell>
-
                         <TableCell>
                           {orders.highPriority
                             ? "high priority"
                             : "low priority"}
                         </TableCell>
-
                         <TableCell>{orders.orderStages}</TableCell>
-                        <TableCell>Result</TableCell>
+                        <TableCell>
+                          {orders.orderStages === "Complete" ? (
+                            <Button>Result Available</Button>
+                          ) : (
+                            <Button className=" hover: cursor-not-allowed"
+                            disabled={true}>
+                              Result Unavailable
+                              </Button>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <span
                             onClick={() => {

@@ -62,6 +62,7 @@ app.use("/api/paymentOrder", paymentOrderRoutes);
 app.use("/api/userBooking", userBookingRoutes);
 app.use('/api/bed', bedRoutes);
 app.use('/api/result', testResult);
+// app.use("MediPlus\client\public\labResults", express.static("labResults"));
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

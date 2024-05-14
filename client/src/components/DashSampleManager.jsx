@@ -29,10 +29,6 @@ const DashSampleManager = () => {
   const [formData, setFormData] = useState({});
   const [fileName, setFileName] = useState("");
 
-
-  
- 
-
   useEffect(() => {
     const fetchSamples = async () => {
       try {
@@ -53,65 +49,56 @@ const DashSampleManager = () => {
 
   //===============================================================================================
 
-    const handleSetSampleDetails = (sample) => {
-      const patientId = sample.patientId._id;
-      const testOrderId = sample.testOrderId._id;
-      const sampleId = sample._id;
+  const handleSetSampleDetails = (sample) => {
+    const patientId = sample.patientId._id;
+    const testOrderId = sample.testOrderId._id;
+    const sampleId = sample._id;
 
-      setFormData({
-        patientId: patientId,
-        testOrderId: testOrderId,
-        sampleId: sampleId,
-      
+    setFormData({
+      patientId: patientId,
+      testOrderId: testOrderId,
+      sampleId: sampleId,
+    });
+  };
+
+  const onChangeFile = (e) => {
+    setFileName(e.target.files[0]);
+    setFormData({ ...formData, resultPDF: fileName });
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const { patientId, sampleId, testOrderId, resultPDF } = formData;
+
+      const formDataToSend = new FormData();
+      formDataToSend.append("patientId", patientId);
+      formDataToSend.append("sampleId", sampleId);
+      formDataToSend.append("testOrderId", testOrderId);
+      formDataToSend.append("resultPDF", resultPDF);
+
+      console.log(resultPDF);
+
+      const res = await fetch(`api/result/upload`, {
+        method: "POST",
+        body: formDataToSend,
       });
-    };
 
-   
-
-    const onChangeFile = (e) => {
-       setFileName(e.target.files[0]);
-      setFormData({...formData, resultPDF: fileName});
-    }
-
-    const handleChange = (e) => {
-      setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
-
-
-
-    const handleSubmit = async(e) => {
-      
-      e.preventDefault();
-
-      try {
-
-        const {patientId, sampleId, testOrderId, resultPDF} = formData;
-
-        const formDataToSend = new FormData();
-        formDataToSend.append('patientId', patientId);
-        formDataToSend.append('sampleId', sampleId);
-        formDataToSend.append('testOrderId', testOrderId);
-        formDataToSend.append('resultPDF', resultPDF);
-
-        console.log(resultPDF);
-
-        const res = await fetch(`api/result/upload`,{
-          method: "POST",
-          body: formDataToSend,
-        });
-
-        if(res.ok){
-          console.log("upload success");
-        }else{
-          console.log("upload failed", res.status);
-        }
-        
-      } catch (error) {
-        console.log(error)
+      if (res.ok) {
+        console.log("upload success");
+      } else {
+        console.log("upload failed", res.status);
       }
-
+    } catch (error) {
+      console.log(error);
     }
-  
+  };
+
   //===============================================================================================
 
   return (
@@ -137,7 +124,7 @@ const DashSampleManager = () => {
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
-              <Table.HeadCell>Test Order ID</Table.HeadCell>
+             
               <Table.HeadCell>Patient Name</Table.HeadCell>
               <Table.HeadCell>Sample Type</Table.HeadCell>
               <Table.HeadCell>Test Name/s</Table.HeadCell>
@@ -152,9 +139,7 @@ const DashSampleManager = () => {
             {samples.map((sample) => (
               <Table.Body className=" divide-y text-center ">
                 <Table.Row>
-                  <Table.Cell className="text-left">
-                    {sample.testOrderId._id}
-                  </Table.Cell>
+                 
                   <Table.Cell>{sample.patientId.name}</Table.Cell>
                   <Table.Cell>{sample.sampleType.toLowerCase()}</Table.Cell>
                   <Table.Cell>
@@ -181,15 +166,24 @@ const DashSampleManager = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      onClick={() => {
-                       
-                        handleSetSampleDetails(sample)
-                        SetShowUploadModal(true);
-                      }}
-                    >
-                      Upload Results
-                    </Button>
+                    {sample.sampleStatus === "complete" ? (
+                      <Button
+                        className=" hover:cursor-not-allowed "
+                        color="success"
+                        disabled={true}
+                      >
+                        Test Uploaded
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          handleSetSampleDetails(sample);
+                          SetShowUploadModal(true);
+                        }}
+                      >
+                        Upload Results
+                      </Button>
+                    )}
                   </TableCell>
                 </Table.Row>
               </Table.Body>
@@ -227,28 +221,26 @@ const DashSampleManager = () => {
                 />
               </div> */}
 
-
-              <TextInput 
-             
-              type="hidden"
-              value={formData.patientId}
-              id="patientId"
-              onChange={handleChange}
-              
+              <TextInput
+                type="hidden"
+                value={formData.patientId}
+                id="patientId"
+                onChange={handleChange}
               />
 
               <TextInput
-              type="hidden"
-              value={formData.testOrderId}
-              id = "testOrderId"
-              onChange={handleChange}
+                type="hidden"
+                value={formData.testOrderId}
+                id="testOrderId"
+                onChange={handleChange}
               />
 
               <TextInput
-              type="hidden"
-              value={formData.sampleId}
-              id="sampleId"
-              onChange={handleChange}/>
+                type="hidden"
+                value={formData.sampleId}
+                id="sampleId"
+                onChange={handleChange}
+              />
 
               {/* <div>
                 <Label htmlFor="secret">High Sensitivity?</Label>
@@ -259,11 +251,12 @@ const DashSampleManager = () => {
 
               <div>
                 <Label htmlFor="resultPDF"> Upload files here:</Label>
-                <input 
-                type="file"
-                name="resultPDF"
-                onChange={onChangeFile}
-                accept=".pdf"/>
+                <input
+                  type="file"
+                  name="resultPDF"
+                  onChange={onChangeFile}
+                  accept=".pdf"
+                />
               </div>
             </div>
             <div className="flex justify-center mt-3">
