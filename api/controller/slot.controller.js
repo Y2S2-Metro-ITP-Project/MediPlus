@@ -514,7 +514,8 @@ export const getSlotsByType = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve slots by type" });
     }
     };
-    export const generateSlotReport = async (req, res) => {
+
+export const generateSlotReport = async (req, res) => {
     try {
     const slotId = req.params.id;
     // Find the slot by ID and populate related data
@@ -545,7 +546,7 @@ export const getSlotsByType = async (req, res) => {
     }
     };
 
-    export const getSlotsByRoom = async (req, res) => {
+export const getSlotsByRoom = async (req, res) => {
       try {
       const { roomId } = req.params;
       const slots = await Slot.find({ room: roomId })
@@ -557,7 +558,7 @@ export const getSlotsByType = async (req, res) => {
       }
       };
 
-      export const cancelSlot = async (req, res) => {
+export const cancelSlot = async (req, res) => {
         try {
         const slotId = req.params.id;
         // Find the slot by ID
@@ -640,3 +641,105 @@ res.json(updatedSlot);
   res.status(500).json({ error: "Server error" });
   }
   };
+
+  export const getSlotDetails = async (req, res) => {
+    try {
+      const slotId = req.params.slotId;
+      const slot = await Slot.findById(slotId)
+        .populate('doctorId', 'username')
+        .populate('room', 'description');
+  
+      if (!slot) {
+        return res.status(404).json({ message: 'Slot not found' });
+      }
+  
+      const bookings = await Booking.find({ slotId });
+      const totalBookings = bookings.length;
+      const bookedCount = bookings.filter((booking) => booking.status === 'Booked').length;
+      const cancelledCount = bookings.filter((booking) => booking.status === 'Cancelled').length;
+      const notBookedCount = bookings.filter((booking) => booking.status === 'Not Booked').length;
+  
+      const { date, startTime, endTime, type } = slot;
+      const roomName = type === 'Online Appointment' ? 'Online' : slot.room.description;
+  
+      const slotDetails = {
+        date: slot.date,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        doctorName: slot.doctorId.username,
+        roomName,
+        status: slot.session,
+        totalBookings,
+        bookedCount,
+        cancelledCount,
+        notBookedCount,
+      };
+  
+      res.status(200).json(slotDetails);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  };
+
+
+ export const getSlotsByDoctorId = async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const slots = await Slot.find({ doctorId: userId })
+        .populate("room")
+        .populate("doctorId");
+  
+      const slotsWithBookingInfo = await Promise.all(
+        slots.map(async (slot) => {
+          const bookings = await Booking.find({ slotId: slot._id }).populate(
+            "patientId",
+            "name contactEmail"
+          );
+          const totalBookings = bookings.length;
+          const bookedCount = bookings.filter(
+            (booking) => booking.status === "Booked"
+          ).length;
+          const cancelledCount = bookings.filter(
+            (booking) => booking.status === "Cancelled"
+          ).length;
+          const notBookedCount = bookings.filter(
+            (booking) => booking.status === "Not Booked"
+          ).length;
+          const rebookedCount = bookings.filter(
+            (booking) => booking.status === "Rebooked"
+          ).length;
+  
+          const status =
+            totalBookings === 0
+              ? "Not Booked"
+              : bookedCount === totalBookings
+              ? "Fully Booked"
+              : cancelledCount === totalBookings
+              ? "Cancelled"
+              : rebookedCount > 0
+              ? "Filling"
+              : bookedCount > 0
+              ? "Filling"
+              : "Unknown";
+  
+          return {
+            ...slot.toObject(),
+            totalBookings,
+            cancelledCount,
+            bookedCount,
+            notBookedCount,
+            rebookedCount,
+            status,
+            bookings,
+          };
+        })
+      );
+  
+      res.json(slotsWithBookingInfo);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to retrieve slots" });
+    }
+  };
+
+

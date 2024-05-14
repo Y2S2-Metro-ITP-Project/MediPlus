@@ -28,7 +28,7 @@ import {
   BsBookmarkFill,
 } from "react-icons/bs";
 import LoadingSpinner from "./LoadingSpinner";
-import html2pdf from "html2pdf.js"; // Import html2pdf library
+import html2pdf from "html2pdf.js"; 
 import { useNavigate } from "react-router-dom";
 
 export default function DashSlot() {
@@ -67,9 +67,14 @@ export default function DashSlot() {
   const fetchSlots = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("/api/slot/");
+      let res;
+      if (currentUser.isDoctor) {
+        res = await fetch(`/api/slot/doctor/${currentUser._id}`);
+      } else {
+        res = await fetch("/api/slot/");
+      }
       const data = await res.json();
-
+  
       if (res.ok) {
         const updatedSlots = data.map((slot) => ({
           ...slot,
@@ -81,7 +86,7 @@ export default function DashSlot() {
           bookedCount: slot.bookedCount,
           status: getSlotStatus(slot),
         }));
-
+  
         setSlots(updatedSlots);
       }
     } catch (error) {
@@ -131,16 +136,21 @@ export default function DashSlot() {
 
   const fetchDoctors = async () => {
     try {
-      const response = await fetch("/api/user/getdoctors");
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message);
+      if (currentUser.isDoctor) {
+        const options = [{ value: currentUser._id, label: currentUser.username }];
+        setDoctorOptions(options);
+      } else {
+        const response = await fetch("/api/user/getdoctors");
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message);
+        }
+        const options = data.map((doctor) => ({
+          value: doctor._id,
+          label: doctor.username,
+        }));
+        setDoctorOptions(options);
       }
-      const options = data.map((doctor) => ({
-        value: doctor._id,
-        label: doctor.username,
-      }));
-      setDoctorOptions(options);
     } catch (error) {
       console.error("Error fetching Doctors:", error);
       toast.error("Failed to fetch doctors. Please try again later.");
@@ -460,7 +470,7 @@ export default function DashSlot() {
             <div className="flex items-center">
               <h1 className="text-3xl font-bold mb-0 mr-4">
                 <HiCalendarDays className="inline-block mr-1 align-middle" />
-                Schedule Appointments
+                Slot Management
               </h1>
             </div>
             <div className="flex items-center">
@@ -536,24 +546,6 @@ export default function DashSlot() {
               <Button color="gray" onClick={() => setFilterDate("")}>
                 <HiFilter className="mr-2 h-5 w-5" />
                 Filter by Date
-              </Button>
-            </div>
-            <div className="flex items-center">
-              <Select
-                value={filterDoctor}
-                onChange={(e) => setFilterDoctor(e.target.value)}
-                className="mr-2"
-              >
-                <option value="">All Doctors</option>
-                {doctorOptions.map((doctor) => (
-                  <option key={doctor.value} value={doctor.value}>
-                    {doctor.label}
-                  </option>
-                ))}
-              </Select>
-              <Button color="gray" onClick={() => setFilterDoctor("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Doctor
               </Button>
             </div>
             <div className="flex items-center">
@@ -779,15 +771,6 @@ export default function DashSlot() {
                   </div>
                   <div className="mb-4">
                     <Label>Doctor</Label>
-                    {currentUser.isDoctor ? (
-                      <TextInput
-                        type="text"
-                        id="selectedDoctorId"
-                        value={currentUser._id}
-                        readOnly
-                        className="mt-1 bg-gray-100"
-                      />
-                    ) : (
                       <Select
                         id="selectedDoctorId"
                         className="mt-1"
@@ -801,7 +784,6 @@ export default function DashSlot() {
                           </option>
                         ))}
                       </Select>
-                    )}
                   </div>
                   {formData.type === "Hospital Booking" && (
                     <div>

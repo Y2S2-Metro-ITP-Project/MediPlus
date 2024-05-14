@@ -121,26 +121,19 @@ export const getBookings = async (req, res, next) => {
   }
 
   try {
-    const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 9;
-    const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
     const bookings = await Booking.find()
       .populate("doctorId", "username")
-      .populate("patientId", "name contactEmail")
-      .populate("roomNo", "description")
-      .skip(startIndex)
-      .limit(limit)
-      .sort({ createdAt: sortDirection });
-    const totalBookings = await Booking.countDocuments();
+      .populate("patientId", "name contactPhone contactEmail")
+      .populate("roomNo", "description");
+
     const updatedBookings = bookings.map((booking) => ({
       ...booking.toObject(),
       doctorName: booking.doctorId ? booking.doctorId.username : "Unknown",
       patientName: booking.patientId ? booking.patientId.name : "UnAssigned",
-      roomName: booking.roomNo
-        ? booking.roomNo.description
-        : "Online Appointment",
+      roomName: booking.roomNo ? booking.roomNo.description : "Online Appointment",
     }));
-    res.status(200).json({ bookings: updatedBookings, totalBookings });
+
+    res.status(200).json({ bookings: updatedBookings });
   } catch (error) {
     next(error);
   }
@@ -376,15 +369,17 @@ export const updateBooking = async (req, res) => {
     let patientUpdateId = patientId || null;
 
     const booking = await Booking.findById(req.params.bookingId).populate(
-      "patientId",
-      "name contactEmail"
+      `patientId`,
+      `name contactEmail`
     );
+
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    const previousPatientName = booking.patientId.name;
-    const previousPatientEmail = booking.patientId.contactEmail;
+    const previousPatientName = booking.patientId ? booking.patientId.name : null;
+    const previousPatientEmail = booking.patientId ? booking.patientId.contactEmail : null;
+
     console.log("Previous patient name:", previousPatientName);
     console.log("Previous patient email:", previousPatientEmail);
 
@@ -400,7 +395,9 @@ export const updateBooking = async (req, res) => {
             action: "Booking Updated",
             timestamp: new Date(),
             user: req.user._id,
-            details: `Patient updated from ${previousPatientName} to ${
+            details: `Patient updated from ${
+              previousPatientName || "UnAssigned"
+            } to ${
               patientUpdateId ? patientUpdateId.name : "UnAssigned"
             }. Status updated to ${status}.`,
           },
@@ -413,61 +410,56 @@ export const updateBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    const { name, contactEmail } = updatedBooking.patientId;
+    const { name, contactEmail } = updatedBooking.patientId || {};
     const { date, time } = updatedBooking;
+
     console.log("Updated patient name:", name);
     console.log("Updated patient email:", contactEmail);
 
-    // Send email to the previous patient
-    const emailContentPreviousPatient = `
-          Dear ${previousPatientName},
+    // Send email to the previous patient (if exists)
+    if (previousPatientEmail) {
+      const emailContentPreviousPatient = `
+        Dear ${previousPatientName},
+        Your appointment with the following details has been updated:
+        Date: ${new Date(date).toLocaleDateString()}
+        Time: ${time}
+        Doctor: ${doctorName}
+        Room: ${roomName}
+        Please contact our support team for more information.
+        Best regards,
+        Your Healthcare Provider
+      `;
+      const auth = await authorize();
+      await sendEmail(
+        auth,
+        previousPatientEmail,
+        "Appointment Status Update",
+        emailContentPreviousPatient
+      );
+    }
 
-          Your appointment with the following details has been updated:
-
-          Date: ${new Date(date).toLocaleDateString()}
-          Time: ${time}
-          Doctor: ${doctorName}
-          Room: ${roomName}
-
-          Please contact our support team for more information.
-
-          Best regards,
-          Your Healthcare Provider
-        `;
-
-    const auth = await authorize();
-    await sendEmail(
-      auth,
-      previousPatientEmail,
-      "Appointment Status Update",
-      emailContentPreviousPatient
-    );
-
-    // Send email to the new patient
-    const emailContentNewPatient = `
-          Dear ${name},
-
-          The status of your appointment has been updated to: ${status}
-
-          The appointment details are as follows:
-
-          Date: ${new Date(date).toLocaleDateString()}
-          Time: ${time}
-          Doctor: ${doctorName}
-          Room: ${roomName}
-
-          If you have any questions, please contact our support team.
-
-          Best regards,
-          Your Healthcare Provider
-        `;
-
-    await sendEmail(
-      auth,
-      contactEmail,
-      "Appointment Status Update",
-      emailContentNewPatient
-    );
+    // Send email to the new patient (if exists)
+    if (contactEmail) {
+      const emailContentNewPatient = `
+        Dear ${name},
+        The status of your appointment has been updated to: ${status}
+        The appointment details are as follows:
+        Date: ${new Date(date).toLocaleDateString()}
+        Time: ${time}
+        Doctor: ${doctorName}
+        Room: ${roomName}
+        If you have any questions, please contact our support team.
+        Best regards,
+        Your Healthcare Provider
+      `;
+      const auth = await authorize();
+      await sendEmail(
+        auth,
+        contactEmail,
+        "Appointment Status Update",
+        emailContentNewPatient
+      );
+    }
 
     res.json(updatedBooking);
   } catch (error) {
@@ -1138,8 +1130,9 @@ export const getBookingsBySlot = async (req, res) => {
 
     // Find all bookings associated with the slot
     const bookings = await Booking.find({ slotId })
-      .populate("patientId", "username")
-      .populate("doctorId", "username");
+      .populate("patientId", "name contactPhone contactEmail")
+      .populate("doctorId", "username")
+      .populate("roomNo", "description");
     
     console.log(bookings)
     res.json(bookings);
