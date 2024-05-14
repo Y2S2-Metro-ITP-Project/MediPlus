@@ -26,6 +26,7 @@ export const createTestOrder = async (req, res, next) => {
     const patientId = req.body.formData.patientId;
     const highPriority = req.body.formData.highPriority;
     const advice = req.body.formData.advice;
+    const paymentComplete = req.body.formData.paymentComplete;
 
     const orderedTestArray = await LabTest.find({ _id: testId });
 
@@ -47,6 +48,7 @@ export const createTestOrder = async (req, res, next) => {
       highPriority,
       totalPrice,
       advice,
+      paymentComplete,
     });
 
     await newOrder.save();

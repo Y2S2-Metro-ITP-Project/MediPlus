@@ -289,8 +289,7 @@ export default function DashInPateintProfile() {
       console.error("Error fetching diagnosis:", error);
     }
   };
-  console.log(diagnosticData);
-  console.log(selectedDate);
+  
 
   {
     /** Handle fetch precriptions */
@@ -337,7 +336,7 @@ export default function DashInPateintProfile() {
       console.error("Error fetching prescriptions:", error);
     }
   };
-  console.log(doctors);
+ 
 
   // ====================================================
   //FETCHING TEST ORDERS FOR RELEVANT PATIENT
@@ -451,6 +450,11 @@ export default function DashInPateintProfile() {
 
     // console.log("tseting testing formdata:", formData)
 
+    setFormData({
+      ...formData,
+      paymentComplete: true,
+    });
+
     try {
       const res = await fetch(`/api/labOrder/orderTest/${currentUser._id}`, {
         method: "POST",
@@ -554,9 +558,7 @@ export default function DashInPateintProfile() {
       setLatestVitals(data.latestVitals);
     }
   };
-  console.log(vitalsDoctor);
-  console.log(vitalsDate);
-  console.log(vitalstime);
+ 
   {
     /** Handle fetch patients */
   }
