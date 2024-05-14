@@ -272,7 +272,7 @@ export default function DashTestManager() {
             </Table.Head>
 
             {labTests.map((labtest) => (
-              <Table.Body className=" divide-y text-center ">
+              <Table.Body className=" divide-y text-center dark:bg-slate-800 ">
                 <Table.Row>
                   <Table.Cell className="text-left">
                     <Link className=" font-medium text-gray-900 dark:text-white hover:underline">
@@ -280,7 +280,7 @@ export default function DashTestManager() {
                     </Link>
                   </Table.Cell>
 
-                  <Table.Cell>{labtest.sampleType.toLowerCase()}</Table.Cell>
+                  <Table.Cell>{labtest.sampleType}</Table.Cell>
                   <Table.Cell>{labtest.sampleVolume} ml</Table.Cell>
                   <Table.Cell>
                     {formatSeconds(labtest.completionTime)}

@@ -313,10 +313,13 @@ export default function DashOutPatientProfile() {
     try {
       const res = await fetch(`/api/labOrder/getPatientTests/${id}`);
       const data = await res.json();
+      
 
       if (res.ok) {
         setLabOrders(data);
       }
+
+      
     } catch (error) {
       console.log(error.message);
     }
@@ -344,6 +347,8 @@ export default function DashOutPatientProfile() {
       fetchTestOrders();
     }
   }, [currentUser._id]);
+
+  
 
   //=====================================================
 
@@ -2260,6 +2265,8 @@ export default function DashOutPatientProfile() {
               </Button>
               <TextInput
                 type="text"
+                value={searchTerm1}
+                onChange={(e) => setSearchTerm3(e.target.value)}
                 placeholder="Search by doctor name"
                 rightIcon={AiOutlineSearch}
                 className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
