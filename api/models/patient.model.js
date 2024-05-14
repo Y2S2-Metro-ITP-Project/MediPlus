@@ -93,9 +93,9 @@ const patientSchema = new mongoose.Schema(
     patientType: {
       type: String,
     },
-    dicharged: {
+    discharged: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,

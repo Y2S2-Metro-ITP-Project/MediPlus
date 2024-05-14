@@ -564,7 +564,6 @@ export const getPatient = async (req, res, next) => {
   }
 };
 export const admitPatient = async (req, res, next) => {
-  console.log(req.body);
   const {
     name,
     admissionDate,
@@ -632,13 +631,21 @@ export const admitPatient = async (req, res, next) => {
 
 export const getAllPatients = async (req, res, next) => {
   try {
-    const patients = await Patient.find({patientType: "inpatient"});
+    const patients = await Patient.find({patientType: "Inpatient"}).populate("bed");
     res.status(200).json({ success: true, patients });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
 };
 
+export const getallInpatients = async (req, res, next) => {
+  try {
+    const patients = await Patient.find({patientType: "Inpatient",discharged:true}).populate("bed");
+    res.status(200).json({ success: true, patients });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+}
 
 // Controller function to fetch a single patient by ID
 export const getPatientByName = async (req, res, next) => {

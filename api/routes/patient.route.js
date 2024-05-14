@@ -18,6 +18,7 @@ import {
   getPatientsforBooking,
   getPatientByUser,
   updatePatientDetails,
+  getallInpatients
 } from "../controller/patient.controller.js";
 const router = express.Router();
 
@@ -35,7 +36,8 @@ router.put("/updatePatientDetails", updatePatientDetails);
 router.post("/searchPatient", verifyToken, searchPateint);
 /** InPatient */
 router.post("/admit", admitPatient);
-router.get("/get", getAllPatients); // Get all patients
+router.get("/get", getAllPatients);
+router.get("/getInpatients",getallInpatients) // Get all patients
 router.get("/:name", getPatientByName); // Get a single patient by name
 router.put("/:id", updatePatientById); // Update a patient by ID
 router.delete("/:id", deletePatientById); // Delete a patient by ID

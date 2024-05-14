@@ -47,9 +47,9 @@ const DashBedManagement = () => {
   }, []);
 
   const fetchPatients = async () => {
-    const response = await fetch(`/api/patient/get`);
+    const response = await fetch(`/api/patient/getInpatients`);
     const data = await response.json();
-    setPatients(data);
+    setPatients(data.patients);
   };
 
   const fetchWards = async () => {
@@ -84,6 +84,7 @@ const DashBedManagement = () => {
         console.log("Bed is available, showing patient modal");
         setShowPatientModal(true);
         setShowModal(false);
+        fetchPatients();
       } else {
         setShowModal(true);
       }
@@ -111,6 +112,8 @@ const DashBedManagement = () => {
       patientName: selectedOption.label,
     });
   };
+
+  console.log(formData);
 
   const handleCloseModal = () => {
     setSelectedBed(null);
@@ -177,64 +180,13 @@ const DashBedManagement = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+
+  const handleAdmitPatient = async (e) => {
     e.preventDefault();
-    const admissionData = { ...formData, bedNumber: selectedBed.number };
-
-    console.log("admissionData:", admissionData);
-
-    if (
-      !formData.name ||
-      !formData.admissionDate ||
-      !formData.illness ||
-      !formData.dateOfBirth ||
-      !formData.gender ||
-      !formData.address ||
-      !formData.contactPhone ||
-      !formData.contactEmail ||
-      !formData.reasonForAdmission ||
-      !formData.patientType
-    ) {
-      setErrorMessage("All fields are required");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-
-      const res = await fetch("/api/patient/admit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(admissionData),
-      });
-
-      const data = await res.json();
-
-      if (data.success === false) {
-        setErrorMessage(data.message);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
-      if (res.ok) {
-        setLoading(false);
-        const patientId = data.patient._id;
-        setPatientId(patientId);
-        setShowPatientModal(true);
-      }
-    } catch (error) {
-      setErrorMessage(error.message);
-      setLoading(false);
-    }
-  };
-
-  const handleAdmitPatient = async () => {
     try {
       const response = await axios.post("/api/bed/admitbed", {
         bedNumber: selectedBed.number,
-        patientId,
+        patientId: formData.patientId,
       });
 
       if (response.data.success) {
@@ -334,7 +286,6 @@ const DashBedManagement = () => {
               <Table.HeadCell>Ward</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Actions</Table.HeadCell>
-              <Table.HeadCell>Download PDF</Table.HeadCell>
             </Table.Head>
             {filteredBeds.map((bed) => (
               <Table.Body className="divide-y" key={bed.number}>
@@ -364,7 +315,7 @@ const DashBedManagement = () => {
                         )
                       }
                     >
-                      {bed.isAvailable ? "Mark Unavailable" : "Mark Available"}
+                      {bed.isAvailable ? "not Occupied" : " Discharge patient"}
                     </Button>
                   </Table.Cell>
                   <Table.Cell>
@@ -378,22 +329,7 @@ const DashBedManagement = () => {
                       Delete
                     </span>
                   </Table.Cell>
-                  <Table.Cell>
-                    {!bed.isAvailable ? (
-                      <span
-                        onClick={() => {
-                          setBedNumberPDF(bed.number);
-                          setBedPDFID(bed._id);
-                          handleDownloadPDF(bed.number);
-                        }}
-                        className="font-medium text-green-700 hover:underline cursor-pointer"
-                      >
-                        DownloadPdf
-                      </span>
-                    ) : (
-                      <p>This bed is not occupied</p>
-                    )}
-                  </Table.Cell>
+                  
                 </Table.Row>
               </Table.Body>
             ))}
@@ -494,7 +430,7 @@ const DashBedManagement = () => {
         <Modal.Header>Select Patient</Modal.Header>
         <Modal.Body>
           {selectedBed && selectedBed.isAvailable ? (
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-4" onSubmit={handleAdmitPatient}>
               <div>
                 <label htmlFor="bedNumber">Bed Number</label>
                 <TextInput
@@ -507,21 +443,17 @@ const DashBedManagement = () => {
                 />
               </div>
               <div>
-  <Label htmlFor="patients">Select Patient</Label>
-  {patients.length > 0 ? (
-    <Select
-      options={patients.map((patient) => ({
-        value: patient._id,
-        label: patient.name,
-      }))}
-      onChange={OnPatientChange}
-      required
-      id="patients"
-    />
-  ) : (
-    <p>No patients found</p>
-  )}
-</div>
+                <Label htmlFor="patients">Select Patient</Label>
+                <ReactSelect
+                  options={patients.map((patient) => ({
+                    value: patient._id,
+                    label: patient.name,
+                  }))}
+                  onChange={OnPatientChange}
+                  required
+                  id="patients"
+                />
+              </div>
 
               <Button
                 gradientDuoTone="purpleToPink"
@@ -547,11 +479,6 @@ const DashBedManagement = () => {
             </Alert>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          {selectedBed && selectedBed.isAvailable && (
-            <Button onClick={handleAdmitPatient}>Confirm Admission</Button>
-          )}
-        </Modal.Footer>
       </Modal>
       {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
       {successMessage && (

@@ -26,6 +26,17 @@ const DashInpatients = () => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [patientId, setPatientId] = useState(null);
+  const fetchPatients = async () => {
+    try {
+      const res = await fetch("/api/patient/get");
+      const data = await res.json();
+      setPatients(data.patients);
+      console.log(data.patients);
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      toast.error("Error fetching patients");
+    }
+  };
   useEffect(() => {
     // Fetch the list of patients from the API
     const fetchPatients = async () => {
@@ -107,8 +118,10 @@ const DashInpatients = () => {
       if (res.ok) {
         setLoading(false);
         const patientId = data.patient._id;
+        toast.success("In patient added successfully")
         setPatientId(patientId);
-        setShowPatientModal(true);
+        setShowPatientModal(false);
+        fetchPatients();
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -136,13 +149,14 @@ const DashInpatients = () => {
         },
         body: JSON.stringify(editingPatient),
       });
+      if(!res.ok){
+        toast.error(data.message || "Error updating patient");
+      }
       // Reset the editingPatient state
       setEditingPatient(null);
       setIsModalOpen(false);
       // Fetch the updated patient list
-      const res = await fetch("/api/patient/get");
-      const data = await res.json();
-      setPatients(data.patients);
+      fetchPatients();
       toast.success("Patient updated successfully");
     } catch (error) {
       console.error("Error updating patient:", error);

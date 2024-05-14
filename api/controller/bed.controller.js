@@ -139,7 +139,7 @@ export const generatePatientReport = async (req, res, next) => {
 // Controller function to admit a patient to a bed
 export const admitPatientToBed = async (req, res, next) => {
   const { bedNumber, patientId } = req.body;
-
+  console.log(req.body)
   try {
     // Check if the bed exists
     const bed = await Bed.findOne({ number: bedNumber });
@@ -156,6 +156,7 @@ export const admitPatientToBed = async (req, res, next) => {
 
     //Update the patient with bed information
     patient.bed = bed._id;
+    patient.discharged = false;
     // Update the bed with patient information
     bed.isAvailable = false;
     bed.patient = patientId;
@@ -215,9 +216,11 @@ export const updateBedAvailability = async (req, res, next) => {
     // Remove patient ID if the bed is made available
     if (isAvailable) {
       bed.patient= null;
+      patient.discharged= true;
+      patient.bed= null;
     }
-
     bed.isAvailable = isAvailable;
+    await patient.save();
     await bed.save();
     res.status(200).json({
       success: true,
