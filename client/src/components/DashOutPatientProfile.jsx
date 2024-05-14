@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { current } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
@@ -122,6 +122,7 @@ export default function DashOutPatientProfile() {
   const [vitalsDoctor, setVitalsDoctor] = useState([]);
   const [selectedVitalsDoctor, setSelectedVitalsDoctor] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const navigate = useNavigate();
   {
     /** Searching for vitals */
   }
@@ -136,6 +137,30 @@ export default function DashOutPatientProfile() {
     foodRelation: "",
     instructions: "",
   });
+const bookingId = queryParams.get("bookingId");
+const slotId = queryParams.get("slotId");
+
+const handleCompleteExamination = async () => {
+  try {
+    const res = await fetch(`/api/booking/updateStatus`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ bookingId, status: "Completed" }),
+    });
+
+    if (res.ok) {
+      toast.success("Examination completed. Redirecting to slot booking.");
+      navigate(`/dashboard?tab=slotbooking/${slotId}`);
+    } else {
+      toast.error("Failed to complete examination.");
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error("An error occurred while completing the examination.");
+  }
+};
 
   const handleSetPrescriotionDetails = (
     medicine,
@@ -1512,11 +1537,18 @@ export default function DashOutPatientProfile() {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
-      <a href="dashboard?tab=patients">
-        <Button outline gradientDuoTone="purpleToPink" className="mb-5">
-          Go Back
-        </Button>
-      </a>
+      {!new URLSearchParams(window.location.search).has('bookingId') && (
+  <a href="dashboard?tab=patients">
+    <Button
+      outline
+      gradientDuoTone="purpleToPink"
+      className="mb-5"
+    >
+      Go Back
+    </Button>
+  </a>
+)}
+      <Button onClick={handleCompleteExamination}>Complete Examination</Button>
       <div className="p-3 md:mx-auto">
         <div className=" flex-wrap flex gap-4 justify-center">
           <div className="flex flex-col p-3 dark:bg-slate-800 gap-4 md:w-72 w-full rounded-md shadow-md">

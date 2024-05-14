@@ -9,6 +9,7 @@ import {
   Card,
   Badge,
   Spinner,
+  Pagination,
 } from "flowbite-react";
 import {
   HiSearch,
@@ -52,6 +53,7 @@ export default function DashSlotBooking() {
   const [slotBookings, setSlotBookings] = useState([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExaminationModal, setShowExaminationModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -95,13 +97,15 @@ export default function DashSlotBooking() {
   });
 
   const [selectAll, setSelectAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [bookingsPerPage, setBookingsPerPage] = useState(10);
 
   useEffect(() => {
     fetchSlotBookings();
     fetchPatients();
     fetchStatusOptions();
     fetchSlotDetails();
-  }, []);
+  }, [slotId]);
 
   const generateBookingReport = async (booking) => {
     try {
@@ -320,7 +324,7 @@ export default function DashSlotBooking() {
     setIsBooking(true);
 
     const doctorName = selectedBooking.doctorId.username;
-    const roomName = selectedBooking.roomName;
+    const roomName = slotDetails.roomName;
     const patientName = selectedBooking.patientId
       ? selectedBooking.patientId.name
       : "";
@@ -569,9 +573,7 @@ export default function DashSlotBooking() {
                   .map(
                     (booking) => `
                       <tr>
-                      <td>${
-                        booking.time
-                      }</td>
+                      <td>${booking.time}</td>
                         <td>${
                           booking.patientId ? booking.patientId.name : "NULL"
                         }</td>
@@ -786,6 +788,47 @@ export default function DashSlotBooking() {
       setIsCancelling(false);
     }
   };
+  
+  const handleExamineBooking = async (booking) => {
+    if (!booking.patientId) {
+      toast.error("No patient associated with this booking.");
+      return;
+    }
+  
+    setSelectedBooking(booking);
+  
+    try {
+      const res = await fetch(`/api/booking/updateStatus`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingId: booking._id, status: "In Consultation" }),
+      });
+  
+      if (res.ok) {
+        toast.success("Booking status updated to In Consultation.");
+        fetchSlotBookings();
+        navigate(`/dashboard?tab=PatientProfile&id=${booking.patientId._id}&bookingId=${booking._id}&slotId=${slotId}`);
+      } else {
+        toast.error("Failed to update booking status.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while updating booking status.");
+    }
+  };
+
+  // Get current bookings based on pagination
+  const indexOfLastBooking = currentPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = filteredSlotBookings.slice(
+    indexOfFirstBooking,
+    indexOfLastBooking
+  );
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -939,22 +982,6 @@ export default function DashSlotBooking() {
                 Filter by Status
               </Button>
             </div>
-            <div className="flex items-center">
-              <Select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="mr-2"
-              >
-                <option value="">All Types</option>
-                <option value="Online Appointment">Online Appointment</option>
-                <option value="Hospital Booking">Hospital Booking</option>
-                <option value="MACS">MACS</option>
-              </Select>
-              <Button color="gray" onClick={() => setFilterType("")}>
-                <HiFilter className="mr-2 h-5 w-5" />
-                Filter by Type
-              </Button>
-            </div>
           </div>
           <div className="my-4 flex justify-between">
             <Button onClick={generateReport} disabled={isGeneratingReport}>
@@ -993,7 +1020,7 @@ export default function DashSlotBooking() {
               </Button>
             </div>
           </div>
-          {filteredSlotBookings.length > 0 ? (
+          {currentBookings.length > 0 ? (
             <>
               <Table hoverable className="shadow-md">
                 <Table.Head>
@@ -1049,7 +1076,7 @@ export default function DashSlotBooking() {
                   <Table.HeadCell>Actions</Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y">
-                  {filteredSlotBookings.map((booking) => (
+                  {currentBookings.map((booking) => (
                     <Table.Row
                       key={booking._id}
                       className="bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -1124,121 +1151,153 @@ export default function DashSlotBooking() {
                             <HiEye className="mr-2 h-4 w-4" />
                             View
                           </Button>
-                          {booking.status === "Not Booked" && (
+                          {(currentUser.isReceptionist ||
+                            currentUser.isAdmin) && (
+                            <>
+                              {booking.status === "Not Booked" && (
+                                <Button
+                                  size="sm"
+                                  color="blue"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setFormData({
+                                      type: booking.type,
+                                      date: booking.date,
+                                      time: booking.time,
+                                      doctorName: booking.doctorId.username,
+                                      roomNo: booking.roomName,
+                                    });
+                                    setIsRebooking(false);
+                                    setShowBookModal(true);
+                                  }}
+                                  disabled={isBooking}
+                                >
+                                  {isBooking ? (
+                                    <Spinner
+                                      size="sm"
+                                      aria-label="Loading spinner"
+                                    />
+                                  ) : (
+                                    <>
+                                      <HiIdentification className="mr-2 h-4 w-4" />
+                                      Book
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                              {booking.status === "Cancelled" && (
+                                <Button
+                                  size="sm"
+                                  color="purple"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setFormData({
+                                      type: booking.type,
+                                      date: booking.date,
+                                      time: booking.time,
+                                      doctorName: booking.doctorId.username,
+                                      roomNo: booking.roomName,
+                                    });
+                                    setIsRebooking(true);
+                                    setShowBookModal(true);
+                                  }}
+                                  disabled={isBooking}
+                                >
+                                  {isBooking ? (
+                                    <Spinner
+                                      size="sm"
+                                      aria-label="Loading spinner"
+                                    />
+                                  ) : (
+                                    <>
+                                      <BsBookmarkStar className="mr-2 h-4 w-4" />
+                                      Rebook
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                color="yellow"
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setUpdateFormData({
+                                    type: booking.type,
+                                    date: booking.date,
+                                    time: booking.time,
+                                    doctorName: booking.doctorId.username,
+                                    roomNo: booking.roomName,
+                                    patientName: booking.patientId
+                                      ? booking.patientId.username
+                                      : "",
+                                    status: booking.status,
+                                  });
+                                  setShowUpdateModal(true);
+                                }}
+                                disabled={isUpdating}
+                              >
+                                {isUpdating ? (
+                                  <Spinner
+                                    size="sm"
+                                    aria-label="Loading spinner"
+                                  />
+                                ) : (
+                                  <>
+                                    <HiPencil className="mr-2 h-4 w-4" />
+                                    Update
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          )}
+                          {currentUser.isDoctor && (
                             <Button
                               size="sm"
                               color="blue"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setFormData({
-                                  type: booking.type,
-                                  date: booking.date,
-                                  time: booking.time,
-                                  doctorName: booking.doctorId.username,
-                                  roomNo: booking.roomName,
-                                });
-                                setIsRebooking(false);
-                                setShowBookModal(true);
-                              }}
-                              disabled={isBooking}
+                              onClick={() => handleExamineBooking(booking)}
+                              disabled={!booking.patientId}
                             >
-                              {isBooking ? (
-                                <Spinner
-                                  size="sm"
-                                  aria-label="Loading spinner"
-                                />
-                              ) : (
-                                <>
-                                  <HiIdentification className="mr-2 h-4 w-4" />
-                                  Book
-                                </>
-                              )}
+                              Examine
                             </Button>
                           )}
-                          {booking.status === "Cancelled" && (
+                          {currentUser.isAdmin && (
                             <Button
                               size="sm"
-                              color="purple"
+                              color="failure"
                               onClick={() => {
                                 setSelectedBooking(booking);
-                                setFormData({
-                                  type: booking.type,
-                                  date: booking.date,
-                                  time: booking.time,
-                                  doctorName: booking.doctorId.username,
-                                  roomNo: booking.roomName,
-                                });
-                                setIsRebooking(true);
-                                setShowBookModal(true);
+                                setShowDeleteModal(true);
                               }}
-                              disabled={isBooking}
+                              disabled={isDeleting}
                             >
-                              {isBooking ? (
+                              {isDeleting ? (
                                 <Spinner
                                   size="sm"
                                   aria-label="Loading spinner"
                                 />
                               ) : (
                                 <>
-                                  <BsBookmarkStar className="mr-2 h-4 w-4" />
-                                  Rebook
+                                  <HiTrash className="mr-2 h-4 w-4" />
+                                  Delete
                                 </>
                               )}
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            color="yellow"
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setUpdateFormData({
-                                type: booking.type,
-                                date: booking.date,
-                                time: booking.time,
-                                doctorName: booking.doctorId.username,
-                                roomNo: booking.roomName,
-                                patientName: booking.patientId
-                                  ? booking.patientId.username
-                                  : "",
-                                status: booking.status,
-                              });
-                              setShowUpdateModal(true);
-                            }}
-                            disabled={isUpdating}
-                          >
-                            {isUpdating ? (
-                              <Spinner size="sm" aria-label="Loading spinner" />
-                            ) : (
-                              <>
-                                <HiPencil className="mr-2 h-4 w-4" />
-                                Update
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            color="failure"
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setShowDeleteModal(true);
-                            }}
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? (
-                              <Spinner size="sm" aria-label="Loading spinner" />
-                            ) : (
-                              <>
-                                <HiTrash className="mr-2 h-4 w-4" />
-                                Delete
-                              </>
-                            )}
-                          </Button>
                         </div>
                       </Table.Cell>
                     </Table.Row>
                   ))}
                 </Table.Body>
               </Table>
+              <div className="mt-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(
+                    filteredSlotBookings.length / bookingsPerPage
+                  )}
+                  onPageChange={paginate}
+                />
+              </div>
             </>
           ) : (
             <p className="px-4">No bookings found.</p>
@@ -1304,97 +1363,101 @@ export default function DashSlotBooking() {
                       {selectedBooking.status}
                     </Badge>
                   </div>
-                  <div className="flex justify-end">
-                    <Button
-                      color="gray"
-                      onClick={() => generateBookingReport(selectedBooking)}
-                      className="mr-2"
-                    >
-                      <HiDownload className="mr-2 h-5 w-5" />
-                      Download Report
-                    </Button>
-                    {selectedBooking.status !== "Cancelled" &&
-                      selectedBooking.status !== "Completed" &&
-                      selectedBooking.status !== "In Consultation" && (
-                        <Button
-                          color="failure"
-                          onClick={handleCancelBooking}
-                          className="mr-2"
-                          disabled={
-                            selectedBooking.status === "Not Booked" ||
-                            isCancelling
-                          }
-                        >
-                          {isCancelling ? (
-                            <Spinner size="sm" aria-label="Loading spinner" />
-                          ) : (
-                            "Cancel Booking"
-                          )}
-                        </Button>
-                      )}
-                    {selectedBooking.status !== "Not Booked" &&
-                      selectedBooking.status !== "Cancelled" && (
-                        <Button
-                          color="purple"
-                          onClick={() =>
-                            generateAppointmentCard(selectedBooking)
-                          }
-                          className="mr-2"
-                          disabled={isGeneratingAppointmentCard}
-                        >
-                          {isGeneratingAppointmentCard ? (
-                            <Spinner size="sm" aria-label="Loading spinner" />
-                          ) : (
-                            <>
-                              <HiIdentification className="mr-2 h-5 w-5" />
-                              Appointment Card
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    {selectedBooking.status !== "Not Booked" &&
-                      selectedBooking.status !== "Cancelled" && (
-                        <Button
-                          color="blue"
-                          onClick={sendEmail}
-                          disabled={isSendingEmail}
-                        >
-                          {isSendingEmail ? (
-                            <Spinner size="sm" aria-label="Loading spinner" />
-                          ) : (
-                            <>
-                              <HiMail className="mr-2 h-5 w-5" />
-                              Send Email
-                            </>
-                          )}
-                        </Button>
-                      )}
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">
-                      Booking History
-                    </h4>
-                    <ul className="space-y-2">
-                      {selectedBooking.history.map((entry, index) => (
-                        <li key={index} className="border-b pb-2">
-                          <p className="font-semibold">{entry.action}</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(entry.timestamp).toLocaleString()}
-                          </p>
-                          {entry.user && (
+                  {(currentUser.isReceptionist || currentUser.isAdmin) && (
+                    <div className="flex justify-end">
+                      <Button
+                        color="gray"
+                        onClick={() => generateBookingReport(selectedBooking)}
+                        className="mr-2"
+                      >
+                        <HiDownload className="mr-2 h-5 w-5" />
+                        Download Report
+                      </Button>
+                      {selectedBooking.status !== "Cancelled" &&
+                        selectedBooking.status !== "Completed" &&
+                        selectedBooking.status !== "In Consultation" && (
+                          <Button
+                            color="failure"
+                            onClick={handleCancelBooking}
+                            className="mr-2"
+                            disabled={
+                              selectedBooking.status === "Not Booked" ||
+                              isCancelling
+                            }
+                          >
+                            {isCancelling ? (
+                              <Spinner size="sm" aria-label="Loading spinner" />
+                            ) : (
+                              "Cancel Booking"
+                            )}
+                          </Button>
+                        )}
+                      {selectedBooking.status !== "Not Booked" &&
+                        selectedBooking.status !== "Cancelled" && (
+                          <Button
+                            color="purple"
+                            onClick={() =>
+                              generateAppointmentCard(selectedBooking)
+                            }
+                            className="mr-2"
+                            disabled={isGeneratingAppointmentCard}
+                          >
+                            {isGeneratingAppointmentCard ? (
+                              <Spinner size="sm" aria-label="Loading spinner" />
+                            ) : (
+                              <>
+                                <HiIdentification className="mr-2 h-5 w-5" />
+                                Appointment Card
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      {selectedBooking.status !== "Not Booked" &&
+                        selectedBooking.status !== "Cancelled" && (
+                          <Button
+                            color="blue"
+                            onClick={sendEmail}
+                            disabled={isSendingEmail}
+                          >
+                            {isSendingEmail ? (
+                              <Spinner size="sm" aria-label="Loading spinner" />
+                            ) : (
+                              <>
+                                <HiMail className="mr-2 h-5 w-5" />
+                                Send Email
+                              </>
+                            )}
+                          </Button>
+                        )}
+                    </div>
+                  )}
+                  {(currentUser.isReceptionist || currentUser.isAdmin) && (
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">
+                        Booking History
+                      </h4>
+                      <ul className="space-y-2">
+                        {selectedBooking.history.map((entry, index) => (
+                          <li key={index} className="border-b pb-2">
+                            <p className="font-semibold">{entry.action}</p>
                             <p className="text-sm text-gray-500">
-                              User: {entry.user.username}
+                              {new Date(entry.timestamp).toLocaleString()}
                             </p>
-                          )}
-                          {entry.details && (
-                            <p className="text-sm text-gray-500">
-                              Details: {entry.details}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                            {entry.user && (
+                              <p className="text-sm text-gray-500">
+                                User: {entry.user.username}
+                              </p>
+                            )}
+                            {entry.details && (
+                              <p className="text-sm text-gray-500">
+                                Details: {entry.details}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </Modal.Body>
@@ -1681,6 +1744,80 @@ export default function DashSlotBooking() {
                 ) : (
                   "Cancel Booking"
                 )}
+              </Button>
+            </Modal.Footer>
+          </Modal>
+          <Modal
+            show={showExaminationModal}
+            onClose={() => setShowExaminationModal(false)}
+          >
+            <Modal.Header>
+              <h3 className="text-xl font-semibold">Examine Patient</h3>
+            </Modal.Header>
+            <Modal.Body>
+              {selectedBooking && (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Patient:</p>
+                    <p>
+                      {selectedBooking.patientId
+                        ? selectedBooking.patientId.name
+                        : "NULL"}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Date:</p>
+                    <p>{new Date(selectedBooking.date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Time:</p>
+                    <p>{selectedBooking.time}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Doctor:</p>
+                    <p>{selectedBooking.doctorId.username}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Room/Location:</p>
+                    <p>{selectedBooking.roomName || "Online"}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="font-bold mr-2">Status:</p>
+                    <Badge
+                      color={
+                        selectedBooking.status === "Completed"
+                          ? "success"
+                          : selectedBooking.status === "Pending"
+                          ? "warning"
+                          : selectedBooking.status === "Cancelled"
+                          ? "failure"
+                          : selectedBooking.status === "Not Booked"
+                          ? "gray"
+                          : selectedBooking.status === "Booked"
+                          ? "info"
+                          : selectedBooking.status === "ReBooked"
+                          ? "purple"
+                          : "indigo"
+                      }
+                    >
+                      {selectedBooking.status}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                color="gray"
+                onClick={() => setShowExaminationModal(false)}
+              >
+                Close
+              </Button>
+              <Button
+                color="blue"
+                onClick={() => handleExamineBooking(selectedBooking)}
+              >
+                Start Examination
               </Button>
             </Modal.Footer>
           </Modal>

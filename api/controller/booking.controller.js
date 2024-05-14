@@ -661,6 +661,7 @@ export const cancelSelectedBookings = async (req, res) => {
     isProcessing = false;
   }
 };
+
 export const updateStatus = async (req, res) => {
   if (isProcessing) {
     return res
@@ -668,11 +669,13 @@ export const updateStatus = async (req, res) => {
       .json({ message: "Please wait for the previous request to complete." });
   }
   isProcessing = true;
-  const booking = await Booking.findById(req.params.bookingId).populate(
+  console.log("Request body:", req.body);
+  const booking = await Booking.findById(req.body.bookingId).populate(
     "patientId",
-    "name contactEmail"
-  );
+    "name contactEmail",
+  ).populate("doctorId", "username").populate("roomNo", "description");
   if (!booking) {
+    isProcessing = false;
     return res.status(404).json({ message: "Booking not found" });
   }
   const previousPatientName = booking.patientId.name;
@@ -708,8 +711,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               Thank you for choosing our healthcare services. If you have any further questions or concerns, please don't hesitate to contact us.
         
@@ -721,7 +724,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Completed";
         historyDetails = `The appointment for patient ${name} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as completed.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} has been marked as completed.`;
         break;
       case "Pending":
         emailContent = `
@@ -733,8 +736,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               We will notify you once the appointment is confirmed or if there are any changes. If you have any questions or need to reschedule, please contact our support team.
         
@@ -746,7 +749,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Pending";
         historyDetails = `The appointment for patient ${name} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as pending. Waiting for confirmation.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} has been marked as pending. Waiting for confirmation.`;
         break;
       case "Cancelled":
         emailContent = `
@@ -758,8 +761,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               If you have any questions or need to reschedule, please contact our support team.
         
@@ -771,7 +774,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Cancelled";
         historyDetails = `The appointment for patient ${previousPatientName} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been cancelled.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} has been cancelled.`;
         break;
       case "Not Booked":
         emailContent = `
@@ -783,8 +786,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               If you wish to book an appointment, please contact our support team.
         
@@ -796,7 +799,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Not Booked";
         historyDetails = `The appointment for patient ${previousPatientName} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been marked as not booked.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${roomNabooking.roomNo.description} has been marked as not booked.`;
         break;
       case "Booked":
         emailContent = `
@@ -808,8 +811,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.descriptionbooking.roomNo.description}
         
               Please arrive 30 minutes before your appointment for check-in and registration.
         
@@ -823,7 +826,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Booked";
         historyDetails = `The appointment for patient ${name} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been successfully booked.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} has been successfully booked.`;
         break;
       case "ReBooked":
         emailContent = `
@@ -835,8 +838,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               Please arrive 30 minutes before your appointment for check-in and registration.
         
@@ -850,7 +853,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment Rebooked";
         historyDetails = `The appointment for patient ${name} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} has been successfully rebooked.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} has been successfully rebooked.`;
         break;
       case "In Consultation":
         emailContent = `
@@ -862,8 +865,8 @@ export const updateStatus = async (req, res) => {
         
               Date: ${new Date(date).toLocaleDateString()}
               Time: ${time}
-              Doctor: ${doctorName}
-              Room: ${roomName}
+              Doctor: ${booking.doctorId.username}
+              Room: ${booking.roomNo.description}
         
               Please wait for further instructions from our healthcare staff.
         
@@ -875,7 +878,7 @@ export const updateStatus = async (req, res) => {
         historyAction = "Appointment In Consultation";
         historyDetails = `The appointment for patient ${name} on ${new Date(
           date
-        ).toLocaleDateString()} at ${time} with Dr. ${doctorName} in ${roomName} is currently in consultation.`;
+        ).toLocaleDateString()} at ${time} with Dr. ${booking.doctorId.username} in ${booking.roomNo.description} is currently in consultation.`;
         break;
       default:
         break;
