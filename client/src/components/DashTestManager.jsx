@@ -544,7 +544,7 @@ export default function DashTestManager() {
             </h3>
           </div>
           <form onSubmit={handleTestUpdate}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Test Name</Label>
                 <TextInput
@@ -607,6 +607,17 @@ export default function DashTestManager() {
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="price">Price </Label>
+                <TextInput
+                  type="text"
+                  placeholder={testData.price}
+                  id="price"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+
               <div className="">
                 <div className="mb-2 block">
                   <Label htmlFor="advice">Advice</Label>
@@ -635,16 +646,7 @@ export default function DashTestManager() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="price">Price</Label>
-                <TextInput
-                  type="text"
-                  placeholder={testData.price}
-                  id="price"
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
+              
             </div>
             <div className="flex justify-center mt-3">
               <Button className="mr-4" color="blue" type="submit" outline>

@@ -8,12 +8,12 @@ import patientRoutes from "./routes/patient.route.js";
 import LabTestRoutes from "./routes/labTest.route.js";
 import sampleRoutes from "./routes/sample.route.js";
 import inventoryRoutes from "./routes/inventory.route.js";
-import testOrderRoutes from "./routes/testOrder.route.js"
+import testOrderRoutes from "./routes/testOrder.route.js";
 import vitalRoutes from "./routes/vitals.route.js";
 import cookieParser from "cookie-parser";
 import empleaveRoutes from "./routes/empleave.route.js";
-import bookingRoutes  from "./routes/booking.route.js";
-import employeeRoutes from "./routes/employee.route.js"
+import bookingRoutes from "./routes/booking.route.js";
+import employeeRoutes from "./routes/employee.route.js";
 import prescriptionRoutes from "./routes/prescription.route.js";
 import dieseaseRoutes from "./routes/diesease.route.js";
 import diagnosisRoutes from "./routes/diagnosis.route.js";
@@ -22,7 +22,7 @@ import paymentOrderRoutes from "./routes/paymentOrder.route.js";
 import userBookingRoutes from "./routes/userBooking.route.js";
 import "./utils/jobs/booking.job.js";
 import bedRoutes from "./routes/bed.route.js";
-import testResult from "./routes/testResult.route.js"
+import testResult from "./routes/testResult.route.js";
 
 dotenv.config();
 
@@ -60,9 +60,11 @@ app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api/prescriptionOrder", PrescriptionOrderRoutes);
 app.use("/api/paymentOrder", paymentOrderRoutes);
 app.use("/api/userBooking", userBookingRoutes);
-app.use('/api/bed', bedRoutes);
-app.use('/api/result', testResult);
-// app.use("MediPlus\client\public\labResults", express.static("labResults"));
+app.use("/api/bed", bedRoutes);
+app.use("/api/result", testResult);
+
+
+
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
