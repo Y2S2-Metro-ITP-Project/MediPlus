@@ -128,6 +128,12 @@ export default function SignIn() {
               Sign Up
             </Link>
           </div>
+          <div className=" flex gap-2 text-sm mt-5">
+            <span>Forget Password?</span>
+            <Link to="/forget-password" className=" text-blue-500">
+              Reset Password
+            </Link>
+            </div>
         </div>
       </div>
     </div>

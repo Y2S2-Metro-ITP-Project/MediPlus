@@ -8,13 +8,13 @@ const employeeDetailsSchema = new mongoose.Schema({
   },
   dateOfBirth: {
     type: Date,
-    default: "No details available",
-    required: true,
+    default: "",
+    required: false,
   },
   salary: {
     type: Number,
-    default: "No details available",
-    required: true,
+    default: "",
+    
   },
   gender: {
     type: String,
@@ -31,27 +31,33 @@ const employeeDetailsSchema = new mongoose.Schema({
     default: "No details available",
     required: true,
   },
+  doctortype: {
+    type: String,
+    enum: ["Permenent", "Visiting",""],
+    default: "",
+
+  },
   specialization: {
     type: String,
     default: "No details available",
-   
+
   },
-  employeeimg: {
+  employeeImage: {
     type: String,
     default:
       "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg",
   },
-   Name: {
-     type: String,
+  Name: {
+    type: String,
     // required: true
-   },
+  },
   experience: {
     type: Number,
-   // required: true
+    // required: true
   },
   qualifications: {
     type: String,
-   // required: true
+    // required: true
   },
   consultationFee: {
     type: Number,
@@ -59,6 +65,16 @@ const employeeDetailsSchema = new mongoose.Schema({
   },
   bio: {
     type: String,
+    //required: true
+  },
+  consultationN0: {
+    type: Number,
+    default:0,
+    //required: true
+  },
+  Final: {
+    type: Number,
+   
     //required: true
   },
 

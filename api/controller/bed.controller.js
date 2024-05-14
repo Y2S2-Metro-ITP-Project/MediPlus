@@ -2,7 +2,7 @@ import Bed from "../models/bed.model.js";
 import Patient from "../models/patient.model.js";
 import { errorHandler } from "../utils/error.js";
 import generatePdfFromHtml from "../utils/BedPDF.js";
-
+import ward from "../models/ward.model.js";
 export const generateReport = async (req, res, next) => {
   try {
     // Get all beds
@@ -10,19 +10,18 @@ export const generateReport = async (req, res, next) => {
     const countAvailableBeds = await Bed.countDocuments({ isAvailable: true });
     const countOccupiedBeds = await Bed.countDocuments({ isAvailable: false });
 
-    const htmlContent=`
+    const htmlContent = `
     <h1>Bed Management</h1>
     <h1>count:${countBeds}</h1>
     <h1>Available:${countAvailableBeds}</h1>
     <h1>UnAvailable:${countOccupiedBeds}</h1>
-    `
+    `;
     // Generate the PDF report
     const report = await generatePdfFromHtml(htmlContent);
     res.set({
       "Content-Type": "application/pdf",
       "Content-Length": report.length,
-    
-    })
+    });
     res.send(report);
   } catch (error) {
     console.error("Error generating report:", error);
@@ -32,10 +31,10 @@ export const generateReport = async (req, res, next) => {
 };
 
 export const generatePatientReport = async (req, res, next) => {
-  const bedId=req.params.id;
+  const bedId = req.params.id;
   console.log(bedId);
   try {
-    const bed = await Bed.findById(bedId).populate('patient');
+    const bed = await Bed.findById(bedId).populate("patient");
     if (!bed) {
       return next(errorHandler(404, "Bed not found"));
     }
@@ -52,8 +51,8 @@ export const generatePatientReport = async (req, res, next) => {
     const emergencyName = patient.emergencyContact.name;
     const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
     const ward = patient.roomPreferences;
-    const number=bed.number;
-    const age=moment().diff(dateOfBirth, 'years');
+    const number = bed.number;
+    const age = moment().diff(dateOfBirth, "years");
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -126,25 +125,20 @@ export const generatePatientReport = async (req, res, next) => {
     </html>    
     
 `;
-const pdfBuffer = await generatePdfFromHtml(htmlContent);
-res.set({
-  "Content-Type": "application/pdf",
-  "Content-Length": pdfBuffer.length,
-});
-res.send(pdfBuffer);
+    const pdfBuffer = await generatePdfFromHtml(htmlContent);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
   } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
-}
-
-
-
+};
 
 // Controller function to admit a patient to a bed
 export const admitPatientToBed = async (req, res, next) => {
-  const { bedNumber, 
-    patientId
- } = req.body;
+  const { bedNumber, patientId } = req.body;
 
   try {
     // Check if the bed exists
@@ -158,22 +152,23 @@ export const admitPatientToBed = async (req, res, next) => {
       return next(errorHandler(400, "Bed is already occupied"));
     }
 
-   const patient = await Patient.findOne({ _id: patientId });
-    
+    const patient = await Patient.findOne({ _id: patientId });
+
+    //Update the patient with bed information
+    patient.bed = bed._id;
     // Update the bed with patient information
     bed.isAvailable = false;
     bed.patient = patientId;
 
     // Save the updated bed to the database
+    await patient.save();
     await bed.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Patient admitted to bed successfully",
-        bed,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Patient admitted to bed successfully",
+      bed,
+    });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
@@ -181,29 +176,31 @@ export const admitPatientToBed = async (req, res, next) => {
 
 // Controller function to get all beds
 export const getAllBeds = async (req, res, next) => {
-    try {
-      const beds = await Bed.find().populate('patient');
-      const totalbeds = await Bed.countDocuments();
-      res.status(200).json({ success: true, beds ,totalbeds});
-    } catch (error) {
-      next(errorHandler(500, "Server Error"));
-    }
-  };
-  
+  try {
+    const beds = await Bed.find().populate("patient").populate("ward");
+    const totalbeds = await Bed.countDocuments();
+    res.status(200).json({beds,totalbeds});
+  } catch (error) {
+    next(errorHandler(500, error.message));
+  }
+};
 
 // Controller function to get bed by number
 export const getBedByNumber = async (req, res, next) => {
-    const { number } = req.params;
-    try {
-      const bed = await Bed.findOne({ number }).populate('patient', 'name admissionDate illness gender age');
-      if (!bed) {
-        return next(errorHandler(404, "Bed not found"));
-      }
-      res.status(200).json({ success: true, bed });
-    } catch (error) {
-      next(errorHandler(500, "Server Error"));
+  const { number } = req.params;
+  try {
+    const bed = await Bed.findOne({ number }).populate(
+      "patient",
+      "name admissionDate illness gender age"
+    );
+    if (!bed) {
+      return next(errorHandler(404, "Bed not found"));
     }
-  };
+    res.status(200).json({ success: true, bed });
+  } catch (error) {
+    next(errorHandler(500, "Server Error"));
+  }
+};
 
 // Controller function to update bed availability
 export const updateBedAvailability = async (req, res, next) => {
@@ -214,19 +211,24 @@ export const updateBedAvailability = async (req, res, next) => {
     if (!bed) {
       return next(errorHandler(404, "Bed not found"));
     }
+    const patient= await Patient.findOne({bed: bed._id});
+    // Remove patient ID if the bed is made available
+    if (isAvailable) {
+      bed.patient= null;
+    }
+
     bed.isAvailable = isAvailable;
     await bed.save();
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Bed availability updated successfully",
-        bed,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Bed availability updated successfully",
+      bed,
+    });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
   }
 };
+
 
 // Controller function to delete bed by number
 export const deleteBedByNumber = async (req, res, next) => {
@@ -245,36 +247,47 @@ export const deleteBedByNumber = async (req, res, next) => {
 };
 
 export const createBed = async (req, res, next) => {
-  const { number } = req.body;
-
   try {
+    const number = req.body.number;
+    const wardId = req.body.ward;
     // Check if the bed number is provided
     if (!number) {
       return next(errorHandler(400, "Bed number is required"));
     }
-
+    console.log(number);
     // Check if the bed number already exists
     const existingBed = await Bed.findOne({ number });
     if (existingBed) {
       return next(errorHandler(400, "Bed number already exists"));
     }
+    // Check if the ward exists
+    try {
+      const ward1 = await ward.findById(wardId);
+      console.log(ward1);
+      const newBed = new Bed({
+        number,
+        ward: wardId,
+      });
+      const newbedId= newBed._id;
+      ward1.beds.push(newbedId);
+      // Check if the ward is full
+      if (ward1.beds.length >= ward1.WardCapacity) {
+        return next(errorHandler(400, "ward is full"));
+      }
 
-    // Create a new bed instance
-    const newBed = new Bed({
-      number,
-    });
+      // Save the new bed to the database
+      await newBed.save();
+      await ward1.save();
 
-    // Save the new bed to the database
-    await newBed.save();
-
-    // Send success response
-    res
-      .status(201)
-      .json({
+      // Send success response
+      res.status(201).json({
         success: true,
         message: "Bed created successfully",
         bed: newBed,
       });
+    } catch (error) {
+      return next(errorHandler(400, "ward not found"));
+    }
   } catch (error) {
     // Handle errors
     next(errorHandler(500, "Server Error"));
