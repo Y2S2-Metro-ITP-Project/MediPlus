@@ -1276,6 +1276,14 @@ export const genrateCloseToExpairyOfStockInventoryReport = async (
     res.status(500).json({ message: error.message });
   }
 };
+export const getItemNames = async (req, res, next) => {
+  try {
+    const itemNames = await Inventory.distinct("itemName");
+    res.status(200).json({ itemNames });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 export const getFilteredInventoryData= async (req, res, next) => {
   if(!req.user.isAdmin && !req.user.isPharmacist){
@@ -1326,4 +1334,5 @@ export const getFilteredInventoryData= async (req, res, next) => {
   } catch (error) {
     res.status(500).json({ message: error.message }); 
   }
+  
 }

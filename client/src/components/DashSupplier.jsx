@@ -8,6 +8,7 @@ import {
   Label,
   Card,
   Badge,
+  Select,
 } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
@@ -36,11 +37,13 @@ const DashSupplier = () => {
     supplierName: "",
     supplierEmail: "",
     supplierPhone: "",
-    itemName: "", 
+    itemName: "",
   });
+  const [itemNames, setItemNames] = useState([]);
 
   useEffect(() => {
     fetchSuppliers();
+    fetchItemNames();
   }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
 
   const fetchSuppliers = async () => {
@@ -163,6 +166,21 @@ const DashSupplier = () => {
     } catch (error) {
       console.log(error);
       toast.error("Failed to update supplier. Please try again later.");
+    }
+  };
+
+  const fetchItemNames = async () => {
+    try {
+      const res = await fetch("/api/inventory/getItemNames");
+      const data = await res.json();
+      if (res.ok) {
+        setItemNames(data.itemNames);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch item names. Please try again later.");
     }
   };
 
@@ -434,14 +452,23 @@ const DashSupplier = () => {
                   </div>
                   <div className="mb-4">
                     <Label htmlFor="itemName">Item Name</Label>
-                    <TextInput
-                      type="text"
+                    <Select
                       id="itemName"
                       value={formData.itemName}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setFormData({ ...formData, itemName: e.target.value })
+                      }
                       required
-                    />
-                    </div>
+                    >
+                      <option value="">Select an item</option>
+                      {itemNames.map((itemName) => (
+                        <option key={itemName} value={itemName}>
+                          {itemName}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
                   <div className="flex justify-center gap-4">
                     <Button type="submit">Add Supplier</Button>
                     <Button color="gray" onClick={() => setShowModal(false)}>
