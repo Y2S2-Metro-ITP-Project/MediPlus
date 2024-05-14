@@ -64,7 +64,7 @@ export default function DashEmpsalary() {
         body: JSON.stringify({
           salary: updatedSalary,
           consultationFee: updatedConsultationFee,
-          
+
         }),
       });
 
@@ -115,7 +115,7 @@ export default function DashEmpsalary() {
   );
 
 
-   // Filtered doctors based on search term
+  // Filtered doctors based on search term
   const searchedAndFilteredDoctors = doctors.filter((doctor) => {
     const username = doctor.userId ? doctor.userId.username.toLowerCase() : "";
     return username.includes(searchTerm.toLowerCase());
@@ -138,7 +138,7 @@ export default function DashEmpsalary() {
       toast.error("Please select a category.");
       return;
     }
-  
+
     let rolesToSend = [];
     switch (category) {
       case "Doctor":
@@ -153,12 +153,12 @@ export default function DashEmpsalary() {
       default:
         break;
     }
-  
+
     const filteredSalary = Salary.filter(employee => rolesToSend.includes(getUserRole(employee.userId)));
-  
+
     try {
       const fileName = `Employee-Report-${category}.pdf`;
-  
+
       const res = await fetch(
         `/api/salary/DownloadSalaryReport`,
         {
@@ -173,26 +173,26 @@ export default function DashEmpsalary() {
         throw new Error("Failed to generate PDF");
       }
       const pdfBlob = await res.blob();
-  
+
       // Create blob URL
       const url = window.URL.createObjectURL(pdfBlob);
-  
+
       // Create temporary link element
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName ; // Set download attribute
+      a.download = fileName; // Set download attribute
       document.body.appendChild(a);
-  
+
       // Click link to initiate download
       a.click();
-  
+
       // Remove link from DOM
       document.body.removeChild(a);
     } catch (error) {
       console.log(error);
     }
   };
-  
+
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <ToastContainer />
@@ -344,10 +344,10 @@ export default function DashEmpsalary() {
                 type="number"
                 value={updatedSalary}
                 onChange={(e) => setUpdatedSalary(e.target.value)}
+                disabled={selectedEmployee === 'Doctor' && selectedEmployeeData?.doctortype === 'Visiting'}
               />
             </div>
             <div className="mt-4">
-
               {/* Check if selectedEmployee is a doctor before rendering the Consultation Fee input */}
               {selectedEmployee === 'Doctor' && (
                 <>
@@ -363,6 +363,7 @@ export default function DashEmpsalary() {
             </div>
           </div>
         </Modal.Body>
+
         <Modal.Footer>
           <Button onClick={handleUpdateFormSubmit}>Update</Button>
           <Button onClick={() => setShowModal3(false)} gradientDuoTone="redToOrange">Cancel</Button>
@@ -371,35 +372,35 @@ export default function DashEmpsalary() {
 
 
 
-  <Modal show={showModal0} onClose={() => setShowModal0(false)} size="md">
-  <Modal.Header>
-    <div className="text-center">
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generate Report</h3>
-    </div>
-  </Modal.Header>
-  <Modal.Body className="flex flex-col items-center">
-    <div className="text-center">
-      <p className="text-base text-gray-600 dark:text-gray-400 mb-4">Select a role to generate the report:</p>
-      <select
-       value={selectedRole}
-       onChange={(e) => setSelectedRole(e.target.value)}
-        className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:border-blue-500"
-      >
-        <option value="">Select Role</option>
-        <option value="Doctor">Doctor</option>
-        <option value="Medical Employees">Medical Employees</option>
-        <option value="General Employees">General Employees</option>
-      </select>
-    </div>
-    {/* Download PDF Button */}
-    <Button
-      onClick={() => handleDownloadPdf(selectedRole)} 
-      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out"
-    >
-      Download PDF
-    </Button>
-  </Modal.Body>
-</Modal>
+      <Modal show={showModal0} onClose={() => setShowModal0(false)} size="md">
+        <Modal.Header>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generate Report</h3>
+          </div>
+        </Modal.Header>
+        <Modal.Body className="flex flex-col items-center">
+          <div className="text-center">
+            <p className="text-base text-gray-600 dark:text-gray-400 mb-4">Select a role to generate the report:</p>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Select Role</option>
+              <option value="Doctor">Doctor</option>
+              <option value="Medical Employees">Medical Employees</option>
+              <option value="General Employees">General Employees</option>
+            </select>
+          </div>
+          {/* Download PDF Button */}
+          <Button
+            onClick={() => handleDownloadPdf(selectedRole)}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out"
+          >
+            Download PDF
+          </Button>
+        </Modal.Body>
+      </Modal>
 
 
     </div>

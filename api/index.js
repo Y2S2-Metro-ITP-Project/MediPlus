@@ -21,13 +21,12 @@ import paymentOrderRoutes from "./routes/paymentOrder.route.js";
 import userBookingRoutes from "./routes/userBooking.route.js";
 import "./utils/jobs/booking.job.js";
 import bedRoutes from "./routes/bed.route.js";
-
 import roomRoutes from "./routes/room.route.js";
 import slotRoutes from "./routes/slot.route.js";
 import slotBookRoutes from "./routes/slotBooking.route.js";
-
 import wardRoutes from "./routes/ward.route.js";
 import Supplier from "./models/Supplier.model.js";
+import ConsultationPayment from "./routes/consult.Payment.route.js"
 
 dotenv.config();
 
@@ -69,6 +68,8 @@ app.use('/api/slot', slotRoutes);
 app.use('/api/slotBooking', slotBookRoutes);
 app.use('/api/ward', wardRoutes);
 app.use("/api/supplier", suplierroutes);
+app.use("/api/payment", ConsultationPayment);
+
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

@@ -10,7 +10,7 @@ export const DashaddEmp = () => {
         email: '',
         password: '',
         role: '',
-        doctortype:'',
+        doctortype: '',
         dateOfBirth: '',
         salary: '',
         gender: 'not given',
@@ -73,7 +73,7 @@ export const DashaddEmp = () => {
         const { username, email, password, role, dateOfBirth, salary, gender, address, contactPhone,
             specialization, experience, qualifications, consultationFee, bio, doctortype } = formData;
 
-        if (!username || !email || !password || !role || !dateOfBirth || !salary || !gender || !address || !contactPhone) {
+        if (!username || !email || !password || !role || !dateOfBirth || !gender || !address || !contactPhone) {
             toast.error("All fields are required");
             return;
         }
@@ -176,7 +176,7 @@ export const DashaddEmp = () => {
                                     className="input-field dark:bg-gray-800 dark:text-white"
                                 >
                                     <option value="">Select Doctor Type</option>
-                                    <option value="Permanent">Permanent Doctor</option>
+                                    <option value="Permenent">Permanent Doctor</option>
                                     <option value="Visiting">Visiting Doctor</option>
                                 </select>
                             </div>
@@ -223,7 +223,10 @@ export const DashaddEmp = () => {
                         value={formData.salary}
                         onChange={handleChange}
                         placeholder="Salary"
+                        disabled={formData.role === "isDoctor" && formData.doctortype === "Visiting"}
                     />
+
+
                     <div className="flex items-center">
                         <label htmlFor="dateOfBirth" className="text-sm font-semibold dark:text-gray-300 mr-2">Date of Birth</label>
                         <TextInput
