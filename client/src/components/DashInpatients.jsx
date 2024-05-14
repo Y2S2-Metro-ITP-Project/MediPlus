@@ -6,6 +6,7 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { HiEye } from "react-icons/hi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {  Select, Spinner } from "flowbite-react";
 
 const DashInpatients = () => {
   const [patients, setPatients] = useState([]);
@@ -15,7 +16,16 @@ const DashInpatients = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState(null);
-
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [beds, setBeds] = useState([]);
+  const [selectedBed, setSelectedBed] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [patientId, setPatientId] = useState(null);
   useEffect(() => {
     // Fetch the list of patients from the API
     const fetchPatients = async () => {
@@ -45,6 +55,64 @@ const DashInpatients = () => {
     } catch (error) {
       console.error("Error deleting patient:", error);
       toast.error("Error deleting patient");
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const admissionData = { ...formData};
+
+    console.log('admissionData:', admissionData);
+
+    if (
+      !formData.name ||
+      !formData.admissionDate ||
+      !formData.illness ||
+      !formData.dateOfBirth ||
+      !formData.gender ||
+      !formData.address ||
+      !formData.contactPhone ||
+      !formData.contactEmail ||
+      !formData.reasonForAdmission||
+      !formData.patientType
+    ) {
+      setErrorMessage("All fields are required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+
+      const res = await fetch("/api/patient/admit", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(admissionData),
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        setErrorMessage(data.message);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      if (res.ok) {
+        setLoading(false);
+        const patientId = data.patient._id;
+        setPatientId(patientId);
+        setShowPatientModal(true);
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
     }
   };
 
@@ -81,6 +149,18 @@ const DashInpatients = () => {
       toast.error("Error updating patient");
     }
   };
+
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+
+
+
+const handleOpenRegistrationModal = () => {
+  setShowPatientModal(true);
+};
+
+const handleCloseRegistrationModal = () => {
+  setShowPatientModal(false);
+};
 
   const handleDeleteConfirm = (patient) => {
     setPatientToDelete(patient);
@@ -153,6 +233,26 @@ const DashInpatients = () => {
           </form>
         </div>
       </div>
+
+      <div className="flex justify-between items-center mb-4">
+  {/* Existing code */}
+  <Button onClick={handleOpenRegistrationModal}>Add Patient</Button>
+</div>
+
+{showRegistrationModal && (
+  <Modal
+    show={showRegistrationModal}
+    onClose={handleCloseRegistrationModal}
+    popup
+    size="xlg"
+  >
+    <Modal.Header>Patient Registration</Modal.Header>
+    <Modal.Body>
+      <PatientRegistrationForm onClose={handleCloseRegistrationModal} />
+    </Modal.Body>
+  </Modal>
+)}
+
       {(patients || []).length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
@@ -336,6 +436,9 @@ const DashInpatients = () => {
           </Modal.Footer>
         </Modal>
       )}
+
+
+      
       {isDeleteModalOpen && (
         <Modal
           show={isDeleteModalOpen}
@@ -369,6 +472,201 @@ const DashInpatients = () => {
             </div>
           </Modal.Body>
         </Modal>
+      )}
+
+
+
+<Modal
+        show={showPatientModal}
+        onClose={() => setShowPatientModal(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header>Patient Registration</Modal.Header>
+        <Modal.Body>
+          { (
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            
+            <div>
+              <label htmlFor="name">Patient Name</label>
+              <TextInput
+                type="text"
+                placeholder="Patient Name"
+                id="name"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="admissionDate">Admission Date</label>
+              <TextInput
+                type="date"
+                id="admissionDate"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="illness">Illness</label>
+              <TextInput
+                type="text"
+                placeholder="Illness"
+                id="illness"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="dateOfBirth">Date of Birth</label>
+              <TextInput
+                type="date"
+                id="dateOfBirth"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="gender">Gender</label>
+              <Select id="gender" onChange={handleChange}>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </Select>
+            </div>
+            <div>
+              <label htmlFor="address">Address</label>
+              <TextInput
+                type="text"
+                placeholder="Address"
+                id="address"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="contactPhone">Contact Phone</label>
+              <TextInput
+                type="tel"
+                placeholder="Contact Phone"
+                id="contactPhone"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="contactEmail">Contact Email</label>
+              <TextInput
+                type="email"
+                placeholder="Contact Email"
+                id="contactEmail"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="identification">Identification</label>
+              <TextInput
+                type="text"
+                placeholder="Identification"
+                id="identification"
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="reasonForAdmission">Reason for Admission</label>
+              <TextInput
+                type="text"
+                placeholder="Reason for Admission"
+                id="reasonForAdmission"
+                onChange={handleChange}
+              />
+            </div>
+             <div className="w-full md:w-1/2">
+              <div>
+                <label htmlFor="insuranceProvider">Insurance Provider</label>
+                <TextInput
+                  type="text"
+                  placeholder="Insurance Provider"
+                  id="insuranceProvider"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="policyNumber">Policy Number</label>
+                <TextInput
+                  type="text"
+                  placeholder="Policy Number"
+                  id="policyNumber"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="contactInfo">Insurance Contact Info</label>
+                <TextInput
+                  type="text"
+                  placeholder="Insurance Contact Info"
+                  id="contactInfo"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="emergencyName">Emergency Contact Name</label>
+                <TextInput
+                  type="text"
+                  placeholder="Emergency Contact Name"
+                  id="emergencyName"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="emergencyRelationship">Emergency Contact Relationship</label>
+                <TextInput
+                  type="text"
+                  placeholder="Emergency Contact Relationship"
+                  id="emergencyRelationship"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="emergencyPhoneNumber">Emergency Contact Phone Number</label>
+                <TextInput
+                  type="tel"
+                  placeholder="Emergency Contact Phone Number"
+                  id="emergencyPhoneNumber"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="roomPreferences">Room Preferences</label>
+                <Select id="roomPreferences" onChange={handleChange}>
+                  <option value="">Select Room Preferences</option>
+                  <option value="General Ward">General Ward</option>
+                  <option value="Emergency Ward">Emergency Ward</option>
+                </Select>
+              </div>
+              <div>
+                <label htmlFor="patientType">patientType</label>
+                <Select id="patientType" onChange={handleChange}>
+                  <option value="">Select Room Preferences</option>
+                  <option value="inpatient">inpatient</option>
+                  <option value="outpatient">outpatient</option>
+                </Select>
+              </div>
+            </div>
+            
+          </form>
+          )}
+
+          
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="gray" onClick={handleCloseRegistrationModal}>
+            Cancel
+          </Button>
+          <Button color="blue" onClick={handleSubmit}>
+            Submit
+          </Button>
+        </Modal.Footer>
+        </Modal>
+        {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
+      {successMessage && (
+        <Alert color="success" onDismiss={() => setSuccessMessage("")}>
+          {successMessage}
+        </Alert>
       )}
     </div>
   );

@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Button, Alert, TextInput, Modal, Select, Spinner, Table } from "flowbite-react";
+import {
+  Button,
+  Alert,
+  TextInput,
+  Modal,
+  Select,
+  Spinner,
+  Table,
+  Label,
+} from "flowbite-react";
 import { HiOutlineExclamationCircle, HiEye } from "react-icons/hi";
 import { AiOutlineSearch } from "react-icons/ai";
 import { ToastContainer, toast } from "react-toastify";
@@ -9,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { HiAnnotation, HiArrowNarrowUp } from "react-icons/hi";
 import ReactSelect from "react-select";
 import { set } from "mongoose";
+
 const DashBedManagement = () => {
   const [beds, setBeds] = useState([]);
   const [selectedBed, setSelectedBed] = useState(null);
@@ -28,12 +38,19 @@ const DashBedManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [totalbeds, setTotalbeds] = useState(0);
   const [wards, setWards] = useState([]);
-  const [selectedWard, setSelectedWard] = useState(null); 
+  const [patients, setPatients] = useState([]);
+  const [selectedWard, setSelectedWard] = useState(null);
   useEffect(() => {
     fetchBeds();
     fetchWards();
+    fetchPatients();
   }, []);
 
+  const fetchPatients = async () => {
+    const response = await fetch(`/api/patient/get`);
+    const data = await response.json();
+    setPatients(data);
+  };
 
   const fetchWards = async () => {
     try {
@@ -43,13 +60,13 @@ const DashBedManagement = () => {
     } catch (error) {
       console.error("Error fetching wards:", error);
     }
-  }
+  };
   const fetchBeds = async () => {
     try {
       const response = await fetch("/api/bed/getbed");
       const data = await response.json();
       setBeds(data.beds);
-      setTotalbeds(data.totalbeds)
+      setTotalbeds(data.totalbeds);
     } catch (error) {
       console.error("Error fetching beds:", error);
     }
@@ -58,13 +75,13 @@ const DashBedManagement = () => {
 
   const handleBedClick = async (bed) => {
     try {
-      console.log('Clicked bed:', bed);
+      console.log("Clicked bed:", bed);
 
       const response = await axios.get(`/api/bed/${bed.number}`);
       setSelectedBed(response.data.bed);
 
       if (bed.isAvailable) {
-        console.log('Bed is available, showing patient modal');
+        console.log("Bed is available, showing patient modal");
         setShowPatientModal(true);
         setShowModal(false);
       } else {
@@ -85,6 +102,14 @@ const DashBedManagement = () => {
     } catch (error) {
       setErrorMessage(error.response.data.message);
     }
+  };
+
+  const OnPatientChange = (selectedOption) => {
+    setFormData({
+      ...formData,
+      patientId: selectedOption.value,
+      patientName: selectedOption.label,
+    });
   };
 
   const handleCloseModal = () => {
@@ -156,7 +181,7 @@ const DashBedManagement = () => {
     e.preventDefault();
     const admissionData = { ...formData, bedNumber: selectedBed.number };
 
-    console.log('admissionData:', admissionData);
+    console.log("admissionData:", admissionData);
 
     if (
       !formData.name ||
@@ -167,7 +192,7 @@ const DashBedManagement = () => {
       !formData.address ||
       !formData.contactPhone ||
       !formData.contactEmail ||
-      !formData.reasonForAdmission||
+      !formData.reasonForAdmission ||
       !formData.patientType
     ) {
       setErrorMessage("All fields are required");
@@ -179,8 +204,8 @@ const DashBedManagement = () => {
       setErrorMessage(null);
 
       const res = await fetch("/api/patient/admit", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(admissionData),
       });
 
@@ -207,7 +232,7 @@ const DashBedManagement = () => {
 
   const handleAdmitPatient = async () => {
     try {
-      const response = await axios.post('/api/bed/admitbed', {
+      const response = await axios.post("/api/bed/admitbed", {
         bedNumber: selectedBed.number,
         patientId,
       });
@@ -215,6 +240,7 @@ const DashBedManagement = () => {
       if (response.data.success) {
         console.log(response.data.message);
         setShowPatientModal(false);
+        fetchPatients();
         fetchBeds();
       } else {
         setErrorMessage(response.data.message);
@@ -238,14 +264,11 @@ const DashBedManagement = () => {
       <h1 className="text-3xl font-bold mb-6">Bed Management</h1>
 
       <div className="flex justify-between">
-        
-            <div className="">
-              <h3 className="text-gray-500 text-md uppercase">
-                Total bed
-              </h3>
-              <p className="text-2xl">{totalbeds}</p>
-            </div>
-          </div>
+        <div className="">
+          <h3 className="text-gray-500 text-md uppercase">Total bed</h3>
+          <p className="text-2xl">{totalbeds}</p>
+        </div>
+      </div>
 
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
@@ -265,27 +288,26 @@ const DashBedManagement = () => {
             </Button>
           </form>
           <div className="flex items-center ml-4">
-          <TextInput
-            type="text"
-            placeholder="Enter bed number"
-            value={newBedNumber}
-            onChange={(e) => setNewBedNumber(e.target.value)}
-            className="mr-2"
-          />
-          <ReactSelect
-          options={wards.map((ward) => ({
-            value: ward._id,
-            label: ward.WardName,
-          }))}
-          isSearchable
-          placeholder="Select Ward"
-          onChange={(selectedOption) => {
-            setSelectedWard(selectedOption.value);
-          }}  
-          />
-
-        </div>
-        <Button
+            <TextInput
+              type="text"
+              placeholder="Enter bed number"
+              value={newBedNumber}
+              onChange={(e) => setNewBedNumber(e.target.value)}
+              className="mr-2"
+            />
+            <ReactSelect
+              options={wards.map((ward) => ({
+                value: ward._id,
+                label: ward.WardName,
+              }))}
+              isSearchable
+              placeholder="Select Ward"
+              onChange={(selectedOption) => {
+                setSelectedWard(selectedOption.value);
+              }}
+            />
+          </div>
+          <Button
             gradientDuoTone="purpleToPink"
             className="ml-5"
             onClick={handleCreateBed}
@@ -294,13 +316,13 @@ const DashBedManagement = () => {
           </Button>
         </div>
         <Button
-            gradientDuoTone="purpleToPink"
-            outline
-            className="ml-5"
-            onClick={handleDownloadPDF}
-          >
-            Download PDF
-          </Button>
+          gradientDuoTone="purpleToPink"
+          outline
+          className="ml-5"
+          onClick={handleDownloadPDF}
+        >
+          Download PDF
+        </Button>
       </div>
 
       {beds.length > 0 ? (
@@ -327,14 +349,19 @@ const DashBedManagement = () => {
                     }`}
                     onClick={() => handleBedClick(bed)}
                   >
-                    {bed.isAvailable ? "Bed is not occupied" : "Bed occupied with the patient"}
+                    {bed.isAvailable
+                      ? "Bed is not occupied"
+                      : "Bed occupied with the patient"}
                   </Table.Cell>
                   <Table.Cell>{bed.ward.WardName}</Table.Cell>
                   <Table.Cell>
                     <Button
                       size="xs"
                       onClick={() =>
-                        handleUpdateBedAvailability(bed.number, !bed.isAvailable)
+                        handleUpdateBedAvailability(
+                          bed.number,
+                          !bed.isAvailable
+                        )
                       }
                     >
                       {bed.isAvailable ? "Mark Unavailable" : "Mark Available"}
@@ -464,196 +491,53 @@ const DashBedManagement = () => {
         popup
         size="xlg"
       >
-        <Modal.Header>Patient Registration</Modal.Header>
+        <Modal.Header>Select Patient</Modal.Header>
         <Modal.Body>
           {selectedBed && selectedBed.isAvailable ? (
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="bedNumber">Bed Number</label>
-              <TextInput
-                type="text"
-                placeholder="Bed Number"
-                id="bedNumber"
-                value={selectedBed.number} // Set default value as the selected bed number
-                onChange={handleChange}
-                readOnly // Make the input read-only
-              />
-            </div>
-            <div>
-              <label htmlFor="name">Patient Name</label>
-              <TextInput
-                type="text"
-                placeholder="Patient Name"
-                id="name"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="admissionDate">Admission Date</label>
-              <TextInput
-                type="date"
-                id="admissionDate"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="illness">Illness</label>
-              <TextInput
-                type="text"
-                placeholder="Illness"
-                id="illness"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="dateOfBirth">Date of Birth</label>
-              <TextInput
-                type="date"
-                id="dateOfBirth"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="gender">Gender</label>
-              <Select id="gender" onChange={handleChange}>
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="address">Address</label>
-              <TextInput
-                type="text"
-                placeholder="Address"
-                id="address"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="contactPhone">Contact Phone</label>
-              <TextInput
-                type="tel"
-                placeholder="Contact Phone"
-                id="contactPhone"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="contactEmail">Contact Email</label>
-              <TextInput
-                type="email"
-                placeholder="Contact Email"
-                id="contactEmail"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="identification">Identification</label>
-              <TextInput
-                type="text"
-                placeholder="Identification"
-                id="identification"
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="reasonForAdmission">Reason for Admission</label>
-              <TextInput
-                type="text"
-                placeholder="Reason for Admission"
-                id="reasonForAdmission"
-                onChange={handleChange}
-              />
-            </div>
-             <div className="w-full md:w-1/2">
               <div>
-                <label htmlFor="insuranceProvider">Insurance Provider</label>
+                <label htmlFor="bedNumber">Bed Number</label>
                 <TextInput
                   type="text"
-                  placeholder="Insurance Provider"
-                  id="insuranceProvider"
+                  placeholder="Bed Number"
+                  id="bedNumber"
+                  value={selectedBed.number} // Set default value as the selected bed number
                   onChange={handleChange}
+                  readOnly // Make the input read-only
                 />
               </div>
               <div>
-                <label htmlFor="policyNumber">Policy Number</label>
-                <TextInput
-                  type="text"
-                  placeholder="Policy Number"
-                  id="policyNumber"
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="contactInfo">Insurance Contact Info</label>
-                <TextInput
-                  type="text"
-                  placeholder="Insurance Contact Info"
-                  id="contactInfo"
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="emergencyName">Emergency Contact Name</label>
-                <TextInput
-                  type="text"
-                  placeholder="Emergency Contact Name"
-                  id="emergencyName"
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="emergencyRelationship">Emergency Contact Relationship</label>
-                <TextInput
-                  type="text"
-                  placeholder="Emergency Contact Relationship"
-                  id="emergencyRelationship"
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="emergencyPhoneNumber">Emergency Contact Phone Number</label>
-                <TextInput
-                  type="tel"
-                  placeholder="Emergency Contact Phone Number"
-                  id="emergencyPhoneNumber"
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="roomPreferences">Room Preferences</label>
-                <Select id="roomPreferences" onChange={handleChange}>
-                  <option value="">Select Room Preferences</option>
-                  <option value="General Ward">General Ward</option>
-                  <option value="Emergency Ward">Emergency Ward</option>
-                </Select>
-              </div>
-              <div>
-                <label htmlFor="patientType">patientType</label>
-                <Select id="patientType" onChange={handleChange}>
-                  <option value="">Select Room Preferences</option>
-                  <option value="inpatient">inpatient</option>
-                  <option value="outpatient">outpatient</option>
-                </Select>
-              </div>
-            </div>
-            <Button
-              gradientDuoTone="purpleToPink"
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Spinner size="sm" />
-                  <span className="pl-3">Admitting Patient...</span>
-                </>
-              ) : (
-                'Admit Patient'
-              )}
-            </Button>
-          </form>
+  <Label htmlFor="patients">Select Patient</Label>
+  {patients.length > 0 ? (
+    <Select
+      options={patients.map((patient) => ({
+        value: patient._id,
+        label: patient.name,
+      }))}
+      onChange={OnPatientChange}
+      required
+      id="patients"
+    />
+  ) : (
+    <p>No patients found</p>
+  )}
+</div>
+
+              <Button
+                gradientDuoTone="purpleToPink"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span className="pl-3">Admitting Patient...</span>
+                  </>
+                ) : (
+                  "Admit Patient"
+                )}
+              </Button>
+            </form>
           ) : (
             <div>No bed selected</div>
           )}
@@ -668,8 +552,8 @@ const DashBedManagement = () => {
             <Button onClick={handleAdmitPatient}>Confirm Admission</Button>
           )}
         </Modal.Footer>
-        </Modal>
-        {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
+      </Modal>
+      {errorMessage && <Alert color="failure">{errorMessage}</Alert>}
       {successMessage && (
         <Alert color="success" onDismiss={() => setSuccessMessage("")}>
           {successMessage}

@@ -631,7 +631,7 @@ export const admitPatient = async (req, res, next) => {
 
 export const getAllPatients = async (req, res, next) => {
   try {
-    const patients = await Patient.find({ roomPreferences: { $exists: true, $ne: "" } });
+    const patients = await Patient.find({patientType: "inpatient"});
     res.status(200).json({ success: true, patients });
   } catch (error) {
     next(errorHandler(500, "Server Error"));
