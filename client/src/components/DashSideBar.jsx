@@ -23,7 +23,10 @@ import { GiHospital } from "react-icons/gi";
 import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
 import { FaHeartbeat } from "react-icons/fa";
+import { FaMoneyBill } from 'react-icons/fa';
 import { IoReceiptOutline } from "react-icons/io5";
+import { FaMedkit } from "react-icons/fa";
+import { FaMoneyBillAlt } from 'react-icons/fa';
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -185,7 +188,7 @@ export default function DashSideBar() {
 
               <Link to="/dashboard?tab=staff">
                 <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
-                  Staff
+                  Employee
                 </Sidebar.Item>
               </Link>
 
@@ -208,6 +211,27 @@ export default function DashSideBar() {
                   Employee Leave
                 </Sidebar.Item>
               </Link>
+              
+              <Link to="/dashboard?tab=Empsalary">
+                <Sidebar.Item
+                  active={tab === "Empsalary"}
+                  icon={FaMoneyBill}
+                  as="div"
+                >
+                  Salary
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=ConsultPayment">
+                <Sidebar.Item
+                  active={tab === "ConsultPayment"}
+                  icon={FaMoneyBillAlt}
+                  as="div"
+                >
+                  Consultation Payment
+                </Sidebar.Item>
+              </Link>
+
             </>
           )}
           {currentUser.isCashier && (
@@ -354,9 +378,15 @@ export default function DashSideBar() {
           )}
           {currentUser.isHRM && (
             <>
+              <Link to="/dashboard?tab=staff_dashbord">
+                <Sidebar.Item active={tab==="staff_dashbord"} icon={HiChartPie} as="div">
+                  Dashboard
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=staff">
                 <Sidebar.Item active={tab === "staff"} icon={FaUsers} as="div">
-                  Staff
+                  Employee
                 </Sidebar.Item>
               </Link>
 
@@ -387,6 +417,16 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Leave
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=Empsalary">
+                <Sidebar.Item
+                  active={tab === "Empsalary"}
+                  icon={FaMoneyBill}
+                  as="div"
+                >
+                  Salary
                 </Sidebar.Item>
               </Link>
             </>
