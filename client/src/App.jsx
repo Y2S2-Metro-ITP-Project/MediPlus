@@ -5,7 +5,6 @@ import About from "./pages/About";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
-import Appointemnt from "./pages/Appointment/Index";
 import ContactUs from "./pages/ContactUs";
 import Header from "./components/Header";
 import FooterComp from "./components/Footer";
@@ -13,7 +12,6 @@ import PrivateRoute from "./components/PrivateRoute";
 import LabDashBoard from "./pages/LabDashBoard";
 import CollectionCentre from "./pages/CollectionCentre";
 import TestProfileManager from "./pages/TestProfileManager";
-import ForgetPassword from "./pages/ForgetPassword";
 export default function App() {
   return (
     <BrowserRouter>
@@ -23,8 +21,6 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
-        <Route path="/forget-password" element={<ForgetPassword />} />
-        <Route path="/appointment" element={<Appointemnt />} />
         <Route element={<PrivateRoute/>}>
         <Route path="/dashboard" element={<Dashboard />} />
         </Route>

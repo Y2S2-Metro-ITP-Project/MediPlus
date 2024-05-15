@@ -26,7 +26,6 @@ import {
   faTint,
 } from "@fortawesome/free-solid-svg-icons";
 import { set } from "mongoose";
-import Vitals from "../../../api/models/vitals.model";
 const THRESHOLDS = {
   temperature: { low: 36.1, high: 37.2 },
   bloodPressureSystolic: { low: 90, high: 120 },
@@ -88,11 +87,7 @@ export default function PatientVitals() {
   const [vitals, setVitals] = useState([]);
   const { currentUser } = useSelector((state) => state.user);
   const [pageNumber, setPageNumber] = useState(0);
-  const [latestVitals, setLatestVitals] = useState(null);
-  const [searchTerm3, setSearchTerm3] = useState("");
-  const [vitalsDate, setVitalsDate] = useState([]);
-  const [vitalsDoctor, setVitalsDoctor] = useState([]);
-  const [vitalstime, setVitalsTime] = useState([]);
+    const [latestVitals, setLatestVitals] = useState(null);
   const VitalsPerPage = 5;
   useEffect(() => {
     const fetchVitals = async () => {
@@ -102,46 +97,7 @@ export default function PatientVitals() {
         );
         const data = await response.json();
         if (response.ok) {
-          const filteredVitals = data.vitals.filter((vitals) =>
-            vitals.doctorId.username
-              .toLowerCase()
-              .includes(searchTerm3.toLowerCase())
-          );
-          const uniqueDates = [
-            ...new Set(
-              data.vitals.map((vitals) =>
-                format(new Date(vitals.date), "MMMM dd, yyyy")
-              )
-            ),
-          ];
-
-          const uniqueDoctors = [];
-          const uniqueDoctorIds = new Set();
-
-          data.vitals.forEach((vitals) => {
-            const { doctorId } = vitals;
-            const doctorIdString = doctorId._id.toString();
-
-            if (!uniqueDoctorIds.has(doctorIdString)) {
-              uniqueDoctorIds.add(doctorIdString);
-              uniqueDoctors.push({
-                doctorId: doctorId._id,
-                username: doctorId.username,
-              });
-            }
-          });
-          const uniqueTimes = [
-            ...new Set(
-              data.vitals.map((vitals) =>
-                format(new Date(vitals.date), "hh:mm a")
-              )
-            ),
-          ];
-
-          setVitalsDate(uniqueDates);
-          setVitalsDoctor(uniqueDoctors);
-          setVitalsTime(uniqueTimes);
-          setVitals(filteredVitals);
+          setVitals(data.vitals);
           setLatestVitals(data.latestVitals);
         } else {
           toast.error(data.message);
@@ -152,7 +108,7 @@ export default function PatientVitals() {
       }
     };
     fetchVitals();
-  }, [currentUser._id,searchTerm3]);
+  }, [currentUser._id]);
   const pageCount = Math.ceil(vitals.length / VitalsPerPage);
 
   const handlePageChange = ({ selected }) => {
@@ -212,108 +168,6 @@ export default function PatientVitals() {
         </Table.Row>
       </Table.Body>
     ));
-  {
-    /** Report Generation */
-  }
-  const [selectedVitalsDate, setSelectedVitalsDate] = useState(null);
-  const [selectedVitalsDoctor, setSelectedVitalsDoctor] = useState(null);
-  const [selectedVitalsTime, setSelectedVitalsTime] = useState(null);
-
-  const handleVitalsDateChange = (selectedOption) => {
-    setSelectedVitalsDate(selectedOption);
-  };
-  const handleVitalsDoctorChange = (selectedOption) => {
-    setSelectedVitalsDoctor(selectedOption);
-  };
-  const handlevitalsTimeChange = (selectedOption) => {
-    setSelectedVitalsTime(selectedOption);
-  };
-  const handleDownloadVitalsReport = async () => {
-    if (selectedVitalsDate !== null) {
-      try {
-        const res = await fetch(`/api/vital/DownloadPDFVitals/${vitals[0].patientId._id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ patientId: vitals[0].patientId._id, selectedVitalsDate }),
-        });
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${vitals[0].patientId.name}-Vitals.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    if (selectedVitalsDoctor !== null) {
-      try {
-        const res = await fetch(`/api/vital/DownloadPDFVitals/${vitals[0].patientId._id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            patientId: vitals[0].patientId._id,
-            selectedVitalsDoctor,
-          }),
-        });
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${vitals[0].patientId.name}-Vitals.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    if (selectedVitalsTime !== null) {
-      try {
-        const res = await fetch(`/api/vital/DownloadPDFVitals/${vitals[0].patientId._id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            patientId: vitals[0].patientId._id,
-            selectedVitalsTime,
-          }),
-        });
-        if (!res.ok) {
-          throw new Error("Failed to generate PDF");
-        }
-        const pdfBlob = await res.blob();
-
-        const url = window.URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Patient-${vitals[0].patientId.name}-Vitals.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       <div className="p-3 md:mx-auto">
@@ -385,6 +239,9 @@ export default function PatientVitals() {
       </div>
       <div>
         <div className=" flex items-center mb-2">
+          <Button outline gradientDuoTone="greenToBlue" className=" ml-4">
+            Download Vitals Report
+          </Button>
           <div className="flex ml-4">
             <span className="flex items-center text-sm font-medium text-gray-900 dark:text-white me-3">
               <span className="w-2.5 h-2.5 bg-green-600 rounded-full mr-1.5"></span>
@@ -419,82 +276,7 @@ export default function PatientVitals() {
           </div>
         </div>
       </div>
-      <div className="flex mb-2 mt-2">
-        <TextInput
-          type="text"
-          value={searchTerm3}
-          onChange={(e) => setSearchTerm3(e.target.value)}
-          placeholder="Search by doctor name"
-          rightIcon={AiOutlineSearch}
-          className="ml-4 bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-2"
-        />
-        <Select
-          id="filter"
-          className="ml-4 mb-2"
-          onChange={handleVitalsDateChange}
-          placeholder="Select a date"
-          value={selectedVitalsDate}
-          styles={{
-            control: (provided) => ({
-              ...provided,
-              width: "200px",
-            }),
-            option: (provided) => ({
-              ...provided,
-              color: "black",
-            }),
-            singleValue: (provided) => ({
-              ...provided,
-              color: "black",
-            }),
-          }}
-          options={vitalsDate.map((date) => ({
-            value: date,
-            label: date,
-          }))}
-          isClearable
-        />
-        <Select
-          id="filter"
-          className="ml-4 mb-2"
-          onChange={handleVitalsDoctorChange}
-          placeholder="Select a doctor"
-          value={selectedVitalsDoctor}
-          styles={{
-            control: (provided) => ({
-              ...provided,
-              width: "200px",
-            }),
-            option: (provided) => ({
-              ...provided,
-              color: "black",
-            }),
-            singleValue: (provided) => ({
-              ...provided,
-              color: "black",
-            }),
-          }}
-          options={vitalsDoctor.map((vitalsDoctor) => ({
-            value: vitalsDoctor.doctorId,
-            label: vitalsDoctor.username,
-          }))}
-          isClearable
-        />
-        <Button
-          outline
-          gradientDuoTone="greenToBlue"
-          className="mb-2 ml-4"
-          onClick={handleDownloadVitalsReport}
-          disabled={
-            (selectedVitalsDate &&
-              selectedVitalsDoctor) ||
-            (!selectedVitalsDate &&
-              !selectedVitalsDoctor)
-          }
-        >
-          Download Vitals Report
-        </Button>
-      </div>
+
       {vitals.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">

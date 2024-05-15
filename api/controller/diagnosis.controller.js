@@ -607,7 +607,6 @@ export const downloadDateDiagnosis = async (req, res) => {
   console.log(req.body);
   const selectedDate = req.body.selectedDiagnosisDate.value;
   const isoDate = new Date(selectedDate).toISOString();
-
   // Extract year, month, and day from the ISODate
   const year = new Date(isoDate).getFullYear();
   const month = new Date(isoDate).getMonth() + 1; // Months are 0-indexed in JavaScript, so add 1

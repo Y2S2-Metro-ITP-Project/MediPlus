@@ -32,7 +32,6 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { IoReceiptOutline } from "react-icons/io5";
 import ReactSelect from "react-select";
-import Supplier from "../../../api/models/Supplier.model";
 export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
   const [inventory, setInventory] = useState([]);
@@ -72,7 +71,6 @@ export default function DashOutPatients() {
     itemExpireDate: "",
     supplierName: "",
     supplierEmail: "",
-    supplierPhone: "",
   });
   const [inventoryUpdateID, setInventoryUpdateID] = useState("");
   const [invetoryUpdateModal, setUpdateInventoryItemModal] = useState(false);
@@ -87,8 +85,6 @@ export default function DashOutPatients() {
     itemExpireDate: "",
     supplierName: "",
     supplierEmail: "",
-    supplierPhone: "",
-    supplierId: "",
   });
   const handleInvenoryUpdateData = (
     itemName,
@@ -100,9 +96,7 @@ export default function DashOutPatients() {
     itemImage,
     itemExpireDate,
     supplierName,
-    supplierEmail,
-    supplierPhone,
-    supplierId
+    supplierEmail
   ) => {
     setInventoryData({
       itemName,
@@ -115,31 +109,32 @@ export default function DashOutPatients() {
       itemExpireDate,
       supplierName,
       supplierEmail,
-      supplierPhone,
-      supplierId,
     });
   };
-  console.log(inventoryData);
   const fetchSuppliers = async () => {
     try {
       const res = await fetch(`/api/supplier/getSupplier`);
       const data = await res.json();
-
-      setSuppliers(
-        data.supplierData.map((supplier) => ({
-          value: supplier._id,
-          label: supplier.supplierName,
-          email: supplier.supplierEmail,
-          phone: supplier.supplierPhone,
-        }))
-      );
+      if (res.ok) {
+        setSuppliers(data);
+      }
     } catch (error) {
       console.log(error);
     }
   };
+
   useEffect(() => {
     fetchSuppliers();
   }, [currentUser._id]);
+
+  const supplierOptions = () => {
+    return suppliers.map((supplier) => {
+      return {
+        value: supplier.supplierName,
+        label: supplier.supplierName,
+      };
+    });
+  };
 
   const fetchInventory = async () => {
     try {
@@ -195,22 +190,8 @@ export default function DashOutPatients() {
     setFilterOption(e.target.value);
   };
 
-  const [supplierId, setSupplierId] = useState("");
-  const [supplierPhone, setSupplierPhone] = useState("");
-  const handleSupplierChange = (selectedOption) => {
-    setSupplierName(selectedOption);
-    if (selectedOption) {
-      setSupplierId(selectedOption.value);
-      setSupplierPhone(selectedOption.phone);
-      setSupplierEmail(selectedOption.email);
-      setFormData({
-        ...formData,
-        supplierId: selectedOption.value,
-        supplierEmail: selectedOption.email,
-        supplierPhone: selectedOption.phone,
-        supplierName: selectedOption.label,
-      });
-    }
+  const handleSupplierChange = (value) => {
+    setFormData({ ...formData, supplierName: value });
   };
 
   const handleSearch = async (e) => {};
@@ -340,8 +321,7 @@ export default function DashOutPatients() {
     itemImage,
     itemExpireDate,
     supplierName,
-    supplierEmail,
-    supplierPhone
+    supplierEmail
   ) => {
     setSelectedItemDetails({
       itemName,
@@ -354,7 +334,6 @@ export default function DashOutPatients() {
       itemExpireDate,
       supplierName,
       supplierEmail,
-      supplierPhone,
     });
     setShowItemDetailsModal(true);
   };
@@ -470,8 +449,7 @@ export default function DashOutPatients() {
                   item.itemImage,
                   item.itemExpireDate,
                   item.supplierName,
-                  item.supplierEmail,
-                  item.supplierPhone
+                  item.supplierEmail
                 )
               }
             />
@@ -505,7 +483,6 @@ export default function DashOutPatients() {
                   setOrderItemId(item._id);
                   setSupplierName(item.supplierName);
                   setSupplierEmail(item.supplierEmail);
-                  setSupplierPhone(item.supplierPhone);
                   setItemName(item.itemName);
                 }}
                 className="font-medium text-yellow-500 hover:underline cursor-pointer mr-2"
@@ -527,9 +504,7 @@ export default function DashOutPatients() {
                     item.itemImage,
                     item.itemExpireDate,
                     item.supplierName,
-                    item.supplierEmail,
-                    item.supplierPhone,
-                    item.supplierId._id
+                    item.supplierEmail
                   );
                   setUpdateInventoryItemModal(true);
                   setInventoryUpdateID(item._id);
@@ -578,8 +553,10 @@ export default function DashOutPatients() {
         setFormData({}),
           setImageFile(null),
           setImageFileUploadingError(false),
-          setImageFileUploadingProgress(null),
-          setFileUploadSuccess(false);
+          setImageFileUploadingProgress(false),
+          setFileUploadSuccess(false),
+          fileUploadSuccess(false),
+          setImageFileUploadingError(false);
       } else {
         toast.error(data.message);
       }
@@ -739,6 +716,7 @@ export default function DashOutPatients() {
       document.body.removeChild(a);
     }
   };
+  console.log(filterOption);
   {
     /** Order Item Model */
   }
@@ -1114,28 +1092,22 @@ export default function DashOutPatients() {
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="itemName">Supplier Name</Label>
-                {/* <Select
-                    id="supplierName"
-                   value={supplierOptions.value} */}
-                {/* /> */}
-                <ReactSelect
-                  options={suppliers}
-                  id="supplier"
+                <Label htmlFor="itemMinValue">Supplier Email</Label>
+                <TextInput
+                  type="email"
+                  id="supplierEmail"
+                  placeholder="Enter Supplier Email"
                   required
-                  isSearchable
-                  value={supplierName}
-                  onChange={handleSupplierChange}
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="itemName">Supplier Email</Label>
+                <Label htmlFor="itemDescription">Supplier</Label>
                 <TextInput
-                  type="text"
-                  id="itemName"
-                  value={supplierEmail}
-                  className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
-                  disabled
+                  id="supplier"
+                  placeholder="Enter Supplier Name"
+                  required
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4">
@@ -1291,31 +1263,20 @@ export default function DashOutPatients() {
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="itemName">Supplier Name</Label>
-                {/* <Select
-                    id="supplierName"
-                   value={supplierOptions.value} */}
-                {/* /> */}
-                <ReactSelect
-                  options={suppliers.filter(
-                    (supplier) => supplier.value !== inventoryData.supplierId
-                  )}
-                  id="supplier"
-                  required
-                  isSearchable
-                  value={supplierName}
-                  onChange={handleSupplierChange}
+                <Label htmlFor="itemMinValue">Supplier Email</Label>
+                <TextInput
+                  type="email"
+                  id="supplierEmail"
+                  placeholder={inventoryData.supplierEmail}
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="itemName">Supplier Email</Label>
+                <Label htmlFor="itemDescription">Supplier Name</Label>
                 <TextInput
-                  type="text"
-                  id="itemName"
-                  placeholder={inventoryData.supplierEmail}
-                  value={supplierEmail}
-                  className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
-                  disabled
+                  id="supplier"
+                  placeholder={inventoryData.supplierName}
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4">
@@ -1423,16 +1384,6 @@ export default function DashOutPatients() {
             </div>
             <div className="mb-4">
               <label className="text-gray-600 dark:text-gray-400 font-semibold">
-                Item Phone Number:
-              </label>
-              {selectedItemDetails.supplierPhone ? (
-                <p>{selectedItemDetails.supplierPhone}</p>
-              ) : (
-                <p>No Supplier Deails Were Added</p>
-              )}
-            </div>
-            <div className="mb-4">
-              <label className="text-gray-600 dark:text-gray-400 font-semibold">
                 Item Category:
               </label>
               <p>{selectedItemDetails.itemCategory}</p>
@@ -1520,13 +1471,12 @@ export default function DashOutPatients() {
                     id="supplierName"
                    value={supplierOptions.value} */}
                   {/* /> */}
-                  <ReactSelect
-                    isDisabled
-                    options={suppliers}
-                    placeholder={supplierName}
-                    id="supplier"
-                    required
-                    isSearchable
+                  <TextInput
+                    type="text"
+                    id="itemName"
+                    value={supplierName}
+                    className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
+                    disabled
                   />
                 </div>
                 <div className="mb-4">
@@ -1544,7 +1494,7 @@ export default function DashOutPatients() {
                   <TextInput
                     type="number"
                     id="itemName"
-                    value={supplierPhone}
+                    value=""
                     className="bg-gray-200 dark:bg-gray-700 text-black dark:text-gray-400"
                     disabled
                   />

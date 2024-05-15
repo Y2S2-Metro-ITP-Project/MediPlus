@@ -6,10 +6,6 @@ const vitalsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Patient",
     },
-    doctorId:{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
     bodyweight: {
       type: Number,
     },

@@ -17,7 +17,7 @@ export const getSupplierData = async (req, res, next) => {
         const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
         const supplierData = await Supplier.find()
             .sort({ createdAt: sortDirection })
-            .skip(startIndex).populate("item");
+            .skip(startIndex);
         
         const totalSupplier = await Supplier.countDocuments();
         const now = new Date();

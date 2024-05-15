@@ -3,8 +3,8 @@ import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "../utils/email.js";
+import pdf from "html-pdf";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
-import generatePDFFromHtml from "../utils/BedPDF.js";
 function generateRandomPassword(length) {
   const charset =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[{]}|;:,<.>/?";
@@ -235,7 +235,6 @@ export const searchPateint = async (req, res, next) => {
     !req.user.isAdmin &&
     req.user.id !== req.params.patientId &&
     !req.user.isReceptionist
-    && !req.user.isDoctor
   ) {
     return next(
       errorHandler(403, "you are not allowed to access this resource")
@@ -265,7 +264,7 @@ export const searchPateint = async (req, res, next) => {
 };
 
 export const filterPatients = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor) {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -442,7 +441,7 @@ export const updateOutPatient = async (req, res, next) => {
 };
 
 export const downloadPDFPatient = async (req, res, next) => {
-  if (!req.user.isAdmin && !req.user.isReceptionist && !req.user.isDoctor) {
+  if (!req.user.isAdmin && !req.user.isReceptionist) {
     return next(
       errorHandler(403, "You are not allowed to access these resources")
     );
@@ -563,287 +562,3 @@ export const getPatient = async (req, res, next) => {
     next(error);
   }
 };
-export const admitPatient = async (req, res, next) => {
-  console.log(req.body);
-  const {
-    name,
-    admissionDate,
-    illness,
-    dateOfBirth,
-    gender,
-    address,
-    contactPhone,
-    contactEmail,
-    identification,
-    medicalHistory,
-    reasonForAdmission,
-    insuranceInformation,
-    emergencyContact,
-    roomPreferences,
-  } = req.body;
-
-  try {
-    // Validate required fields
-    if (
-      !name ||
-      !admissionDate ||
-      !illness ||
-      !dateOfBirth ||
-      !gender ||
-      !address ||
-      !contactPhone ||
-      !contactEmail ||
-      !roomPreferences
-    ) {
-      return next(errorHandler(400, "All fields are required"));
-    }
-
-    // Create a new patient instance
-    const newPatient = new Patient({
-      name,
-      admissionDate,
-      illness,
-      dateOfBirth,
-      gender,
-      address,
-      contactPhone,
-      contactEmail,
-      identification,
-      medicalHistory,
-      reasonForAdmission,
-      insuranceInformation,
-      emergencyContact,
-      roomPreferences,
-      patientType: "Inpatient",
-    });
-
-    // Save the new patient to the database
-    await newPatient.save();
-
-    // Send response
-    res
-      .status(201)
-      .json({ message: "Patient admitted successfully", patient: newPatient });
-  } catch (error) {
-    // Handle errors
-    next(error);
-  }
-};
-
-export const getAllPatients = async (req, res, next) => {
-  try {
-    const patients = await Patient.find({ roomPreferences: { $exists: true, $ne: "" } });
-    res.status(200).json({ success: true, patients });
-  } catch (error) {
-    next(errorHandler(500, "Server Error"));
-  }
-};
-
-
-// Controller function to fetch a single patient by ID
-export const getPatientByName = async (req, res, next) => {
-  const { name } = req.params;
-  try {
-    const patient = await Patient.findOne({ name });
-    if (!patient) {
-      return next(errorHandler(404, "Patient not found"));
-    }
-    res.status(200).json({ success: true, patient });
-  } catch (error) {
-    next(errorHandler(500, "Server Error"));
-  }
-};
-
-// Controller function to update a patient by ID
-export const updatePatientById = async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const updatedPatient = await Patient.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
-    if (!updatedPatient) {
-      return next(errorHandler(404, "Patient not found"));
-    }
-    res.status(200).json({ success: true, patient: updatedPatient });
-  } catch (error) {
-    next(errorHandler(500, "Server Error"));
-  }
-};
-
-// Controller function to delete a patient by ID
-export const deletePatientById = async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const deletedPatient = await Patient.findByIdAndDelete(id);
-    if (!deletedPatient) {
-      return next(errorHandler(404, "Patient not found"));
-    }
-    res
-      .status(200)
-      .json({ success: true, message: "Patient deleted successfully" });
-  } catch (error) {
-    next(errorHandler(500, "Server Error"));
-  }
-};
-
-export const downloadPDF = async (req, res, next) => {
-  const patientID = req.body.patientIDPDF;
-
-  try {
-    const patient = await Patient.findById(patientID);
-    if (!patient) {
-      return next(errorHandler(404, "Patient not found"));
-    }
-    const Patientbed = await Patient.findOne({ _id: patientID }).populate(
-      'bed',
-      'number'
-    );
-
-    if (Patientbed.bed) {
-      console.log("Patient Bed Number:", Patientbed.bed.number);
-    } else {
-      console.log("Patient has no assigned bed.");
-    }
-    const name = patient.name;
-    const gender = patient.gender;
-    const contactEmail = patient.contactEmail;
-    const contactPhone = patient.contactPhone;
-    const createdAt = patient.createdAt;
-    const dateOfBirth = patient.dateOfBirth;
-    const address = patient.address;
-    const identification = patient.identification;
-    const emergencyName = patient.emergencyContact.name;
-    const emergencyPhoneNumber = patient.emergencyContact.phoneNumber;
-    const ward = patient.roomPreferences;
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Patient Registration Report</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-            }
-            h1, h2 {
-                margin-bottom: 10px;
-                color: #333;
-            }
-            p {
-                margin-bottom: 5px;
-                color: #666;
-            }
-            .section {
-                margin-bottom: 20px;
-            }
-            .patient-picture {
-                width: 200px;
-                height: auto;
-                border: 1px solid #ccc;
-                margin-bottom: 10px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>Patient Medical Report</h1>
-        </div>
-        <div class="section">
-            <h2>Personal Information</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Gender:</strong> ${gender}</p>
-            <p><strong>Date of Birth:</strong> ${dateOfBirth}</p>
-            <p><strong>Contact Email:</strong> ${contactEmail}</p>
-            <p><strong>Contact Phone:</strong> ${contactPhone}</p>
-            <p><strong>Address:</strong> ${address}</p>
-            <p><strong>Identification:</strong> ${identification}</p>
-        </div>
-        <div class="section">
-            <h2>Emergency Contact Information</h2>
-            <p><strong>Name:</strong> ${emergencyName}</p>
-            <p><strong>Phone Number:</strong> ${emergencyPhoneNumber}</p>
-        </div>
-        <div class="section">
-            <h2>Ward Information</h2>
-            <p><strong>Room Preference:</strong> ${ward}</p>
-        </div>
-    </body>
-    </html>
-    
-`;
-
-    const pdfBuffer = await generatePDFFromHtml(htmlContent);
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Length": pdfBuffer.length,
-    });
-    res.send(pdfBuffer);
-  } catch (error) {
-    next(errorHandler(500, error.message));
-  }
-};
-
-export const getPatientsforBooking = async (req, res, next) => {
-  try {
-    const patients = await Patient.find(); // Retrieve all patients from the database
-    res.status(200).json(patients); // Send the retrieved patients as JSON response
-  } catch (error) {
-    console.error("Error fetching patients:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-export const getPatientByUser = async (req, res, next) => {
-  const userId = req.params.userId;
-  console.log(userId);
-  try {
-    const patient = await Patient.findOne({ user: userId });
-    console.log(patient);
-    if (!patient) {
-      return next(errorHandler(404, "No patient found for this user"));
-    }
-    res.status(200).json(patient);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updatePatientDetails = async (req, res, next) => {
-  // Validate the request body
-  const { patientId, name, contactEmail, contactPhone, address } = req.body;
-
-  if (!patientId || !name || !contactEmail || !contactPhone || !address) {
-    return next(errorHandler(400, "All fields are required"));
-  }
-
-  try {
-    // Find the patient by ID and update the specified fields
-    const patient = await Patient.findByIdAndUpdate(
-      patientId,
-      {
-        $set: {
-          name,
-          contactEmail,
-          contactPhone,
-          address,
-        },
-      },
-      { new: true } // Return the updated patient document
-    );
-
-    // If patient is not found, return a 404 error
-    if (!patient) {
-      return next(errorHandler(404, "No patient found with this ID"));
-    }
-
-    // Return the updated patient details
-    res.status(200).json(patient);
-  } catch (error) {
-    // Handle any errors that occur during the update process
-    next(error);
-  }
-};
-
-
-
-

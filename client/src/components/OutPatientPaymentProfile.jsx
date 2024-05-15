@@ -170,20 +170,11 @@ export default function OutPatientPaymentProfile() {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
-
-      {paymentOrder.PatientID.patientType=="Outpatient" ? (
-        <a href="dashboard?tab=OutPatientBilling">
-          <Button outline gradientDuoTone="purpleToPink" className="mb-5">
-            Go Back
-          </Button>
-        </a>
-      ) : (
-        <a href="dashboard?tab=InpatientPayment">
-          <Button outline gradientDuoTone="purpleToPink" className="mb-5">
-            Go Back
-          </Button>
-        </a>
-      )}
+      <a href="dashboard?tab=OutPatientBilling">
+        <Button outline gradientDuoTone="purpleToPink" className="mb-5">
+          Go Back
+        </Button>
+      </a>
       <div className="flex mb-2">
         <h1 className="text-3xl font-bold mb-4 ">
           {paymentOrder.PatientName} Payment Order Profile

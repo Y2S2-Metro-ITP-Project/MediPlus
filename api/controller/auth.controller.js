@@ -2,7 +2,6 @@ import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { errorHandler } from "../utils/error.js";
-import { sendEmail } from "../utils/email.js";
 export const signup = async (req, res, next) => {
   const { username, email, password } = req.body;
   if (
@@ -28,39 +27,25 @@ export const signup = async (req, res, next) => {
   }
 };
 
-export const employeeSignUp = async (req, res, next) => {
-  const { username, email, password, role } = req.body;
-  console.log(req.body);
+
+export const employeeSignUp=async(req,res,next)=>{
+  const {username,email,password,role}=req.body;
+  console.log(req.body)
   /*if(!req.user.isAdmin && !req.user.isHRM){
     return next(errorHandler(403,"You are not allowed to access this function"));
   }*/
-  if (
-    !username ||
-    !email ||
-    !password ||
-    !role ||
-    username === "" ||
-    email === "" ||
-    password === "" ||
-    role === ""
-  ) {
-    return next(errorHandler(400, "All fields are required"));
+  if(!username || !email || !password || !role || username==="" || email==="" || password==="" || role===""){
+    return next(errorHandler(400,"All fields are required"));
   }
-  const hashPassword = bcryptjs.hashSync(password, 10);
-  if (role === "admin") {
-    return next(errorHandler(403, "You are not allowed to create an admin"));
+  const hashPassword=bcryptjs.hashSync(password,10);
+  if(role==="admin"){
+    return next(errorHandler(403,"You are not allowed to create an admin"));
   }
-  if (role === "HRM") {
-    return next(errorHandler(403, "You are not allowed to create an HRM"));
+  if(role==="HRM"){
+    return next(errorHandler(403,"You are not allowed to create an HRM"));
   }
-  if (role === "receptionist") {
-    const newReceptionist = new User({
-      username,
-      email,
-      password: hashPassword,
-      isReceptionist: true,
-      isUser: false,
-    });
+  if(role==="receptionist"){
+    const newReceptionist = new User({ username, email, password: hashPassword,isReceptionist:true,isUser:false });
     try {
       await newReceptionist.save();
       res.json({ message: "Signup success" });
@@ -68,14 +53,8 @@ export const employeeSignUp = async (req, res, next) => {
       next(error);
     }
   }
-  if (role === "headNurse") {
-    const newHeadNurse = new User({
-      username,
-      email,
-      password: hashPassword,
-      isHeadNurse: true,
-      isUser: false,
-    });
+  if(role==="headNurse"){
+    const newHeadNurse = new User({ username, email, password: hashPassword,isHeadNurse:true,isUser:false });
     try {
       await newHeadNurse.save();
       res.json({ message: "Signup success" });
@@ -83,14 +62,8 @@ export const employeeSignUp = async (req, res, next) => {
       next(error);
     }
   }
-  if (role === "nurse") {
-    const newNurse = new User({
-      username,
-      email,
-      password: hashPassword,
-      isNurse: true,
-      isUser: false,
-    });
+  if(role==="nurse"){
+    const newNurse = new User({ username, email, password: hashPassword,isNurse:true,isUser:false });
     try {
       await newNurse.save();
       res.json({ message: "Signup success" });
@@ -98,14 +71,8 @@ export const employeeSignUp = async (req, res, next) => {
       next(error);
     }
   }
-  if (role === "doctor") {
-    const newDoctor = new User({
-      username,
-      email,
-      password: hashPassword,
-      isDoctor: true,
-      isUser: false,
-    });
+  if(role==="doctor"){
+    const newDoctor = new User({ username, email, password: hashPassword,isDoctor:true,isUser:false });
     try {
       await newDoctor.save();
       res.json({ message: "Signup success" });
@@ -113,14 +80,8 @@ export const employeeSignUp = async (req, res, next) => {
       next(error);
     }
   }
-  if (role === "pharmacist") {
-    const newPharmacist = new User({
-      username,
-      email,
-      password: hashPassword,
-      isPharmacist: true,
-      isUser: false,
-    });
+  if(role==="pharmacist"){
+    const newPharmacist = new User({ username, email, password: hashPassword,isPharmacist:true,isUser:false });
     try {
       await newPharmacist.save();
       res.json({ message: "Signup success" });
@@ -128,7 +89,8 @@ export const employeeSignUp = async (req, res, next) => {
       next(error);
     }
   }
-};
+}
+
 
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
@@ -222,65 +184,4 @@ export const googleAuth = async (req, res, next) => {
 
 export const test = (req, res) => {
   res.json({ message: "API is working!!!!!" });
-};
-
-function generateRandomPassword(length) {
-  const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[{]}|;:,<.>/?";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  return password;
-}
-export const forgetPassword = async (req, res, next) => {
-  const { email } = req.body;
-  if (!email || email === "") {
-    return next(errorHandler(400, "Email is required"));
-  }
-  try {
-    const user = await User.findOne({ email });
-    let password = generateRandomPassword(12);
-    if (user) {
-      const hashPassword = bcryptjs.hashSync(password, 10);
-      await User.findByIdAndUpdate(
-        user._id,
-        {
-          $set: {
-            password: hashPassword,
-          },
-        },
-        { new: true }
-      );
-      res.json({
-        message: "Your password is successfully reset and sent to your email",
-      });
-    } else {
-      return next(errorHandler(400, "Error in resetting password"));
-    }
-    if(user){
-      try {
-        await sendEmail({
-          to: email,
-          subject: "Welcome to Ismails Pvt Hospital!",
-          html: `
-          <p>Dear User,</p>
-          <p>Your account password is successfully resetted.Here is your new password.</p>
-          <ul>
-            <li><strong>Password:</strong>${password}</li>
-          </ul>
-          <p>Please keep this information secure and change the password once you log back in.</p>
-          <p>Best regards,<br>The MediPlus Team</p>
-          <p>For any inquiries, please contact us at <strong> 0758 123 456</strong></p>
-          <P>This is an auto-generated email. Please do not reply to this email.</p>
-        `,
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  } catch (error) {
-    next(error);
-  }
 };

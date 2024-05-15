@@ -1,6 +1,6 @@
 import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   signInSuccess,
@@ -9,33 +9,14 @@ import {
 } from "../redux/user/userSlice";
 import { ToastContainer, toast } from "react-toastify";
 import OAuth from "../components/OAuth";
-
 export default function SignIn() {
-  const location = useLocation();
-  const [showToast, setShowToast] = useState(false);
-
-  useEffect(() => {
-    if (location.state && location.state.fromBooking) {
-      setShowToast(true);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    if (showToast) {
-      toast.info('Please sign in or sign up to book an appointment.');
-      setShowToast(false);
-    }
-  }, [showToast]);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({});
   const { loading, error: errorMessage } = useSelector((state) => state.user);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -57,15 +38,12 @@ export default function SignIn() {
       }
       if (res.ok) {
         dispatch(signInSuccess(data));
-        // Redirect to the previous location or the home page
-        const redirectUrl = location.state?.from || '/';
-        navigate(redirectUrl);
+        navigate("/");
       }
     } catch (error) {
       dispatch(signInFailure(error.message));
     }
   };
-
   return (
     <div className="min-h-screen mt-20">
       <ToastContainer />
@@ -123,17 +101,11 @@ export default function SignIn() {
             <OAuth />
           </form>
           <div className=" flex gap-2 text-sm mt-5">
-            <span>Don't Have an account?</span>
+            <span>Dont Have an account?</span>
             <Link to="/sign-up" className=" text-blue-500">
               Sign Up
             </Link>
           </div>
-          <div className=" flex gap-2 text-sm mt-5">
-            <span>Forget Password?</span>
-            <Link to="/forget-password" className=" text-blue-500">
-              Reset Password
-            </Link>
-            </div>
         </div>
       </div>
     </div>
