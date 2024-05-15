@@ -18,6 +18,7 @@ import {
   generateAppointmentCard,
   sendEmails,
   getBookingsBySlot,
+  pendingStatus,
 } from "../controller/booking.controller.js";
 
 const router = express.Router();
@@ -34,6 +35,7 @@ router.put("/update/:bookingId", verifyToken, updateBooking);
 router.put("/bookAppointment/:bookingId", verifyToken, bookAppointment);
 router.put("/rebookAppointment/:bookingId", verifyToken, reBookAppointment);
 router.put("/updateStatus", verifyToken, updateStatus);
+router.put("/pendingStatus", verifyToken, pendingStatus);  
 router.put("/cancel/:bookingId", verifyToken, cancelSelectedBookings);
 //router.post("/generateReport", verifyToken, generateBookingsReport);
 router.get("/generateAppointmentCard/:bookingId", verifyToken, generateAppointmentCard);

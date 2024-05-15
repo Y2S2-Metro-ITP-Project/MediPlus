@@ -36,6 +36,10 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Completed", "Failed"],
       default: "Pending",
+    },bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: false,
     },
   },
   {

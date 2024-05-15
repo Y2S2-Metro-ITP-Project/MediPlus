@@ -1537,7 +1537,7 @@ const handleCompleteExamination = async () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
-      {!new URLSearchParams(window.location.search).has('bookingId') && (
+     {!new URLSearchParams(window.location.search).has('bookingId') && (
   <a href="dashboard?tab=patients">
     <Button
       outline

@@ -7,6 +7,8 @@ import {
   Table,
   TextInput,
   Checkbox,
+  Accordion,
+  Card,
 } from "flowbite-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -25,7 +27,9 @@ const DoctorProfile = ({ doctor, onBack }) => {
   const [eChannellingFee, setEChannellingFee] = useState(0);
   const totalAmount =
     doctor.doctorDetails.consultationFee + hospitlFee + eChannellingFee;
+    console.log("Total Amount:", totalAmount);
   const [paymentStatus, setPaymentStatus] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const user = useSelector((state) => state.user.currentUser);
 
@@ -64,9 +68,8 @@ const DoctorProfile = ({ doctor, onBack }) => {
       if (!selectedSession || !formData._id) {
         throw new Error("No session or patient selected");
       }
-  
-      // Make an API call to update the booking status to "payment pending"
-      const response = await fetch(`/api/booking/updateStatus`, {
+
+      const response = await fetch(`/api/booking/pendingStatus`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -77,13 +80,13 @@ const DoctorProfile = ({ doctor, onBack }) => {
           patientId: formData._id, // Include patientId in the request body
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to update booking status");
       }
-  
-      setModalIsOpen(false);
-      setPaymentStatus("pending");
+
+      // Open the payment modal
+      setShowPaymentModal(true);
     } catch (error) {
       console.error("Error updating booking status:", error);
       toast.error(
@@ -92,60 +95,41 @@ const DoctorProfile = ({ doctor, onBack }) => {
     }
   };
 
-  const handlePayment = async (paymentSuccess, selectedSession) => {
+  const handlePaymentSubmit = async (cardDetails) => {
     try {
-      if (paymentSuccess) {
-        if (!selectedSession || !selectedSession._id) {
-          throw new Error("No session selected");
-        }
-  
-        // Make an API call to update the booking status to "Booked" if payment is successful
-        const response = await fetch(`/api/booking/updateStatus`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            bookingId: selectedSession._id,
-            status: "Booked",
-          }),
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to update booking status");
-        }
-  
-        setPaymentStatus("success");
-        handleClosewithSessionModal();
-        toast.success("Payment successful!");
-      } else {
-        // If payment is rejected, update the booking status to "Not Booked"
-        if (!selectedSession || !selectedSession._id) {
-          throw new Error("No session selected");
-        }
-  
-        const response = await fetch(`/api/booking/updateStatus`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            bookingId: selectedSession._id,
-            status: "Not Booked",
-          }),
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to update booking status");
-        }
-  
-        setPaymentStatus("failed");
-        handleClosewithSessionModal();
-        toast.error("Payment failed. Please try again.");
+      
+      const response = await fetch("/api/payment/submitPayment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          patientId: formData._id,
+          patientName: formData.name,
+          patientEmail: formData.contactEmail,
+          OrderType: "Consultation",
+          totalPayment: totalAmount,
+          paymentType: "Card",
+          status: "Completed",
+          cardDetails,
+          bookingId: selectedSession._id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit payment");
       }
+
+      // Payment successful
+      setShowPaymentModal(false);
+      setModalIsOpen(false);
+      setPaymentStatus("success");
+      toast.success("Payment successful!");
     } catch (error) {
-      console.error("Error during payment:", error);
-      toast.error("An error occurred during payment. Please try again.");
+      console.error("Error submitting payment:", error);
+      toast.error(
+        "An error occurred while submitting payment. Please try again."
+      );
     }
   };
 
@@ -244,7 +228,6 @@ const DoctorProfile = ({ doctor, onBack }) => {
       const updatedPatient = await response.json();
       console.log("Updated patient:", updatedPatient);
       // Handle success, e.g., close the modal, show a success message
-      handleCloseModal();
       toast.success("Patient details updated successfully");
     } catch (error) {
       console.error("Error updating patient details:", error);
@@ -256,119 +239,222 @@ const DoctorProfile = ({ doctor, onBack }) => {
 
   const groupedSessions = groupSessionsByDateAndTime();
 
-  const PaymentForm = ({ totalAmount, onPayment, selectedSession }) => (
-    <Modal
-      show={paymentStatus === "pending"}
-      onClose={() => setPaymentStatus(null)}
-      size="md"
-      popup={true}
-    >
-      <Modal.Header />
-      <Modal.Body>
-        <div className="space-y-6">
-          <h3 className="text-xl font-medium text-gray-900">Payment</h3>
-          <p>Total Amount: Rs {totalAmount.toFixed(2)}</p>
-        </div>
-      </Modal.Body>
-      <Modal.Footer>
-        <button
-          onClick={() => onPayment(true)}
-          className="bg-green-500 hover:bg-green-600 text-white focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg text-sm font-medium px-5 py-2.5 mr-2"
-        >
-          Simulate Success
-        </button>
-        <button
-          onClick={() => onPayment(false)}
-          className="bg-red-500 hover:bg-red-600 text-white focus:ring-4 focus:outline-none focus:ring-red-300 rounded-lg text-sm font-medium px-5 py-2.5"
-        >
-          Simulate Failure
-        </button>
-      </Modal.Footer>
-    </Modal>
-  );
+  const PaymentModal = ({ show, onClose, onSubmit, totalAmount }) => {
+    const [cardDetails, setCardDetails] = useState({
+      cardNumber: "1234567890123456", // Dummy card number
+      expiryDate: "05/25", // Dummy expiry date
+      cvv: "123", // Dummy CVV
+    });
+    const [errors, setErrors] = useState({});
+  
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      const errors = validateForm();
+      if (Object.keys(errors).length === 0) {
+        onSubmit(cardDetails);
+      } else {
+        setErrors(errors);
+      }
+    };
+  
+    const validateForm = () => {
+      const errors = {};
+  
+      // Validate card number
+      const cardNumberRegex = /^[0-9]{16}$/;
+      if (!cardNumberRegex.test(cardDetails.cardNumber)) {
+        errors.cardNumber = "Please enter a valid 16-digit card number.";
+      }
+  
+      // Validate expiry date
+      const expiryDateRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+      if (!expiryDateRegex.test(cardDetails.expiryDate)) {
+        errors.expiryDate = "Please enter a valid expiry date in the format MM/YY.";
+      }
+  
+      // Validate CVV
+      const cvvRegex = /^[0-9]{3}$/;
+      if (!cvvRegex.test(cardDetails.cvv)) {
+        errors.cvv = "Please enter a valid 3-digit CVV.";
+      }
+  
+      return errors;
+    };
+  
+    return (
+      <Modal show={show} onClose={onClose} size="md" popup={true}>
+        <Modal.Header />
+        <Modal.Body>
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium text-gray-900">
+              Payment Details (Total: Rs {totalAmount?.toFixed(2) || 0})
+            </h3>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <Label htmlFor="cardNumber">Card Number</Label>
+                <TextInput
+                  id="cardNumber"
+                  type="text"
+                  value={cardDetails.cardNumber}
+                  onChange={(e) =>
+                    setCardDetails({ ...cardDetails, cardNumber: e.target.value })
+                  }
+                  required
+                  helperText={errors.cardNumber}
+                  color={errors.cardNumber ? "failure" : "gray"}
+                />
+              </div>
+              <div className="mb-4">
+                <Label htmlFor="expiryDate">Expiry Date</Label>
+                <TextInput
+                  id="expiryDate"
+                  type="text"
+                  value={cardDetails.expiryDate}
+                  onChange={(e) =>
+                    setCardDetails({ ...cardDetails, expiryDate: e.target.value })
+                  }
+                  required
+                  helperText={errors.expiryDate}
+                  color={errors.expiryDate ? "failure" : "gray"}
+                />
+              </div>
+              <div className="mb-4">
+                <Label htmlFor="cvv">CVV</Label>
+                <TextInput
+                  id="cvv"
+                  type="text"
+                  value={cardDetails.cvv}
+                  onChange={(e) =>
+                    setCardDetails({ ...cardDetails, cvv: e.target.value })
+                  }
+                  required
+                  helperText={errors.cvv}
+                  color={errors.cvv ? "failure" : "gray"}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit">Submit Payment</Button>
+              </div>
+            </form>
+          </div>
+        </Modal.Body>
+      </Modal>
+    );
+  };
 
   return (
-    <div className="doctor-profile-container flex flex-col h-full p-5 border border-gray-300 rounded-lg shadow-md mb-5">
+    <div className="doctor-profile-container bg-white rounded-lg shadow-lg p-6">
       <div className="doctor-profile-header flex justify-between items-center mb-5">
-        <span>{doctor.doctorDetails.specialization}</span>
+        <div className="flex items-center">
+          <img
+            src="https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg"
+            alt={`Dr. ${doctor.doctorDetails.Name}`}
+            className="w-16 h-16 rounded-full mr-4"
+          />
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Dr. {doctor.doctorDetails.Name}
+            </h2>
+            <p className="text-gray-600">
+              {doctor.doctorDetails.specialization}
+            </p>
+          </div>
+        </div>
         <button
-          className="back-button bg-blue-500 text-white rounded-md px-4 py-2"
+          className="back-button bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-colors"
           onClick={onBack}
         >
           Back
         </button>
       </div>
-      <div className="profile-info flex items-center mb-5">
-        <img
-          src={doctor.doctorDetails.employeeimg}
-          alt="Avatar"
-          className="avatar w-12 h-12 rounded-full mr-4"
-        />
-        <div>
-          <div className="name font-bold">{doctor.doctorDetails.Name}</div>
-          <div className="hospital text-gray-600">
-            {doctor.doctorDetails.specialization}
-          </div>
-        </div>
-      </div>
-      <div className="doctor-profile-content flex-1 overflow-y-auto">
-        {Object.entries(groupedSessions).map(([key, bookings]) => (
-          <div key={key} className="booking-date mb-4">
-            <h2 className="text-lg font-semibold">{key}</h2>
-            <div className="session border border-gray-300 rounded-lg p-4">
-              <div className="session-details flex justify-between">
-                <div>
-                  <p>
-                    {bookings[0].time.includes("AM") ? "Morning" : "Evening"}
-                  </p>
-                  <p className="text-blue-500">{bookings[0].time}</p>
-                </div>
-                <div>
-                  <p>Patients:</p>
-                  <p>
-                    {bookings.reduce(
-                      (total, session) =>
-                        session.status === "Booked" ? total + 1 : total,
-                      0
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p>Channelling Fee</p>
-                  <p className="text-green-500">
-                    Rs.{doctor.doctorDetails.consultationFee} + Booking Fee
-                  </p>
-                </div>
-                {bookings.some((session) => session.status === "Not Booked") ? (
-                  <button
-                    className="button bg-green-500 text-white rounded-md px-4 py-2"
-                    onClick={() =>
-                      handleBookSession(
-                        bookings.find(
+
+      <div className="doctor-profile-content">
+        <Accordion flush>
+          <Accordion.Panel>
+            <Accordion.Title>About the Doctor</Accordion.Title>
+            <Accordion.Content>
+              <p className="text-gray-600">
+                {doctor.doctorDetails.about ||
+                  "No additional information available."}
+              </p>
+            </Accordion.Content>
+          </Accordion.Panel>
+          <Accordion.Panel>
+            <Accordion.Title>Availability</Accordion.Title>
+            <Accordion.Content>
+              <div className="doctor-profile-content flex-1 overflow-y-auto">
+                {Object.entries(groupedSessions).map(([key, bookings]) => (
+                  <div key={key} className="booking-date mb-4">
+                    <h3 className="text-lg font-semibold">{key}</h3>
+                    <div className="session border border-gray-300 rounded-lg p-4">
+                      <div className="session-details flex justify-between">
+                        <div>
+                          <p>
+                            {bookings[0].time.includes("AM")
+                              ? "Morning"
+                              : "Evening"}
+                          </p>
+                          <p className="text-blue-500">{bookings[0].time}</p>
+                        </div>
+                        <div>
+                          <p>Patients:</p>
+                          <p>
+                            {bookings.reduce(
+                              (total, session) =>
+                                session.status === "Booked" ? total + 1 : total,
+                              0
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p>Type:</p>
+                          <p>
+                            {bookings[0].type}
+                          </p>
+                        </div>
+                        <div>
+                          <p>Channelling Fee</p>
+                          <p className="text-green-500">
+                            Rs.{doctor.doctorDetails.consultationFee} + Booking
+                            Fee
+                          </p>
+                        </div>
+                        {bookings.some(
                           (session) => session.status === "Not Booked"
-                        )
-                      )
-                    }
-                  >
-                    Book
-                  </button>
-                ) : (
-                  <div className="button-container flex items-center">
-                    <button
-                      className="button bg-gray-400 text-white rounded-md px-4 py-2 flex items-center cursor-not-allowed"
-                      disabled
-                    >
-                      Full{" "}
-                      <span className="padlock-icon ml-2 text-lg">
-                        &#x1F512;
-                      </span>
-                    </button>
+                        ) ? (
+                          <button
+                            className="button bg-green-500 text-white rounded-md px-4 py-2 hover:bg-green-600 transition-colors"
+                            onClick={() =>
+                              handleBookSession(
+                                bookings.find(
+                                  (session) => session.status === "Not Booked"
+                                )
+                              )
+                            }
+                          >
+                            Book
+                          </button>
+                        ) : (
+                          <div className="button-container flex items-center">
+                            <button
+                              className="button bg-gray-400 text-white rounded-md px-4 py-2 flex items-center cursor-not-allowed"
+                              disabled
+                            >
+                              Full{" "}
+                              <span className="padlock-icon ml-2 text-lg">
+                                &#x1F512;
+                              </span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          </div>
-        ))}
+            </Accordion.Content>
+          </Accordion.Panel>
+        </Accordion>
       </div>
 
       <Modal
@@ -414,7 +500,7 @@ const DoctorProfile = ({ doctor, onBack }) => {
                       value={formData.contactEmail || ""}
                       placeholder="Enter your email"
                       required={true}
-                      class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                      class="border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p.5"
                     />
                   </div>
                   <div class="grid grid-cols-2 gap-4">
@@ -456,7 +542,6 @@ const DoctorProfile = ({ doctor, onBack }) => {
                 </div>
               </div>
             </div>
-
             <div className="col-span-1">
               <div className="mb-4">
                 <h4 className="text-base font-semibold mb-2">
@@ -544,7 +629,6 @@ const DoctorProfile = ({ doctor, onBack }) => {
             </button>
             <button
               onClick={() => {
-                handleUpdatePatientDetails();
                 handlePayToBook();
               }}
               className="bg-green-500 hover:bg-green-600 text-white focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg text-sm font-medium px-5 py-2.5"
@@ -554,14 +638,14 @@ const DoctorProfile = ({ doctor, onBack }) => {
           </div>
         </Modal.Footer>
       </Modal>
+      <PaymentModal
+        show={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSubmit={handlePaymentSubmit}
+      />
 
-      <PaymentForm
-  totalAmount={totalAmount}
-  onPayment={(success) => handlePayment(success, selectedSession)}
-  selectedSession={selectedSession}
-/>
       <Modal
-        show={paymentStatus == "success"}
+        show={paymentStatus === "success"}
         onClose={() => setPaymentStatus(null)}
         size="md"
         popup={true}
@@ -586,7 +670,7 @@ const DoctorProfile = ({ doctor, onBack }) => {
       </Modal>
 
       <Modal
-        show={paymentStatus == "failed"}
+        show={paymentStatus === "failed"}
         onClose={() => setPaymentStatus(null)}
         size="md"
         popup={true}

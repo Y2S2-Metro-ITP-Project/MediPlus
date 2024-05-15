@@ -1,6 +1,8 @@
 import Payment from '../models/payment.model.js';
 import mongoose from 'mongoose';
 import generatePdfFromHtml from "../utils/PatientPDF.js";
+import Booking from '../models/booking.model.js';
+import { authorize, sendEmail } from "../utils/bookingEmail.js";
 
 export const getAllConsultationPayments = async (req, res) => {
   try {
@@ -175,4 +177,54 @@ const generateMonthName = (monthIndex) => {
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString();
+};
+
+
+export const createConsultationPayment = async (req, res) => {
+  try {
+    const { patientId, patientName, patientEmail, OrderType, totalPayment, paymentType, status, bookingId } = req.body;
+    console.log('Received payment data:', req.body);
+    // Create a new payment record
+    const payment = new Payment({
+      patientId,
+      patientName,
+      patientEmail,
+      OrderType,
+      totalPayment,
+      paymentType,
+      status,
+      bookingId,
+    });
+
+    // Save the payment record to the database
+    const savedPayment = await payment.save();
+    if (savedPayment) {
+      const booking = await Booking.findById(bookingId)
+        .populate('roomNo', 'description')
+        .populate('doctorId', 'username')
+        .populate('patientId', 'name contactEmail');
+
+      if (!booking) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      booking.status = 'Booked';
+      await booking.save();
+
+      // Send email to patient
+      const emailData = {
+        to: booking.patientId.contactEmail,
+        subject: 'Booking Confirmation',
+        text: `Dear ${booking.patientId.name},\n\nYour booking has been confirmed.\n\nDoctor: ${booking.doctorId.username}\nDate: ${booking.date}\nTime: ${booking.time}\nRoom: ${booking.roomNo ? booking.roomNo.description : 'Online Appointment'}\n\nThank you for choosing our service.\n\nBest Regards,\nHospital Team`,
+      };
+
+      const auth = await authorize();
+      await sendEmail(auth, emailData.to, emailData.subject, emailData.text);
+    }
+
+    res.status(201).json(savedPayment);
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

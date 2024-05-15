@@ -160,7 +160,7 @@ export const getBookingsForScheduling = async (req, res, next) => {
 export const getBookingsForDoctor = async (req, res) => {
   try {
     const doctorId = req.params.doctorId;
-    const bookings = await Booking.find({ doctorId });
+    const bookings = await Booking.find({ doctorId }).populate("roomNo", "description").populate("patientId", "name contactEmail");
     res.status(200).json(bookings);
   } catch (error) {
     console.error("Error fetching bookings for doctor:", error);
@@ -1142,5 +1142,27 @@ export const getBookingsBySlot = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to retrieve bookings by slot" });
+  }
+};
+
+export const pendingStatus = async (req, res) => {
+  try {
+    const { bookingId, patientId } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    booking.status = 'Pending Payment';
+    booking.patientId = patientId;
+
+    await booking.save();
+    console.log('Booking status updated successfully');
+    res.status(200).json({ message: 'Booking status updated successfully' });
+  } catch (error) {
+    console.error('Error updating booking status:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

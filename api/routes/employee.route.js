@@ -13,7 +13,7 @@ router.put("/updateEmp/:userId", verifyToken, updateEmp);
 router.put("/updateUserDetails/:userId", verifyToken, updateUserDetails);
 router.post("/createEmployeeDetails", verifyToken ,createEmployeeDetails);
 router.post("/DownloadPDFEmployee/:userId",verifyToken, DownloadPDFEmployee);
-router.get('/getDoctorDetails/:doctorId', verifyToken, getDoctorDetailsById);
+router.get('/getDoctorDetails/:doctorId', getDoctorDetailsById);
 router.get('/getDoctorsBySpecialization/:specialization', verifyToken, getDoctorsBySpecialization);
 router.get('/getDoctorBySpecializationAndId/:specialization/:doctorId', verifyToken, getDoctorBySpecializationAndId);
 router.get('/getDoctorDetails', getDoctorDetails);

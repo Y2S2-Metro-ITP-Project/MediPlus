@@ -82,6 +82,8 @@ export default function DashSlotBooking() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isGeneratingAppointmentCard, setIsGeneratingAppointmentCard] =
     useState(false);
+  const [onlineAppointmentDetails, setOnlineAppointmentDetails] = useState(null);
+
 
   const [slotDetails, setSlotDetails] = useState({
     date: "",
@@ -699,13 +701,8 @@ export default function DashSlotBooking() {
 
   const filteredSlotBookings = slotBookings.filter((booking) => {
     const matchesSearch =
-      booking.doctorId?.username
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (booking.patientId &&
-        booking.patientId.username
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()));
+      booking.doctorId?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.patientId && booking.patientId.name?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPatient = filterPatient
       ? booking.patientId && booking.patientId._id === filterPatient
       : true;
@@ -720,6 +717,7 @@ export default function DashSlotBooking() {
       matchesRoom
     );
   });
+
   const handleSelectAll = () => {
     const updatedSlotBookings = slotBookings.map((booking) => ({
       ...booking,
@@ -788,36 +786,41 @@ export default function DashSlotBooking() {
       setIsCancelling(false);
     }
   };
-  
-  const handleExamineBooking = async (booking) => {
-    if (!booking.patientId) {
+
+
+  const handleExamineBooking = async () => {
+    if (!selectedBooking.patientId) {
       toast.error("No patient associated with this booking.");
       return;
     }
-  
-    setSelectedBooking(booking);
-  
+
     try {
-      const res = await fetch(`/api/booking/updateStatus`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingId: booking._id, status: "In Consultation" }),
-      });
   
-      if (res.ok) {
+
+        await fetch(`/api/booking/updateStatus`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bookingId: selectedBooking._id,
+            status: "In Consultation",
+          }),
+        });
+
         toast.success("Booking status updated to In Consultation.");
         fetchSlotBookings();
-        navigate(`/dashboard?tab=PatientProfile&id=${booking.patientId._id}&bookingId=${booking._id}&slotId=${slotId}`);
-      } else {
-        toast.error("Failed to update booking status.");
-      }
+        navigate(
+          `/dashboard?tab=PatientProfile&id=${selectedBooking.patientId._id}&bookingId=${selectedBooking._id}&slotId=${slotId}`
+        );
     } catch (error) {
       console.error(error);
       toast.error("An error occurred while updating booking status.");
+    } finally {
+      setShowExaminationModal(true);
     }
   };
+
 
   // Get current bookings based on pagination
   const indexOfLastBooking = currentPage * bookingsPerPage;
@@ -1251,14 +1254,20 @@ export default function DashSlotBooking() {
                             </>
                           )}
                           {currentUser.isDoctor && (
-                            <Button
-                              size="sm"
-                              color="blue"
-                              onClick={() => handleExamineBooking(booking)}
-                              disabled={!booking.patientId}
-                            >
-                              Examine
-                            </Button>
+                             <Button
+                             size="sm"
+                             color="blue"
+                             onClick={() => {
+                               setSelectedBooking(booking);
+                               setShowExaminationModal(true);
+                             }}
+                             disabled={
+                               !booking.patientId ||
+                               (booking.status !== "Booked" && booking.status !== "ReBooked " && booking.status !== "In Consultation")
+                             }
+                           >
+                             Examine
+                           </Button>
                           )}
                           {currentUser.isAdmin && (
                             <Button
@@ -1747,80 +1756,102 @@ export default function DashSlotBooking() {
               </Button>
             </Modal.Footer>
           </Modal>
-          <Modal
-            show={showExaminationModal}
-            onClose={() => setShowExaminationModal(false)}
-          >
-            <Modal.Header>
-              <h3 className="text-xl font-semibold">Examine Patient</h3>
-            </Modal.Header>
-            <Modal.Body>
-              {selectedBooking && (
-                <div className="space-y-4">
+     <Modal
+        show={showExaminationModal}
+        onClose={() => setShowExaminationModal(false)}
+      >
+        <Modal.Header>
+          <h3 className="text-xl font-semibold">Examine Patient</h3>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Patient:</p>
+                <p>
+                  {selectedBooking.patientId
+                    ? selectedBooking.patientId.name
+                    : "NULL"}
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Date:</p>
+                <p>{new Date(selectedBooking.date).toLocaleDateString()}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Time:</p>
+                <p>{selectedBooking.time}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Doctor:</p>
+                <p>{selectedBooking.doctorId.username}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Room/Location:</p>
+                <p>{selectedBooking.roomName || "Online"}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-bold mr-2">Status:</p>
+                <Badge
+                  color={
+                    selectedBooking.status === "Completed"
+                      ? "success"
+                      : selectedBooking.status === "Pending"
+                      ? "warning"
+                      : selectedBooking.status === "Cancelled"
+                      ? "failure"
+                      : selectedBooking.status === "Not Booked"
+                      ? "gray"
+                      : selectedBooking.status === "Booked"
+                      ? "info"
+                      : selectedBooking.status === "ReBooked"
+                      ? "purple"
+                      : "indigo"
+                  }
+                >
+                  {selectedBooking.status}
+                </Badge>
+              </div>
+  
                   <div className="flex items-center">
-                    <p className="font-bold mr-2">Patient:</p>
-                    <p>
-                      {selectedBooking.patientId
-                        ? selectedBooking.patientId.name
-                        : "NULL"}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="font-bold mr-2">Date:</p>
-                    <p>{new Date(selectedBooking.date).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="font-bold mr-2">Time:</p>
-                    <p>{selectedBooking.time}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="font-bold mr-2">Doctor:</p>
-                    <p>{selectedBooking.doctorId.username}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="font-bold mr-2">Room/Location:</p>
-                    <p>{selectedBooking.roomName || "Online"}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="font-bold mr-2">Status:</p>
-                    <Badge
-                      color={
-                        selectedBooking.status === "Completed"
-                          ? "success"
-                          : selectedBooking.status === "Pending"
-                          ? "warning"
-                          : selectedBooking.status === "Cancelled"
-                          ? "failure"
-                          : selectedBooking.status === "Not Booked"
-                          ? "gray"
-                          : selectedBooking.status === "Booked"
-                          ? "info"
-                          : selectedBooking.status === "ReBooked"
-                          ? "purple"
-                          : "indigo"
-                      }
+                    <p className="font-bold mr-2">Online Meeting Link:</p>
+                    <a
+                      href={selectedBooking.meetLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      {selectedBooking.status}
-                    </Badge>
+                      {selectedBooking.meetLink}
+                    </a>
                   </div>
-                </div>
-              )}
-            </Modal.Body>
-            <Modal.Footer>
-              <Button
-                color="gray"
-                onClick={() => setShowExaminationModal(false)}
-              >
-                Close
-              </Button>
-              <Button
-                color="blue"
-                onClick={() => handleExamineBooking(selectedBooking)}
-              >
-                Start Examination
-              </Button>
-            </Modal.Footer>
-          </Modal>
+                  <Button
+                    color="green"
+                    onClick={() => {
+                      window.open(selectedBooking.meetLink, "_blank");
+                    }}
+                  >
+                    Launch Online Meeting
+                  </Button>
+
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            color="gray"
+            onClick={() => setShowExaminationModal(false)}
+          >
+            Close
+          </Button>
+          {!onlineAppointmentDetails && (
+            <Button
+              color="blue"
+              onClick={handleExamineBooking}
+            >
+              Start Examination
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
         </>
       )}
     </div>
