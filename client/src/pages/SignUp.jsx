@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
+import { Alert, Button, Label, Spinner, TableBody, TextInput } from "flowbite-react";
 import OAuth from "../components/OAuth";
 
 export default function SignUp() {
@@ -15,14 +15,21 @@ export default function SignUp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { id, value } = e.target;
     if (!formData.username || !formData.email || !formData.password) {
       toast.error("Please fill out all the fields");
       return;
     }
-    if (formData.password.length < 6) {
+  if (id === "password") {
+    if (value.length < 6) {
       toast.error("Password must be at least 6 characters long");
-      return;
+    } else {
+      const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{6,}$/;
+      if (!passwordPattern.test(value)) {
+        toast.error("Password must contain at least one uppercase letter, one lowercase letter, and one number");
+      }
     }
+  }
     try {
       setLoading(true);
       setErrorMessage(null);

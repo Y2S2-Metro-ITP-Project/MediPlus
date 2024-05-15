@@ -6,16 +6,13 @@ export const sendEmail = async ({ to, subject, text,html}) => {
     port: 587,
     secure: false,
     auth: {
-      user: "mediplus920@outlook.com",
+      user: "mediplusv2@outlook.com",
       pass: "MediPlus890@",
-    },
-    tls: {
-      rejectUnauthorized: false,
     },
   });
 
   const mailOptions = {
-    from: "mediplus920@outlook.com",
+    from: "mediplusv2@outlook.com",
     to,
     subject,
     text,

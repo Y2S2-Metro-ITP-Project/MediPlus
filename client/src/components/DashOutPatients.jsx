@@ -16,14 +16,13 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { Link, json } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
-import { get, set } from "mongoose";
-import { saveAs } from "file-saver";
 import {
   getStorage,
   ref,
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
+import ReactPaginate from "react-paginate";
 export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
   const [patients, setPatients] = useState([]);
@@ -39,6 +38,78 @@ export default function DashOutPatients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [patientName, setPatient] = useState("");
   const [patientIdDownloadPDF, setPatientIdDownloadPDF] = useState("");
+  {
+    /** Pagination */
+  }
+  const [pageNumber, setPageNumber] = useState(0);
+  const OutpatientsPerPage = 5;
+
+  const pageCount = Math.ceil(patients.length / OutpatientsPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+
+  const displayOuPatientsOrders = patients
+    .slice(
+      pageNumber * OutpatientsPerPage,
+      (pageNumber + 1) * OutpatientsPerPage
+    )
+    .map((patient) => (
+      <Table.Body className="divide-y" key={patient._id}>
+        <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
+          <Table.Cell>
+            {new Date(patient.createdAt).toLocaleDateString()}
+          </Table.Cell>
+          <Table.Cell>{patient.name}</Table.Cell>
+          <Table.Cell>{patient.contactEmail}</Table.Cell>
+          <Table.Cell>{patient.contactPhone}</Table.Cell>
+          <Table.Cell>
+            <Link to={`/dashboard?tab=PatientProfile&id=${patient._id}`}>
+              <HiEye className="text-blue-500 cursor-pointer" />
+            </Link>
+          </Table.Cell>
+          <Table.Cell>
+            <Link className="text-teal-500 hover:underline">
+              <span
+                onClick={() => {
+                  setPatientIdToUpdate(patient._id);
+                  handleSetPatientDetails(
+                    patient.name,
+                    patient.gender,
+                    patient.contactEmail,
+                    patient.contactPhone,
+                    patient.createdAt,
+                    patient.illness,
+                    patient.dateOfBirth,
+                    patient.address,
+                    patient.identification,
+                    patient.emergencyContact.name,
+                    patient.emergencyContact.phoneNumber,
+                    patient.patientProfilePicture
+                  );
+                  setUpdatePatientModal(true);
+                }}
+              >
+                Update
+              </span>
+            </Link>
+          </Table.Cell>
+          <Table.Cell>
+            <span
+              onClick={() => {
+                setShowModal(true);
+                setPatientIdToDelete(patient._id);
+              }}
+              className="font-medium text-red-500 hover:underline cursor-pointer"
+            >
+              Delete
+            </span>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    ));
+
   const fetchPatients = async () => {
     try {
       const res = await fetch(`/api/patient/getPatients`);
@@ -69,7 +140,7 @@ export default function DashOutPatients() {
         console.log(error);
       }
     };
-    if (currentUser.isAdmin || currentUser.isReceptionist) {
+    if (currentUser.isAdmin || currentUser.isReceptionist || currentUser.isDoctor || currentUser.isNurse) {
       fetchPatients();
     }
   }, [currentUser._id]);
@@ -181,12 +252,15 @@ export default function DashOutPatients() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
+  console.log(formData);
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
     useState(null);
   const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
   const [fileUploadSuccess, setFileUploadSuccess] = useState(false);
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [showPatientDetails, setShowPatientDetails] = useState(false);
+  const [updatePatientModal, setUpdatePatientModal] = useState(false);
+  const [patientIdToUpdate, setPatientIdToUpdate] = useState("");
   const [patientDetails, setPatientDetails] = useState({
     name: false,
     gender: false,
@@ -303,9 +377,10 @@ export default function DashOutPatients() {
         setImageFileUploadingError(null);
         toast.success("Patient Added Successfully");
       } else {
-        toast.error(data.error);
+        toast.error(data.message);
       }
     } catch (error) {
+      toast.error(error.message);
       toast.error(error.message);
     }
   };
@@ -339,40 +414,63 @@ export default function DashOutPatients() {
     });
     setShowPatientDetails(true);
   };
-  const handleDownloadPdf = async (name) => {
+  const handlePatientUpdate = async (e) => {
+    e.preventDefault();
     try {
-      const res = await fetch(
-        `/api/patient/DownloadPDFPatient/${patientIdDownloadPDF}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ patientId: patientIdDownloadPDF }),
-        }
-      );
-      if (!res.ok) {
-        throw new Error("Failed to generate PDF");
+      const res = await fetch(`/api/patient/update/${patientIdToUpdate}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUpdatePatientModal(false);
+        setFormData({});
+        setImageFile(null);
+        setImageFileUploadingError(null);
+        setFileUploadSuccess(null);
+        setImageFileUploadingProgress(null);
+        setImageFileUploadingError(null);
+        fetchPatients();
+        toast.success("Patient Updated Successfully");
+      } else {
+        toast.error(data.message);
       }
-      const pdfBlob = await res.blob();
-
-      // Create blob URL
-      const url = window.URL.createObjectURL(pdfBlob);
-
-      // Create temporary link element
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Patient-${name}.pdf`; // Set download attribute
-      document.body.appendChild(a);
-
-      // Click link to initiate download
-      a.click();
-
-      // Remove link from DOM
-      document.body.removeChild(a);
     } catch (error) {
       console.log(error);
+      toast.error(error);
     }
+  };
+  const handleSetPatientDetails = (
+    name,
+    gender,
+    contactEmail,
+    contactPhone,
+    createdAt,
+    illness,
+    dateOfBirth,
+    address,
+    identification,
+    emergencyName,
+    emergencyPhoneNumber,
+    patientProfilePicture
+  ) => {
+    setPatientDetails({
+      name,
+      gender,
+      contactEmail,
+      contactPhone,
+      createdAt,
+      illness,
+      dateOfBirth,
+      address,
+      identification,
+      emergencyName,
+      emergencyPhoneNumber,
+      patientProfilePicture,
+    });
   };
   return (
     <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
@@ -418,12 +516,14 @@ export default function DashOutPatients() {
             Choose a filter option
           </option>
           <option value="today">Today</option>
+          <option value="lastweek">Last Week</option>
           <option value="lastmonth">Last Month</option>
           <option value="lastyear">Last Year</option>
-          <option value="Bydate">By Date</option>
+          <option value="latest">Latest</option>
+          <option value="oldest">Oldest</option>
         </select>
       </div>
-      {(currentUser.isAdmin || currentUser.isReceptionist) &&
+      {(currentUser.isAdmin || currentUser.isReceptionist || currentUser.isDoctor || currentUser.isNurse) &&
       patients.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">
@@ -435,76 +535,26 @@ export default function DashOutPatients() {
               <Table.HeadCell>Patient Details</Table.HeadCell>
               <Table.HeadCell>Update</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
-              <Table.HeadCell>Additional</Table.HeadCell>
             </Table.Head>
-            {patients.map((patient) => (
-              <Table.Body className="divide-y" key={patient._id}>
-                <Table.Row className="bg-white dar:border-gray-700 dark:bg-gray-800">
-                  <Table.Cell>
-                    {new Date(patient.createdAt).toLocaleDateString()}
-                  </Table.Cell>
-                  <Table.Cell>{patient.name}</Table.Cell>
-                  <Table.Cell>{patient.contactEmail}</Table.Cell>
-                  <Table.Cell>{patient.contactPhone}</Table.Cell>
-                  <Table.Cell>
-                    <HiEye
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() =>
-                        handlePatientDetailsView(
-                          patient.name,
-                          patient.gender,
-                          patient.contactEmail,
-                          patient.contactPhone,
-                          patient.createdAt,
-                          patient.illness,
-                          patient.dateOfBirth,
-                          patient.address,
-                          patient.identification,
-                          patient.emergencyContact.name,
-                          patient.emergencyContact.phoneNumber,
-                          patient.patientProfilePicture
-                        )
-                      }
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Link className="text-teal-500 hover:underline">
-                      <span
-                        onClick={() => {
-                          setShowReplyModal(true);
-                          setInquiryIdToReply(inquiry._id);
-                        }}
-                      >
-                        Update
-                      </span>
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        setShowModal(true);
-                        setPatientIdToDelete(patient._id);
-                      }}
-                      className="font-medium text-red-500 hover:underline cursor-pointer"
-                    >
-                      Delete
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <span
-                      onClick={() => {
-                        handleDownloadPdf(patient.name);
-                        setPatientIdDownloadPDF(patient._id);
-                      }}
-                      className="font-medium text-green-700 hover:underline cursor-pointer"
-                    >
-                      Download PDF
-                    </span>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            ))}
+            {displayOuPatientsOrders}
           </Table>
+          <div className="mt-9 center">
+            <ReactPaginate
+              previousLabel={"Previous"}
+              nextLabel={"Next"}
+              pageCount={pageCount}
+              onPageChange={handlePageChange}
+              containerClassName={"pagination flex justify-center"}
+              previousLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              nextLinkClassName={
+                "inline-flex items-center px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              }
+              disabledClassName={"opacity-50 cursor-not-allowed"}
+              activeClassName={"bg-indigo-500 text-white"}
+            />
+          </div>
           {showMore && (
             <button
               onClick={handleShowMore}
@@ -517,6 +567,7 @@ export default function DashOutPatients() {
       ) : (
         <p>You have no Patients</p>
       )}
+      {/** Delete Patient Modal */}
       <Modal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -541,6 +592,7 @@ export default function DashOutPatients() {
           </div>
         </Modal.Body>
       </Modal>
+      {/** Add Patient Modal */}
       <Modal
         show={addPatientModal}
         onClose={() => setAddPateintModal(false)}
@@ -699,6 +751,7 @@ export default function DashOutPatients() {
           </form>
         </Modal.Body>
       </Modal>
+      {/** Show Patient Details Modal */}
       <Modal
         show={showPatientDetails}
         onClose={() => setShowPatientDetails(false)}
@@ -768,6 +821,166 @@ export default function DashOutPatients() {
               Close
             </Button>
           </div>
+        </Modal.Body>
+      </Modal>
+      {/** Update Patient Modal */}
+      <Modal
+        show={updatePatientModal}
+        onClose={() => setUpdatePatientModal(false)}
+        popup
+        size="xlg"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <h3 className="mb-4 text-lg text-gray-500 dark:text-gray-400">
+              Update Patient
+            </h3>
+          </div>
+          <form onSubmit={handlePatientUpdate}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="name">Patient Name</Label>
+                <TextInput
+                  type="text"
+                  placeholder={patientDetails.name}
+                  id="name"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <TextInput
+                  type="date"
+                  id="dateOfBirth"
+                  placeholder={patientDetails.dateOfBirth}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select
+                  id="gender"
+                  placeholder={patientDetails.dateOfBirth}
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <TextInput
+                  type="text"
+                  id="address"
+                  placeholder={patientDetails.address}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contactPhone">Contact Phone</Label>
+                <TextInput
+                  type="tel"
+                  id="contactPhone"
+                  placeholder={patientDetails.contactPhone}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contactEmail">Contact Email</Label>
+                <TextInput
+                  type="email"
+                  placeholder={patientDetails.contactEmail}
+                  id="contactEmail"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="identification">Identification</Label>
+                <TextInput
+                  type="text"
+                  placeholder={patientDetails.identification}
+                  id="identification"
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyName">Emergency Contact Name</Label>
+                <TextInput
+                  type="text"
+                  id="emergencyName"
+                  placeholder={patientDetails.emergencyName}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyPhoneNumber">
+                  Emergency Contact Phone Number
+                </Label>
+                <TextInput
+                  type="tel"
+                  id="emergencyPhoneNumber"
+                  placeholder={patientDetails.emergencyPhoneNumber}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <Label className="mg">Patient Image</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="input-field ml-5"
+                />
+                {imageFileUploadingProgress && (
+                  <div className="mt-2">
+                    <progress value={imageFileUploadingProgress} max="100" />
+                  </div>
+                )}
+                {imageFileUploadingError && (
+                  <div className="mt-2">
+                    <p className="text-red-500">{imageFileUploadingError}</p>
+                  </div>
+                )}
+                {fileUploadSuccess && (
+                  <div className="mt-2">
+                    <p className="text-green-500">{fileUploadSuccess}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-center mt-3">
+              <Button color="blue" type="submit" outline>
+                Submit
+              </Button>
+              <Button
+                className="ml-4"
+                color="red"
+                onClick={() => {
+                  setUpdatePatientModal(false);
+                  setFormData({});
+                  setImageFile(null);
+                  setImageFileUploadingError(null);
+                  setFileUploadSuccess(null);
+                  setImageFileUploadingProgress(null);
+                  setImageFileUploadingError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </Modal.Body>
       </Modal>
     </div>
