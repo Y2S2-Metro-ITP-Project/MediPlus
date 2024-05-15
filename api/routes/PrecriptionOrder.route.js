@@ -17,7 +17,8 @@ import {
   getInFilteredOrderData,
   getInFilteredOrderByPaymentStatusData,
   downloadInDoctorOrderReport,
-  downloadInPatientOrderDateData
+  downloadInPatientOrderDateData,
+  getFilteredOrderDataByDischargeStatus
 } from "../controller/PrescriptionOrder.controller.js";
 const router = express.Router();
 
@@ -53,4 +54,5 @@ router.post("/getprescriptionOrderByDispense/:id",verifyToken,getFilteredOrderDa
 router.post("/getprescriptionOrderByPayment/:id",verifyToken,getFilteredOrderByPaymentStatusData)
 router.post("/getInprescriptionOrderByDispense/:id",verifyToken,getInFilteredOrderData)
 router.post("/getInprescriptionOrderByPayment/:id",verifyToken,getInFilteredOrderByPaymentStatusData)
+router.post("/getInprescriptionOrderByDischargeStatus/:id",verifyToken,getFilteredOrderDataByDischargeStatus)
 export default router;

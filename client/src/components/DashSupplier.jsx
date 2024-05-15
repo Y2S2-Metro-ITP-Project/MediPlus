@@ -20,6 +20,7 @@ import {
 } from "react-icons/hi";
 import { ToastContainer, toast } from "react-toastify";
 import LoadingSpinner from "./LoadingSpinner";
+import { set } from "mongoose";
 
 const DashSupplier = () => {
   const { currentUser } = useSelector((state) => state.user);
@@ -36,13 +37,8 @@ const DashSupplier = () => {
     supplierName: "",
     supplierEmail: "",
     supplierPhone: "",
-    itemName: "", 
+    itemName: "",
   });
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
-
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
@@ -61,6 +57,10 @@ const DashSupplier = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
 
   const handleSort = (column) => {
     if (sortColumn === column) {
@@ -95,6 +95,7 @@ const DashSupplier = () => {
           itemName: "",
         });
         setShowModal(false);
+        fetchSuppliers();
         toast.success("Supplier added successfully");
       } else {
         toast.error(data.message);
@@ -119,6 +120,7 @@ const DashSupplier = () => {
           suppliers.filter((supplier) => supplier._id !== supplierIdToDelete)
         );
         setShowModal(false);
+        fetchSuppliers();
         toast.success(data.message);
       } else {
         toast.error(data.message);
@@ -153,9 +155,10 @@ const DashSupplier = () => {
         setFormData({
           supplierName: "",
           supplierEmail: "",
-          supplierPhone: "", 
+          supplierPhone: "",
           itemName: "",
         });
+        fetchSuppliers();
         toast.success("Supplier updated successfully");
       } else {
         toast.error(data.message);
@@ -174,6 +177,14 @@ const DashSupplier = () => {
     supplier.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const [detailsShow, setDetailsShow] = useState(false);
+  const [detailsData, setDetailsData] = useState({});
+  const handleDetailsMessageBox = (supplier) => {
+    setDetailsData(supplier);
+    setDetailsShow(true);
+  };
+
+  console.log(detailsData);
   return (
     <div className="p-4">
       {isLoading ? (
@@ -264,7 +275,17 @@ const DashSupplier = () => {
                       }`}
                       onClick={() => handleSort("itemName")}
                     >
-                      item Name
+                      No of Items
+                    </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                    <span
+                      className={`cursor-pointer ${
+                        sortColumn === "itemDetials" ? "text-blue-500" : ""
+                      }`}
+                      onClick={() => handleSort("itemDetials")}
+                    >
+                      Item Details
                     </span>
                   </Table.HeadCell>
                   <Table.HeadCell>Actions</Table.HeadCell>
@@ -278,7 +299,23 @@ const DashSupplier = () => {
                       <Table.Cell>{supplier.supplierName}</Table.Cell>
                       <Table.Cell>{supplier.supplierEmail}</Table.Cell>
                       <Table.Cell>{supplier.supplierPhone}</Table.Cell>
-                      <Table.Cell>{supplier.itemName}</Table.Cell>
+                      <Table.Cell>{supplier.item.length}</Table.Cell>
+                      <Table.Cell>
+                        {supplier.item.length > 0 ? (
+                          <>
+                            <HiEye
+                              className="text-blue-500 cursor-pointer"
+                              onClick={() =>
+                                handleDetailsMessageBox(supplier.item)
+                              }
+                            />
+                          </>
+                        ) : (
+                          <span className="text-red-500">
+                            No items assigned
+                          </span>
+                        )}
+                      </Table.Cell>
                       <Table.Cell>
                         <div className="flex items-center space-x-4">
                           <Button
@@ -289,8 +326,7 @@ const DashSupplier = () => {
                               setFormData({
                                 supplierName: supplier.supplierName,
                                 supplierEmail: supplier.supplierEmail,
-                                supplierPhone: supplier.supplierPhone,   
-                                itemName: supplier.itemName,
+                                supplierPhone: supplier.supplierPhone,
                               });
                               setShowModal(true);
                             }}
@@ -371,16 +407,6 @@ const DashSupplier = () => {
                       required
                     />
                   </div>
-                  <div className="mb-4">
-                    <Label htmlFor="itemName">Item Name</Label>
-                    <TextInput
-                      type="text"
-                      id="itemName"
-                      value={formData.itemName}
-                      onChange={handleInputChange}
-                      required
-                    />
-                    </div>
                   <div className="flex justify-center gap-4">
                     <Button type="submit">Update Supplier</Button>
                     <Button
@@ -441,7 +467,7 @@ const DashSupplier = () => {
                       onChange={handleInputChange}
                       required
                     />
-                    </div>
+                  </div>
                   <div className="flex justify-center gap-4">
                     <Button type="submit">Add Supplier</Button>
                     <Button color="gray" onClick={() => setShowModal(false)}>
@@ -451,6 +477,46 @@ const DashSupplier = () => {
                 </form>
               )}
             </Modal.Body>
+          </Modal>
+          <Modal
+            show={detailsShow}
+            onClose={() => setDetailsShow(false)}
+            size="xlg"
+          >
+            <Modal.Header>Supplier Details</Modal.Header>
+            <Modal.Body>
+              {detailsData.length > 0 ? (
+                <Table hoverable className="shadow-md">
+                  <Table.Head>
+                    <Table.HeadCell>Item Name</Table.HeadCell>
+                    <Table.HeadCell>Item Category</Table.HeadCell>
+                    <Table.HeadCell>Item Description</Table.HeadCell>
+                    <Table.HeadCell>Item Price</Table.HeadCell>
+                    <Table.HeadCell>Item Quantity</Table.HeadCell>
+                    <Table.HeadCell>Item Min Value</Table.HeadCell>
+                    <Table.HeadCell>Item Expire Date</Table.HeadCell>
+                  </Table.Head>
+                  <Table.Body className="divide-y">
+                    {detailsData.map((item) => (
+                      <Table.Row key={item._id}>
+                        <Table.Cell>{item.itemName}</Table.Cell>
+                        <Table.Cell>{item.itemCategory}</Table.Cell>
+                        <Table.Cell>{item.itemDescription}</Table.Cell>
+                        <Table.Cell>{item.itemPrice}</Table.Cell>
+                        <Table.Cell>{item.itemQuantity}</Table.Cell>
+                        <Table.Cell>{item.itemMinValue}</Table.Cell>
+                        <Table.Cell>{item.itemExpireDate}</Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              ) : (
+                <p className="px-4">No items found.</p>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button onClick={() => setDetailsShow(false)}>Close</Button>
+            </Modal.Footer>
           </Modal>
         </>
       )}

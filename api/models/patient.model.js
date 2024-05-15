@@ -93,7 +93,7 @@ const patientSchema = new mongoose.Schema(
     patientType: {
       type: String,
     },
-    dicharged: {
+    discharged: {
       type: Boolean,
       default: false,
     },

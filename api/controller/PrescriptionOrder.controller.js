@@ -1381,3 +1381,59 @@ export const getInFilteredOrderByPaymentStatusData = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export const getFilteredOrderDataByDischargeStatus=async(req,res)=>{
+  if (!req.user.isAdmin && !req.user.isDoctor && !req.user.isPharmacist) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const filterOption = req.body.filterValue;
+    if (
+      filterOption === "yes" ||
+      filterOption === "no"
+    ) {
+      try {
+        if(filterOption==="yes"){
+          const prescriptionOrders1 = await PrescriptionOrder.find()
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { discharged: true },
+          })
+          .populate({
+            path: "payment",
+          });
+        const prescriptionOrders = prescriptionOrders1.filter(
+          (order) => order.patientId !== null
+        );
+        res.status(200).json({ prescriptionOrders });
+        }
+        else if(filterOption==="no"){
+          const prescriptionOrders1 = await PrescriptionOrder.find()
+          .populate({
+            path: "doctorId",
+          })
+          .populate({
+            path: "patientId",
+            match: { discharged: false },
+          })
+          .populate({
+            path: "payment",
+          });
+          const prescriptionOrders = prescriptionOrders1.filter(
+            (order) => order.patientId !== null
+          );
+          res.status(200).json({ prescriptionOrders });
+        }
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+
+}

@@ -2,6 +2,7 @@ import Inventory from "../models/inventory.model.js";
 import generatePdfFromHtml from "../utils/PatientPDF.js";
 import { sendEmail } from "../utils/email.js";
 import { errorHandler } from "../utils/error.js";
+import Supplier from "../models/Supplier.model.js";
 export const getInventoryData = async (req, res) => {
   if (
     !req.user.isAdmin &&
@@ -23,7 +24,7 @@ export const getInventoryData = async (req, res) => {
     const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
     const items = await Inventory.find()
       .sort({ createdAt: sortDirection })
-      .skip(startIndex);
+      .skip(startIndex).populate("supplierId");
 
     const totalItems = await Inventory.countDocuments();
     const now = new Date();
@@ -95,8 +96,10 @@ export const addInventoryData = async (req, res, next) => {
     itemMinValue,
     itemImage,
     itemExpireDate,
-    supplier,
+    supplierId,
     supplierEmail,
+    supplierPhone,
+    supplierName,
   } = req.body;
   try {
     const existingItem = await Inventory.find({ itemName, supplierEmail });
@@ -112,9 +115,17 @@ export const addInventoryData = async (req, res, next) => {
       itemMinValue,
       itemImage,
       itemExpireDate,
-      supplierName: supplier,
+      supplierName,
       supplierEmail,
+      supplierPhone,
+      supplierId,
     });
+    const supplier=await Supplier.findById(supplierId);
+    if(!supplier){
+      return next(errorHandler(404, "Supplier not found"));
+    }
+    supplier.item.push(inventory._id);
+    await supplier.save();
     await inventory.save();
     res.status(201).json({ inventory });
   } catch (error) {
@@ -189,15 +200,21 @@ export const updateInventoryData = async (req, res) => {
       itemMinValue,
       itemImage,
       itemExpireDate,
-      supplier,
+      supplierId,
+      supplierName,
       supplierEmail,
+      supplierPhone,
     } = req.body;
-    const itemExist = await Inventory.findOne({ itemName, supplier });
+    const itemExist = await Inventory.findOne({ itemName, supplierName });
     if (itemExist) {
       return next(errorHandler(400, "Item already exists"));
     }
     const inventory = await Inventory.findById(req.params.inventoryId);
+    const supplierId1=inventory.supplierId;
     if (inventory) {
+      const supplier = await Supplier.findById(supplierId1);
+      supplier.item.pull(req.params.inventoryId);
+      await supplier.save();
       const updatedInventoryItem = await Inventory.findByIdAndUpdate(
         req.params.inventoryId,
         {
@@ -210,12 +227,20 @@ export const updateInventoryData = async (req, res) => {
             itemMinValue,
             itemImage,
             itemExpireDate,
-            supplierName: supplier,
+            supplierId,
+            supplierName,
             supplierEmail,
+            supplierPhone,
           },
         },
         { new: true }
       );
+      if (!supplier) {
+        return next(errorHandler(404, "Supplier not found"));
+      }
+      const supplier1=await Supplier.findById(supplierId);
+      supplier1.item.push(updatedInventoryItem._id);
+      await supplier1.save();
       res.status(200).json(updatedInventoryItem);
     } else {
       res.status(404).json({ message: "Inventory not found" });
