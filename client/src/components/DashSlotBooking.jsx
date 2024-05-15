@@ -483,116 +483,141 @@ export default function DashSlotBooking() {
     setIsGeneratingReport(true);
     try {
       const reportContent = `
-        <html>
-          <head>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 20px;
-              }
-              h1 {
-                text-align: center;
-                color: #333;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-              }
-              th, td {
-                padding: 10px;
-                text-align: left;
-                border-bottom: 1px solid #ddd;
-              }
-              th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-              }
-              tr:nth-child(even) {
-                background-color: #f9f9f9;
-              }
-              .logo {
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .logo img {
-                max-width: 200px;
-              }
-              .report-title {
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .report-date {
-                text-align: right;
-                font-style: italic;
-                margin-bottom: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="logo">
-              <img src="https://example.com/hospital-logo.png" alt="Hospital Logo">
-            </div>
-            <div class="report-title">
-              <h1>Slot Booking Report</h1>
-            </div>
-            <div class="report-date">
-              Report Generated on ${new Date().toLocaleDateString()}
-            </div>
-            <div>
-              <h2>Slot Details</h2>
-              <p><strong>Date:</strong> ${new Date(
-                slotDetails.date
-              ).toLocaleDateString()}</p>
-              <p><strong>Start Time:</strong> ${slotDetails.startTime}</p>
-              <p><strong>End Time:</strong> ${slotDetails.endTime}</p>
-              <p><strong>Doctor:</strong> ${slotDetails.doctorName}</p>
-              <p><strong>Room:</strong> ${slotDetails.roomName || "Online"}</p>
-              <p><strong>Status:</strong> ${slotDetails.status}</p>
-              <p><strong>Total Bookings:</strong> ${
-                slotDetails.totalBookings
-              }</p>
-              <p><strong>Booked Count:</strong> ${slotDetails.bookedCount}</p>
-              <p><strong>Cancelled Count:</strong> ${
-                slotDetails.cancelledCount
-              }</p>
-              <p><strong>Not Booked Count:</strong> ${
-                slotDetails.notBookedCount
-              }</p>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>TimeSlot</th>
-                  <th>Patient</th>
-                  <th>Contact Number</th>
-                  <th>Booking Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${filteredSlotBookings
-                  .map(
-                    (booking) => `
-                      <tr>
-                      <td>${booking.time}</td>
-                        <td>${
-                          booking.patientId ? booking.patientId.name : "NULL"
-                        }</td>
-                        <td>${
-                          booking.patientId
-                            ? booking.patientId.contactPhone
-                            : "NULL"
-                        }</td>
-                        <td>${booking.status}</td>
-                      </tr>
-                    `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </body>
-        </html>`;
+  <html>
+  <head>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 30px;
+        padding: 30px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        box-sizing: border-box;
+        background-color: #f8f8f8;
+      }
+  
+      .report-heading {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+      }
+      .report-heading h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      .report-heading p {
+        font-size: 14px;
+        color: #555;
+      }
+  
+      .slot-details-container {
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+      .slot-details-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+      }
+      .slot-details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        background-color: #f8f8f8;
+        padding: 15px;
+        border: 1px solid #ddd; 
+      }
+      .slot-details p {
+        margin: 0;
+        font-size: 14px;
+        color: #555;
+      }
+      .slot-details p strong {
+        color: #333;
+      }
+  
+      .booking-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd; 
+      }
+      .booking-table th, .booking-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #f0f0f0;
+        border: 1px solid #ddd; 
+      }
+      .booking-table th {
+        background-color: #fafafa;
+        font-weight: bold;
+      }
+      .booking-table tr:nth-child(even) {
+        background-color: #fcfcfc;
+      }
+      .table-container{
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-botton: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="report-heading">
+      <h1>Slot Booking Report</h1>
+      <p>Generated on ${new Date().toLocaleDateString()}</p>
+    </div>
+  
+    <div class="slot-details-container">
+      <div class="slot-details-title">Slot Details</div>
+      <div class="slot-details">
+        <p><strong>Date:</strong> ${new Date(slotDetails.date).toLocaleDateString()}</p>
+        <p><strong>Start Time:</strong> ${slotDetails.startTime}</p>
+        <p><strong>End Time:</strong> ${slotDetails.endTime}</p>
+        <p><strong>Doctor:</strong> ${slotDetails.doctorName}</p>
+        <p><strong>Room:</strong> ${slotDetails.roomName || "Online"}</p>
+        <p><strong>Status:</strong> ${slotDetails.status}</p>
+        <p><strong>Total Bookings:</strong> ${slotDetails.totalBookings}</p>
+        <p><strong>Booked Count:</strong> ${slotDetails.bookedCount}</p>
+        <p><strong>Cancelled Count:</strong> ${slotDetails.cancelledCount}</p>
+        <p><strong>Not Booked Count:</strong> ${slotDetails.notBookedCount}</p>
+      </div>
+    </div>
+  
+    <div class="table-container">
+    <div class="table-slot-title">Slot Appointments</div>
+    <table class="booking-table">
+      <thead>
+        <tr>
+          <th>TimeSlot</th>
+          <th>Patient</th>
+          <th>Contact Number</th>
+          <th>Booking Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filteredSlotBookings
+          .map((booking) => `
+          <tr>
+            <td>${booking.time}</td>
+            <td>${booking.patientId ? booking.patientId.name : "NULL"}</td>
+            <td>${booking.patientId ? booking.patientId.contactPhone : "NULL"}</td>
+            <td>${booking.status}</td>
+          </tr>
+          `)
+          .join("")}
+      </tbody>
+    </table>
+    </div>
+  </body>
+  </html>
+  `;
+  
       const options = {
         filename: "slot_bookings_report.pdf",
         image: { type: "jpeg", quality: 0.98 },
@@ -601,9 +626,11 @@ export default function DashSlotBooking() {
           unit: "in",
           format: "a4",
           orientation: "portrait",
+          margin: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 },
+          compress: true,
         },
       };
-
+  
       html2pdf().set(options).from(reportContent).save();
     } catch (error) {
       console.error(error);
@@ -612,7 +639,6 @@ export default function DashSlotBooking() {
       setIsGeneratingReport(false);
     }
   };
-
   const generateAppointmentCard = async (booking) => {
     setIsGeneratingAppointmentCard(true);
     try {
