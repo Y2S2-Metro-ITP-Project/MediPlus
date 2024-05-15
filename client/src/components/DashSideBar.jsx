@@ -333,7 +333,7 @@ export default function DashSideBar() {
                   In Patient Billing
                 </Sidebar.Item>
               </Link>
-              <Link to="/dashboard?tab=ConsultationBilling">
+              {/* <Link to="/dashboard?tab=ConsultationBilling">
                 <Sidebar.Item
                   active={tab === "CounsultationBilling"}
                   icon={TbBrandBooking}
@@ -341,7 +341,7 @@ export default function DashSideBar() {
                 >
                   Consultation
                 </Sidebar.Item>
-              </Link>
+              </Link> */}
 
               <Link to="/dashboard?tab=EMPleave">
                 <Sidebar.Item
@@ -350,6 +350,15 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Leave
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=ConsultPayment">
+                <Sidebar.Item
+                  active={tab === "ConsultPayment"}
+                  icon={FaMoneyBillAlt}
+                  as="div"
+                >
+                  Consultation Payment
                 </Sidebar.Item>
               </Link>
             </>
