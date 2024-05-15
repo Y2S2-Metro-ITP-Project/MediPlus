@@ -338,6 +338,7 @@ export const downloadPDFVitals = async (req, res) => {
             oxygenSaturation,
             BMI,
             doctorId: { username },
+            patientId: { patientName },
           } = vital;
 
           const formattedDate = new Date(date).toLocaleString();
@@ -357,6 +358,7 @@ export const downloadPDFVitals = async (req, res) => {
             <div class="section">
             <h2>Date: ${formattedDate}</h2>
             <h2>Doctor Who collected the vitals: ${username}</h2>
+            <h2>Patient Name: ${ patientName }</h2>
             <p><strong>Temperature:</strong> ${temperature} (${temperatureCondition})</p>
             <p><strong>Weight:</strong> ${bodyweight} KG</p>
             <p><strong>Height:</strong> ${height} CM</p>
