@@ -3,9 +3,8 @@ import mongoose from "mongoose";
 const inventorySchema= new mongoose.Schema({
 
     itemName: {
-        type:String,
-        required:true,
-        unique:true
+      type: String,
+      required: true,
     },
     itemCategory: {
         type:String,
@@ -39,11 +38,21 @@ const inventorySchema= new mongoose.Schema({
         required:true
     },
     supplierEmail: {
-        type:String,
-        required:true,
-        unique:true
+      type: String,
+      required: true,
     },
-},{timestamps:true})
+    supplierPhone: {
+      type: String,
+      required: true,
+    },
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Supplier",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
 const Inventory=mongoose.model('Inventory',inventorySchema)
 export default Inventory;

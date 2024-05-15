@@ -6,6 +6,7 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { HiOutlineEye } from "react-icons/hi";
 import { ToastContainer, toast } from "react-toastify";
 import { FaCheck, FaTimes } from "react-icons/fa";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 export default function DashStaffManagement() {
   const { currentUser } = useSelector((state) => state.user);
@@ -39,8 +40,51 @@ export default function DashStaffManagement() {
     qualifications: '',
     consultationFee: '',
     bio: '',
-    employeeimg: '',
+    employeeImage: '',
+    doctortype: '',
   });
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imageFileUploadingProgress, setImageFileUploadingProgress] = useState(null);
+  const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
+  const [fileUploadSuccess, setFileUploadSuccess] = useState(false);
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files[0];
+    setImageFile(file);
+
+    const storage = getStorage();
+    const filename = new Date().getTime() + file.name;
+    const storageRef = ref(storage, filename);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    try {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setImageFileUploadingProgress(progress.toFixed(0));
+        },
+        (error) => {
+          setImageFileUploadingError("Could not upload image(File must be less than 2MB)");
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            setUpdatedEmployeeDetails(prevData => ({
+              ...prevData,
+              employeeImage: downloadURL
+            }));
+            setFileUploadSuccess("File Uploaded Successfully");
+            setImageFileUploadingProgress(null);
+          });
+        }
+      );
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    }
+  };
+
 
   const handleOpenUpdateModal = async (user) => {
     if (!user) return;
@@ -76,7 +120,9 @@ export default function DashStaffManagement() {
           qualifications: data.employeeDetails.qualifications || "",
           consultationFee: data.employeeDetails.consultationFee || "",
           bio: data.employeeDetails.bio || "",
-          employeeimg: data.employeeDetails.employeeimg || "",
+          employeeImage: data.employeeDetails.employeeImage || "",
+          doctortype: data.employeeDetails.doctortype || "",
+
         });
       } else {
         console.error("Failed to fetch employee details:", data.message);
@@ -98,14 +144,7 @@ export default function DashStaffManagement() {
     const newRole = e.target.value;
     setUpdatedUserData({ ...updatedUserData, role: newRole });
   };
-  // Function to handle image change
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    setUpdatedEmployeeDetails(prevData => ({
-      ...prevData,
-      employeeimg: file, // Update the employeeimg field with the selected file
-    }));
-  };
+
 
 
 
@@ -253,23 +292,23 @@ export default function DashStaffManagement() {
     }
   }, [currentUser._id]);
 
-  const handleShowMore = async () => {
-    const startIndex = users.length;
-    try {
-      const res = await fetch(
-        `/api/employee/getemployee?&startIndex=${startIndex}`
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setUsers((prev) => [...prev, ...data.users]);
-        if (data.users.length < 9) {
-          setShowMore(false);
-        }
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
+  // const handleShowMore = async () => {
+  //   const startIndex = users.length;
+  //   try {
+  //     const res = await fetch(
+  //       `/api/employee/getemployee?&startIndex=${startIndex}`
+  //     );
+  //     const data = await res.json();
+  //     if (res.ok) {
+  //       setUsers((prev) => [...prev, ...data.users]);
+  //       if (data.users.length < 9) {
+  //         setShowMore(false);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error.message);
+  //   }
+  // };
 
   const handleShowDetailsWithNameTag = async (
     userId,
@@ -296,7 +335,7 @@ export default function DashStaffManagement() {
 
       // Determine the selected roles
       const selectedRoles = [];
-      const roles = ["Doctor", "Nurse", "Pharmacist", "Receptionist", "HeadNurse", "HRM"];
+      const roles = ["Doctor", "Nurse", "Pharmacist", "Receptionist", "HeadNurse", "HRM", "Cashier", "LabTech"];
       roles.forEach(role => {
         if (userData[`is${role}`]) {
           selectedRoles.push(role);
@@ -371,6 +410,10 @@ export default function DashStaffManagement() {
           return user.isReceptionist;
         case "HeadNurse":
           return user.isHeadNurse;
+        case "Cashier":
+          return user.isCashier;
+        case "LabTech":
+          return user.isLabTech;
         default:
           return true;
       }
@@ -446,6 +489,8 @@ export default function DashStaffManagement() {
             <option value="Pharmacist">Pharmacist</option>
             <option value="Receptionist">Receptionist</option>
             <option value="HeadNurse">Head Nurse</option>
+            <option value="Cashier">Cashier</option>
+            <option value="LabTech">lab Technician</option>
           </select>
         </div>
         <div>
@@ -531,6 +576,16 @@ export default function DashStaffManagement() {
                     ) : (
                       ""
                     )}
+                    {user.isCashier ? (
+                      <span style={{ color: "red" }}>Cashier </span>
+                    ) : (
+                      ""
+                    )}
+                    {user.isLabTech ? (
+                      <span style={{ color: "white" }}>lab Technician</span>
+                    ) : (
+                      ""
+                    )}
                   </Table.Cell>
                   <Table.Cell>
                     <span
@@ -584,14 +639,14 @@ export default function DashStaffManagement() {
               </Table.Body>
             ))}
           </Table>
-          {showMore && (
+          {/* {showMore && (
             <button
               onClick={handleShowMore}
               className="w-full text-teal-500 self-center text-sm py-7"
             >
               Show More
             </button>
-          )}
+          )} */}
         </>
       ) : (
         <p>You have no users</p>
@@ -631,54 +686,49 @@ export default function DashStaffManagement() {
         <Modal.Header />
         <Modal.Body>
           {selectedUserDetails && (
-            <div>
-              <h2 className="text-lg font-semibold">
-                {selectedUserDetails.username}
-              </h2>
-              <p>Email: {selectedUserDetails.email}</p>
-              <p>Role: {getSelectedRole(selectedUserDetails)}</p>
+            <div className="profile-container">
+              <div className="profile-header">
+                <h1 className="text-3xl font-bold">{selectedUserDetails.username}</h1> {/* Bigger and bold username */}
+                <p className="font-bold">Email: {selectedUserDetails.email}</p>
+                <p className="font-bold">Role: {getSelectedRole(selectedUserDetails)}</p>
+              </div>
               {selectedUserDetails.employeeDetails && (
-                <>
-                  <p>
-                    Name:{" "}
-                    {selectedUserDetails.employeeDetails.Name}
-                  </p>
-                  <p>Gender: {selectedUserDetails.employeeDetails.gender}</p>
-                  <p>
-                    Date of Birth:{" "}
-                    {selectedUserDetails.employeeDetails.dateOfBirth}
-                  </p>
-                  <p>Salary: {selectedUserDetails.employeeDetails.salary}</p>
-                  <p>Address: {selectedUserDetails.employeeDetails.address}</p>
-                  <p>
-                    Contact Phone:{" "}
-                    {selectedUserDetails.employeeDetails.contactPhone}
-                  </p>
+                <div className="image-container">
+                  <div className="image-wrapper">
+                    <img
+                      src={selectedUserDetails.employeeDetails.employeeImage}
+                      alt="Employee"
+                      width="250" // Example width
+                      height="250" // Example height
+                    />
+                  </div>
+                  <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
+                  <h3 className="text-xl font-bold">Employee Details</h3>
+                  <div className="details-row">
+                    <p><strong>Name:</strong> {selectedUserDetails.username}</p>
+                    <p><strong>Gender:</strong> {selectedUserDetails.employeeDetails.gender}</p>
+                    <p><strong>Date of Birth:</strong> {selectedUserDetails.employeeDetails.dateOfBirth}</p>
+                    <p><strong>Salary:</strong> {selectedUserDetails.employeeDetails.salary}</p>
+                  </div>
+                  <div className="details-row">
+                    <p><strong>Address:</strong> {selectedUserDetails.employeeDetails.address}</p>
+                    <p><strong>Contact Number:</strong> {selectedUserDetails.employeeDetails.contactPhone}</p>
+                  </div>
                   {getSelectedRole(selectedUserDetails) === "Doctor" && (
                     <>
-                      <p>
-                        Specialization:{" "}
-                        {selectedUserDetails.employeeDetails.specialization}
-                      </p>
-                      <p>
-                        Experience:{" "}
-                        {selectedUserDetails.employeeDetails.experience}
-                      </p>
-                      <p>
-                        Qualifications:{" "}
-                        {selectedUserDetails.employeeDetails.qualifications}
-                      </p>
-                      <p>
-                        ConsultationFee:{" "}
-                        {selectedUserDetails.employeeDetails.consultationFee}
-                      </p>
-                      <p>
-                        Bio:{" "}
-                        {selectedUserDetails.employeeDetails.bio}
-                      </p>
+                      <hr className="my-4 border-gray-300" /> {/* Horizontal line */}
+                      <div className="details-row">
+                        <h3 className="text-xl font-bold">Doctor Details</h3>
+                        <p><strong>Doctor Type:</strong> {selectedUserDetails.employeeDetails.doctortype}</p>
+                        <p><strong>Specialization:</strong> {selectedUserDetails.employeeDetails.specialization}</p>
+                        <p><strong>Experience:</strong> {selectedUserDetails.employeeDetails.experience}</p>
+                        <p><strong>Qualifications:</strong> {selectedUserDetails.employeeDetails.qualifications}</p>
+                        <p><strong>Consultation Fee:</strong> {selectedUserDetails.employeeDetails.consultationFee}</p>
+                        <p><strong>Bio:</strong> {selectedUserDetails.employeeDetails.bio}</p>
+                      </div>
                     </>
                   )}
-                </>
+                </div>
               )}
             </div>
           )}
@@ -709,8 +759,6 @@ export default function DashStaffManagement() {
               className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
           </div>
-
-
           <div className="mt-4">
             <label className="block">Email</label>
             <TextInput
@@ -731,16 +779,32 @@ export default function DashStaffManagement() {
               className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             >
               <option value="">Select Role</option>
-              <option value="HRM">HRM</option>
               <option value="Doctor">Doctor</option>
               <option value="Nurse">Nurse</option>
               <option value="Pharmacist">Pharmacist</option>
               <option value="Receptionist">Receptionist</option>
               <option value="HeadNurse">Head Nurse</option>
+              <option value="Cashier">Cashier</option>
+              <option value="LabTech">lab Technician</option>
             </select>
           </div>
           {updatedUserData.role === "Doctor" && (
             <>
+            <br />
+              <div className="flex flex-col">
+                <select
+                  id="doctortype"
+                  value={updatedEmployeeDetails.doctortype}
+                  onChange={(e) =>
+                    setUpdatedEmployeeDetails({ ...updatedEmployeeDetails, doctortype: e.target.value })
+                  }
+                  className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                >
+                  <option value="">Select Doctor Type</option>
+                  <option value="Permenent">Permanent Doctor </option>
+                  <option value="Visiting">Visiting Doctor</option>
+                </select>
+              </div>
               <div className="mt-4">
                 <label className="block">Specialization</label>
                 <TextInput
@@ -824,8 +888,15 @@ export default function DashStaffManagement() {
               }
               className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder={userToUpdate?.employeeDetails?.dateOfBirth || "Select Date of Birth"}
+
             />
           </div>
+          {updatedUserData.role === "Doctor" && updatedEmployeeDetails.doctortype === "Visiting" && (
+            <>
+             <br />
+            <div className="mt-4 text-red-500">Please update the salary for Visiting Doctor</div>
+            </>
+          )}
           <div className="mt-4">
             <label className="block">Salary</label>
             <TextInput
@@ -862,16 +933,27 @@ export default function DashStaffManagement() {
               placeholder={userToUpdate?.employeeDetails?.contactPhone || "Enter Contact Phone"}
             />
           </div>
-
-          <div className="mt-4">
-                <label className="block">Profile Image</label>
-                <input
-                    value={updatedEmployeeDetails.employeeimg ? updatedEmployeeDetails.employeeimg.name : ''}
-                  type="file"
-                  onChange={handleImageChange}
-                  className="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                />
-              </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="mt-4"
+          />
+          {imageFileUploadingProgress && (
+            <div className="mt-2">
+              <progress value={imageFileUploadingProgress} max="100" />
+            </div>
+          )}
+          {imageFileUploadingError && (
+            <div className="mt-2">
+              <p className="text-red-500">{imageFileUploadingError}</p>
+            </div>
+          )}
+          {fileUploadSuccess && (
+            <div className="mt-2">
+              <p className="text-green-500">{fileUploadSuccess}</p>
+            </div>
+          )}
 
           <div className="mt-4 flex justify-end gap-4">
             <Button onClick={handleUpdateUser}>Update</Button>

@@ -124,7 +124,168 @@ export const downloadPDFVitals = async (req, res) => {
   const vitals = await Vitals.find({ patientId });
   console.log(vitals);
   try {
-    let htmlContent = `
+    const patientId = req.body.patientId;
+    const selectedVitalsDate = req.body.selectedVitalsDate
+      ? req.body.selectedVitalsDate.value
+      : null;
+    const selectedVitalsDoctor = req.body.selectedVitalsDoctor
+      ? req.body.selectedVitalsDoctor.value
+      : null;
+    const selectedVitalsTime = req.body.selectedVitalsTime
+      ? req.body.selectedVitalsTime.value
+      : null;
+    if (selectedVitalsDate != null) {
+      const isoDate = new Date(selectedVitalsDate).toISOString();
+      // Extract year, month, and day from the ISODate
+      const year = new Date(isoDate).getFullYear();
+      const month = new Date(isoDate).getMonth() + 1; // Months are 0-indexed in JavaScript, so add 1
+      const day = new Date(isoDate).getDate();
+      const vitals = await Vitals.find({
+        patientId,
+        date: {
+          $gte: new Date(`${year}-${month}-${day}`),
+          $lt: new Date(`${year}-${month}-${day + 1}`),
+        },
+      })
+        .populate("patientId")
+        .populate("doctorId", "username");
+      try {
+        let htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Patient Vital Report</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }
+                h1, h2 {
+                    margin-bottom: 10px;
+                    color: #333;
+                    text-align: center; /* Center the headings */
+                }
+                p {
+                    margin-bottom: 5px;
+                    color: #666;
+                }
+                .section {
+                    margin-bottom: 20px;
+                }
+                .patient-picture {
+                    width: 200px;
+                    height: auto;
+                    border: 1px solid #ccc;
+                    margin: 0 auto; /* Center the picture */
+                    display: block; /* Ensure the picture is displayed as a block element */
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Patient Vitals Report</h1>
+            </div>
+        `;
+
+
+        vitals.forEach((vital) => {
+          const {
+            date,
+            temperature,
+            bodyweight,
+            height,
+            bloodGlucose,
+            bloodPressureSystolic,
+            bloodPressureDiastolic,
+            heartRate,
+            respiratoryRate,
+            oxygenSaturation,
+            BMI,
+            doctorId: { username },
+            patientId: { patientName },
+          } = vital;
+
+          const formattedDate = new Date(date).toLocaleString();
+          // Get the condition for each vital sign
+          const temperatureCondition = getTemperatureCondition(temperature);
+          const bloodPressureCondition = getBloodPressureCondition(
+            bloodPressureSystolic,
+            bloodPressureDiastolic
+          );
+          const heartRateCondition = getHeartRateCondition(heartRate);
+          const bloodGlucoseCondition = getBloodGlucoseCondition(bloodGlucose);
+          const oxygenSaturationCondition =
+            getOxygenSaturationCondition(oxygenSaturation);
+          const BMICondition = getBMICondition(BMI);
+          // Add the vital sign information to the HTML content
+          htmlContent += `
+            <div class="section">
+            <h2>Date: ${formattedDate}</h2>
+            <h2>Doctor Who collected the vitals: ${username}</h2>
+            <h2>Patient Name: ${ patientName }</h2>
+            <p><strong>Temperature:</strong> ${temperature} (${temperatureCondition})</p>
+            <p><strong>Weight:</strong> ${bodyweight} KG</p>
+            <p><strong>Height:</strong> ${height} CM</p>
+            <p><strong>BMI:</strong> ${BMI.toFixed(2)} (${BMICondition})</p>
+            <p><strong>Blood Glucose:</strong> ${bloodGlucose} MG/DL (${bloodGlucoseCondition})</p>
+            <p><strong>Blood Pressure:</strong> ${bloodPressureSystolic}/${bloodPressureDiastolic} MMHG (${bloodPressureCondition})</p>
+            <p><strong>Heart Rate:</strong> ${heartRate} BPM (${heartRateCondition})</p>
+            <p><strong>Respiratory Rate:</strong> ${respiratoryRate}</p>
+            <p><strong>Oxygen Saturation:</strong> ${oxygenSaturation} SPO2 (${oxygenSaturationCondition})</p>
+            </div>
+            
+            `;
+        });
+
+        // Close the HTML content
+        htmlContent += `
+        </body>
+        </html>`;
+
+        const pdfBuffer = await generatePdfFromHtml(htmlContent);
+        res.set({
+          "Content-Type": "application/pdf",
+          "Content-Length": pdfBuffer.length,
+        });
+        res.send(pdfBuffer);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+    if (selectedVitalsTime != null) {
+      const date = new Date();
+
+      // Split the selectedVitalsTime into hours, minutes, and AM/PM
+      let timeParts = selectedVitalsTime.split(":");
+      let hours = parseInt(timeParts[0]); // Extract hours
+      let minutes = parseInt(timeParts[1]); // Extract minutes
+      let amOrPm = timeParts[1].split(" ")[1]; // Extract AM/PM
+
+      // Adjust hours for PM if necessary
+      if (amOrPm === "PM" && hours !== 12) {
+        hours += 12;
+      }
+
+      // Set the hours and minutes to the date object
+      date.setHours(hours, minutes);
+
+      // Create the end time by adding 1 hour to the start time
+      const endTime = new Date(date.getTime() + 1000 * 60 * 60);
+
+      // Query the vitals with the time range
+      const vitals = await Vitals.find({
+        patientId,
+        date: {
+          $gte: date,
+          $lt: endTime,
+        },
+      })
+        .populate("patientId")
+        .populate("doctorId", "username");
+      console.log(vitals);
+      try {
+        let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
         <head>

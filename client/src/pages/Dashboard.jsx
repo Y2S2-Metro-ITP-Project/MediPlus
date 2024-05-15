@@ -21,12 +21,20 @@ import PatientDiagnosis from "../components/PatientDiagnosis";
 import PatientVitals from "../components/PatientVitals";
 import DashDoctorsOrdersPrecriptions from "../components/DashDoctorsOrdersPrecriptions";
 import DashMedicineDispence from "../components/DashMedicineDispence";
+import Dashstaff_dashboard from "../components/Dashstaff_dashboard";
+import DashEmpsalary from "../components/DashEmpsalary";
 import DashOutPatientBilling from "../components/DashOutPatientBilling";
 import OutPatientPaymentProfile from "../components/OutPatientPaymentProfile";
 import DashSupplier from "../components/DashSupplier";
 import DashSupplierOrder from "../components/DashSupplierOrder"
-
-
+import DoctorsList from "../components/DoctorList";
+import PatientDashboard from "../components/PatientDashBoard";
+import DoctorProfile from "../components/DoctorProfile";
+import PatientBooking from "../components/PatientBooking";
+import DashRoom from "../components/DashRoom";
+import DashSlots from "../components/DashSlots";
+import DashSlotBooking from "../components/DashSlotBooking";
+import Dashconsultationpayment from "../components/Dashconsultationpayment";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -38,7 +46,7 @@ export default function Dashboard() {
       setTab(tabFromUrl);
     }
   }, [location.search]);
-  return(
+  return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* <DashSideBar /> */}
       <div className=" md:w-56">
@@ -59,41 +67,60 @@ export default function Dashboard() {
       {/** <DashUserInquires/> */}
       {tab === "userInquiries" && <DashUserInquiries />}
       {/** <DashStaffManagement /> */}
-      {tab=="staff" && <DashStaffManagement/>}
+      {tab == "staff" && <DashStaffManagement />}
       {/**<Leave/> */}
-      {tab==="leave" && <DashLeave/>}
-       {/**<EMPleave/> */}
-       {tab==="EMPleave" && <DashEMPLeave/>}
+      {tab === "leave" && <DashLeave />}
+      {/**<EMPleave/> */}
+      {tab === "EMPleave" && <DashEMPLeave />}
       {/**<AddEmployee/> */}
-      {tab==="Add_staff" && <DashaddEmp/>}
+      {tab === "Add_staff" && <DashaddEmp />}
+      {/**<Dashstaff_dashboard/> */}
+      {tab === "staff_dashbord" && <Dashstaff_dashboard />}
+      {/**<DashEmpsalary/> */}
+      {tab === "Empsalary" && <DashEmpsalary />}
       {/** <DashBedManagement/> */}
       {tab === "beds" && <DashBedManagement />}
       {/** <DashWards/> */}
       {tab === "wards" && <DashWards />}
       {/** <ReceptionistDashBoard/> */}
-      {tab==="receptionist" && <ReceptionistDashBoard/>}
+      {tab === "receptionist" && <ReceptionistDashBoard />}
       {/**<DashPatientProfile */}
-      {tab==="PatientProfile" && <DashOutPatientProfile/>}
+      {tab === "PatientProfile" && <DashOutPatientProfile />}
       {/**<DashAddDiesease */}
-      {tab==="AddDisease" && <DashAddDisease/>}
+      {tab === "AddDisease" && <DashAddDisease />}
       {/** <DashPatientPrescriptions/> */}
-      {tab==="PatientPrescriptions" && <PatientPrescriptions/>}
+      {tab === "PatientPrescriptions" && <PatientPrescriptions />}
       {/** <DashDiagnosis/> */}
-      {tab==="PatientDiagnosis" && <PatientDiagnosis/>}
+      {tab === "PatientDiagnosis" && <PatientDiagnosis />}
       {/**<DashPatientVitals/> */}
-      {tab==="PatientVitals" && <PatientVitals/>}
+      {tab === "PatientVitals" && <PatientVitals />}
       {/** <DashPrecritionOrder/> */}
-      {tab==="orderPrescritions" && <DashDoctorsOrdersPrecriptions/>}
+      {tab === "orderPrescritions" && <DashDoctorsOrdersPrecriptions />}
       {/** <DashMedicineDispence/> */}
-      {tab==="Dispence" && <DashMedicineDispence/>}
+      {tab === "Dispence" && <DashMedicineDispence />}
       {/** <DashOutPatientBilling/> */}
-      {tab==="OutPatientBilling" && <DashOutPatientBilling/>}
+      {tab === "OutPatientBilling" && <DashOutPatientBilling />}
       {/** <DashOutPatientPaymentProfile/> */}
-      {tab==="OutPatientPaymentProfile" && <OutPatientPaymentProfile/>}
+      {tab === "OutPatientPaymentProfile" && <OutPatientPaymentProfile />}
+      {/** <DashInpatientProfile/> */}
+      {tab === "InpatientProfile" && <DashInPateintProfile />}
+      {/** <DashDoctorInpatient/> */}
+      {tab === "DoctorInpatient" && <DashDoctorInpatient />}
+      {/** <DashWardProfile/> */}
+      {tab === "WardProfile" && <DashWardProfile />}
+      {/** <Diesease/> */}
+      {tab === "disease" && <DashDiseases />}
+      {/** <DashInpatienPayment/> */}
+      {tab === "InpatientPayment" && <DashInPatientPayment />}
+      {/** <DashDoctorsorderIn/> */}
+      {tab === "DoctorOrderIn" && <DashDoctorOrderIn />}
       {/** <DashSupplier/> */}
-      {tab==="supplier" && <DashSupplier/>}
+      {tab === "supplier" && <DashSupplier />}
       {/** <DashSupplierOrder/> */}
-      {tab==="supplierOrder" && <DashSupplierOrder/>}
+      {tab === "supplierOrder" && <DashSupplierOrder />}
+      {/** <ConsultPayment/> */}
+      {tab === "ConsultPayment" && <Dashconsultationpayment />}
+
     </div>
   );
 }
