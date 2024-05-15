@@ -39,11 +39,6 @@ const DashSupplier = () => {
     supplierPhone: "",
     itemName: "",
   });
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
-
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
@@ -62,6 +57,10 @@ const DashSupplier = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
 
   const handleSort = (column) => {
     if (sortColumn === column) {
@@ -96,6 +95,7 @@ const DashSupplier = () => {
           itemName: "",
         });
         setShowModal(false);
+        fetchSuppliers();
         toast.success("Supplier added successfully");
       } else {
         toast.error(data.message);
@@ -120,6 +120,7 @@ const DashSupplier = () => {
           suppliers.filter((supplier) => supplier._id !== supplierIdToDelete)
         );
         setShowModal(false);
+        fetchSuppliers();
         toast.success(data.message);
       } else {
         toast.error(data.message);
@@ -157,6 +158,7 @@ const DashSupplier = () => {
           supplierPhone: "",
           itemName: "",
         });
+        fetchSuppliers();
         toast.success("Supplier updated successfully");
       } else {
         toast.error(data.message);
@@ -182,7 +184,7 @@ const DashSupplier = () => {
     setDetailsShow(true);
   };
 
-  console.log(detailsData)
+  console.log(detailsData);
   return (
     <div className="p-4">
       {isLoading ? (
@@ -303,7 +305,9 @@ const DashSupplier = () => {
                           <>
                             <HiEye
                               className="text-blue-500 cursor-pointer"
-                              onClick={() => handleDetailsMessageBox(supplier.item)}
+                              onClick={() =>
+                                handleDetailsMessageBox(supplier.item)
+                              }
                             />
                           </>
                         ) : (
@@ -474,10 +478,14 @@ const DashSupplier = () => {
               )}
             </Modal.Body>
           </Modal>
-          <Modal show={detailsShow} onClose={() => setDetailsShow(false)} size="xlg">
+          <Modal
+            show={detailsShow}
+            onClose={() => setDetailsShow(false)}
+            size="xlg"
+          >
             <Modal.Header>Supplier Details</Modal.Header>
             <Modal.Body>
-              {detailsData.length > 0 ?(
+              {detailsData.length > 0 ? (
                 <Table hoverable className="shadow-md">
                   <Table.Head>
                     <Table.HeadCell>Item Name</Table.HeadCell>
@@ -504,7 +512,6 @@ const DashSupplier = () => {
                 </Table>
               ) : (
                 <p className="px-4">No items found.</p>
-              
               )}
             </Modal.Body>
             <Modal.Footer>
