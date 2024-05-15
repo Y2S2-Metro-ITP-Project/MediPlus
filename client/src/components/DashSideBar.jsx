@@ -8,6 +8,8 @@ import {
   HiAnnotation,
   HiChartPie,
 } from "react-icons/hi";
+import { BiCalendarCheck } from "react-icons/bi";
+import { MdDashboard } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { FaShippingFast } from "react-icons/fa";
 import { FaUserInjured } from "react-icons/fa";
@@ -19,11 +21,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaRegCalendarTimes } from "react-icons/fa";
 import { FaUserPlus } from "react-icons/fa";
 import { FaBed } from "react-icons/fa";
+import { TbBrandBooking } from "react-icons/tb";
+import { FaCheckToSlot } from "react-icons/fa6";
 import { GiHospital } from "react-icons/gi";
 import { BiCapsule } from "react-icons/bi";
 import { FaClipboardList } from "react-icons/fa";
 import { FaHeartbeat } from "react-icons/fa";
 import { IoReceiptOutline } from "react-icons/io5";
+import { FaMedkit } from "react-icons/fa";
 export default function DashSideBar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -67,6 +72,7 @@ export default function DashSideBar() {
                 Dashboard
               </Sidebar.Item>
             </Link>
+
           )}
           {currentUser && currentUser.isAdmin && (
             <Link to="#">
@@ -78,7 +84,7 @@ export default function DashSideBar() {
               >
                 Dashboard
               </Sidebar.Item>
-            </Link>
+            </Link>     
           )}
           <Link to="/dashboard?tab=profile">
             <Sidebar.Item
@@ -124,6 +130,24 @@ export default function DashSideBar() {
                   Outpatients
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=DoctorInpatient">
+                <Sidebar.Item
+                  active={tab === "DoctorInpatient"}
+                  icon={FaUserInjured}
+                  as="div"
+                >
+                  InPatients
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=disease">
+                <Sidebar.Item
+                  active={tab === "disease"}
+                  icon={FaMedkit}
+                  as="div"
+                >
+                  Add Disease
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=EMPleave">
                 <Sidebar.Item
                   active={tab === "EMPleave"}
@@ -144,6 +168,24 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Users
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={BiCalendarCheck}
+                  as="div"
+                >
+                  Appointments
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={FaCheckToSlot}
+                  as="div"
+                >
+                  Schedule Slots
                 </Sidebar.Item>
               </Link>
               <Link to="/dashboard?tab=inquiries">
@@ -198,7 +240,21 @@ export default function DashSideBar() {
                   Add Employee
                 </Sidebar.Item>
               </Link>
-
+              <Link to="/dashboard?tab=rooms">
+              <Sidebar.Item
+                active={tab === "rooms"}
+                icon={HiDocument}
+                labelColor="dark"
+                as="div"
+              >
+                Rooms
+              </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=slots">
+              <Sidebar.Item active={tab === "slots"} icon={HiDocumentText} as="div">  
+                Slots
+              </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=leave">
                 <Sidebar.Item
                   active={tab === "leave"}
@@ -210,6 +266,29 @@ export default function DashSideBar() {
               </Link>
             </>
           )}
+          {currentUser.isDoctor && (
+            <>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={BiCalendarCheck}
+                  as="div"
+                >
+                  Appointment
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={FaCheckToSlot}
+                  as="div"
+                >
+                  Schedule Slots
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+
           {currentUser.isCashier && (
             <>
               <Link to="/dashboard?tab=OutPatientBilling">
@@ -219,6 +298,25 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Out Patient Billing
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=InpatientPayment">
+                <Sidebar.Item
+                  active={tab === "InpatientPayment"}
+                  icon={IoReceiptOutline}
+                  as="div"
+                >
+                  In Patient Billing
+                </Sidebar.Item>
+              </Link>
+              <Link to="/dashboard?tab=ConsultationBilling">
+                <Sidebar.Item
+                  active={tab === "CounsultationBilling"}
+                  icon={TbBrandBooking}
+                  as="div"
+                >
+                  Consultation
                 </Sidebar.Item>
               </Link>
 
@@ -241,9 +339,40 @@ export default function DashSideBar() {
                   icon={FaClipboardList}
                   as="div"
                 >
-                  Doctor Orders
+                  Doctor Orders{" "}
+                  <span
+                    style={{
+                      color: tab === "orderPrescritions" ? "green" : "red", // Adjust colors as needed
+                      fontWeight: "bold",
+                      marginLeft: "5px",
+                    }}
+                  >
+                    OUT
+                  </span>
+                  <span style={{ fontSize: "12px", color: "gray" }}></span>
                 </Sidebar.Item>
               </Link>
+
+              <Link to="/dashboard?tab=DoctorOrderIn">
+                <Sidebar.Item
+                  active={tab === "DoctorOrderIn"}
+                  icon={FaClipboardList}
+                  as="div"
+                >
+                  Doctor Orders{" "}
+                  <span
+                    style={{
+                      color: tab === "DoctorOrderIn" ? "green" : "red", // Adjust colors as needed
+                      fontWeight: "bold",
+                      marginLeft: "5px",
+                    }}
+                  >
+                    IN
+                  </span>
+                  <span style={{ fontSize: "12px", color: "gray" }}></span>
+                </Sidebar.Item>
+              </Link>
+
               <Link to="/dashboard?tab=inventory">
                 <Sidebar.Item
                   active={tab === "inventory"}
@@ -287,6 +416,25 @@ export default function DashSideBar() {
                   Out Patients
                 </Sidebar.Item>
               </Link>
+              <Link to="/dashboard?tab=booking">
+                <Sidebar.Item
+                  active={tab === "booking"}
+                  icon={BiCalendarCheck}
+                  as="div"
+                >
+                  Appointment
+                </Sidebar.Item>
+              </Link>
+
+              <Link to="/dashboard?tab=schedule">
+                <Sidebar.Item
+                  active={tab === "schedule"}
+                  icon={FaCheckToSlot}
+                  as="div"
+                >
+                  Schedule Slots
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=inquiries">
                 <Sidebar.Item
                   active={tab === "inquiries"}
@@ -323,6 +471,15 @@ export default function DashSideBar() {
           )}
           {(currentUser.isOutPatient || currentUser.isInPatient) && (
             <>
+              <Link to="/dashboard?tab=patientDashboard">
+                <Sidebar.Item
+                  active={tab === "patientDashboard"}
+                  icon={MdDashboard}
+                  as="div"
+                >
+                  Dashboard
+                </Sidebar.Item>
+              </Link>
               <Link to="/dashboard?tab=PatientPrescriptions">
                 <Sidebar.Item
                   active={tab === "PatientPrescriptions"}
@@ -348,6 +505,19 @@ export default function DashSideBar() {
                   as="div"
                 >
                   Vitals
+                </Sidebar.Item>
+              </Link>
+            </>
+          )}
+          {currentUser.isOutPatient && (
+            <>
+              <Link to="/dashboard?tab=bookings">
+                <Sidebar.Item
+                  active={tab === "bookings"}
+                  icon={BiCalendarCheck}
+                  as="div"
+                >
+                  Your Appointments
                 </Sidebar.Item>
               </Link>
             </>

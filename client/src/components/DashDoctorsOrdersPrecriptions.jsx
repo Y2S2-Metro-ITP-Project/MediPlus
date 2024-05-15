@@ -46,29 +46,30 @@ export default function DashDoctorsOrdersPrecriptions() {
               .toLowerCase()
               .includes(searchTerm.toLowerCase())
         );
-        const uniqueDoctors = [
-          ...new Set(
-            data.prescriptionOrders.map((prescriptionOrders) => ({
-              doctorId: prescriptionOrders.doctorId,
-              username: prescriptionOrders.doctorId.username,
-            }))
-          ),
-        ];
-        const uniqueDates = [
-          ...new Set(
-            data.prescriptionOrders.map((prescriptionOrders) =>
-              format(new Date(prescriptionOrders.date), "yyyy-MM-dd")
+        // Unique doctors
+        const uniqueDoctors = Array.from(
+          new Set(data.prescriptionOrders.map((order) => order.doctorId))
+        ).map((doctorId) => ({
+          doctorId: doctorId,
+          username: doctorId.username,
+        }));
+
+        // Unique dates
+        const uniqueDates = Array.from(
+          new Set(
+            data.prescriptionOrders.map((order) =>
+              format(new Date(order.date), "yyyy-MM-dd")
             )
-          ),
-        ];
-        const uniquePatients = [
-          ...new Set(
-            data.prescriptionOrders.map((prescriptionOrders) => ({
-              patientId: prescriptionOrders.patientId,
-              name: prescriptionOrders.patientId.name,
-            }))
-          ),
-        ];
+          )
+        );
+
+        // Unique patients
+        const uniquePatients = Array.from(
+          new Set(data.prescriptionOrders.map((order) => order.patientId))
+        ).map((patientId) => ({
+          patientId: patientId,
+          name: patientId.name,
+        }));
 
         setDoctors(uniqueDoctors);
         setDates(uniqueDates);
@@ -405,11 +406,15 @@ export default function DashDoctorsOrdersPrecriptions() {
       console.log(error);
     }
   };
-  {/** Implementation of Reset */}
+  {
+    /** Implementation of Reset */
+  }
   const handleReset = async () => {
     fetchOrders();
   };
-  {/** Implementation of fileration by payment status */}
+  {
+    /** Implementation of fileration by payment status */
+  }
   const handleInventoryFilterByPaymentStatus = async (e) => {
     const filterValue = e.target.value;
     try {
@@ -487,38 +492,37 @@ export default function DashDoctorsOrdersPrecriptions() {
       <div></div>
       <div>
         <div className="flex">
-        <select
-          id="filter"
-          onChange={handleInventoryFilterByDispenseStatus}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue" disabled selected>
-            Choose a Dispense status
-          </option>
-          <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Pending">Pending</option>
-        </select>
-        <select
-          id="filter"
-          onChange={handleInventoryFilterByPaymentStatus}
-          className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="defaultvalue" disabled selected>
-            Choose a Payment status
-          </option>
-          <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Pending">Pending</option>
-          <option value="Not Created">Not Created</option>
-        </select>
-        <Button
-          className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
-          color="gray"
-          onClick={() => handleReset()}
-        >
-          Reset
-        </Button>
+          <select
+            id="filter"
+            onChange={handleInventoryFilterByDispenseStatus}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Dispense status
+            </option>
+            <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <select
+            id="filter"
+            onChange={handleInventoryFilterByPaymentStatus}
+            className="ml-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="defaultvalue" disabled selected>
+              Choose a Payment status
+            </option>
+            <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <Button
+            className="w-200 h-10 ml-6lg:ml-0 lg:w-32 ml-4"
+            color="gray"
+            onClick={() => handleReset()}
+          >
+            Reset
+          </Button>
         </div>
         <div className=" flex items-center mb-2">
           <TextInput

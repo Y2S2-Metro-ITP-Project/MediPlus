@@ -192,13 +192,16 @@ export default function DashUserInquiries() {
   const handleSearch = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`/api/inquiry/searchUserInquiries/${currentUser._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ searchTerm }),
-      });
+      const res = await fetch(
+        `/api/inquiry/searchUserInquiries/${currentUser._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ searchTerm }),
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         setInquirires(data);
@@ -321,7 +324,8 @@ export default function DashUserInquiries() {
       {(currentUser.isUser ||
         currentUser.isReceptionist ||
         currentUser.isOutPatient ||
-        currentUser.isInPatient) &&
+        currentUser.isInPatient ||
+        currentUser.isHeadNurse) &&
       inquiries.length > 0 ? (
         <>
           <Table hoverable className="shadow-md">

@@ -44,7 +44,7 @@ export default function DashMedicineDispence() {
           `/api/prescriptionOrder/getPrescriptionPatientOrder/${id}`
         );
         const data = await res.json();
-        if(!res.ok) {
+        if (!res.ok) {
           throw new Error(data.message);
           setLoading(false);
         }
@@ -101,9 +101,15 @@ export default function DashMedicineDispence() {
         }
       );
       if (res.ok) {
-        toast.success("Order Confirmed Successfully");
-        window.location.href =
-          "http://localhost:5173/dashboard?tab=orderPrescritions";
+        if (orders.patientId.patientType == "Outpatient") {
+          toast.success("Order Confirmed Successfully");
+          window.location.href =
+            "http://localhost:5173/dashboard?tab=orderPrescritions";
+        }else if(orders.patientId.patientType="Inpatient"){
+          toast.success("Order Confirmed Successfully");
+          window.location.href =
+            "http://localhost:5173/dashboard?tab=DoctorOrderIn";
+        }
       }
     } catch (error) {
       console.log(error);
@@ -130,15 +136,23 @@ export default function DashMedicineDispence() {
     let dosage = prescription.dosage;
     totalPrice1 += itemPrice * dosage;
   });
-  console.log(orders.patientId.address)
+  console.log(orders.patientId.address);
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer />
-      <a href="dashboard?tab=orderPrescritions">
-        <Button outline gradientDuoTone="purpleToPink" className="mb-5">
-          Go Back
-        </Button>
-      </a>
+      {orders.patientId.patientType == "Outpatient" ? (
+        <a href="dashboard?tab=orderPrescritions">
+          <Button outline gradientDuoTone="purpleToPink" className="mb-5">
+            Go Back
+          </Button>
+        </a>
+      ) : (
+        <a href="dashboard?tab=DoctorOrderIn">
+          <Button outline gradientDuoTone="purpleToPink" className="mb-5">
+            Go Back
+          </Button>
+        </a>
+      )}
       <div className="flex mb-2">
         <h1 className="text-3xl font-bold mb-4 ">
           {orders.patientId.name} Prescription Order
@@ -150,7 +164,7 @@ export default function DashMedicineDispence() {
           <div className="mb-4 flex items-center">
             <p className="text-gray-600 mr-4">Patient Profile</p>
             <img
-            src={orders.patientId.patientProfilePicture}
+              src={orders.patientId.patientProfilePicture}
               alt="Patient"
               className="h-20 w-20 rounded-full border-2 border-blue-500"
             />
@@ -167,32 +181,48 @@ export default function DashMedicineDispence() {
             <div>
               <p className="text-gray-600">Date of Birth</p>
               <p className="font-semibold">
-              {formatDateOfBirth(orders.patientId.dateOfBirth)}
+                {formatDateOfBirth(orders.patientId.dateOfBirth)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Contact Phone</p>
-              <p className="font-semibold">{orders.patientId.contactPhone}</p>
+              <p className="font-semibold">
+                {orders.patientId.contactPhone || "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Identification</p>
-              <p className="font-semibold">{orders.patientId.identification}</p>
+              <p className="font-semibold">
+                {orders.patientId.identification || "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Contact Email</p>
-              <p className="font-semibold">{orders.patientId.contactEmail}</p>
+              <p className="font-semibold">
+                {orders.patientId.contactEmail || "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Address</p>
-              <p className="font-semibold">{orders.patientId.address}</p>
+              <p className="font-semibold">
+                {orders.patientId.address || "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-red-600">Emergency Contact Name</p>
-              <p className="font-semibold">{orders.patientId.emergencyContact.name}</p>
+              <p className="font-semibold">
+                {orders.patientId.emergencyContact
+                  ? orders.patientId.emergencyContact.name
+                  : "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-red-600">Emergency Contact Phone</p>
-              <p className="font-semibold">{orders.patientId.emergencyContact.phoneNumber}</p>
+              <p className="font-semibold">
+                {orders.patientId.emergencyContact
+                  ? orders.patientId.emergencyContact.phoneNumber
+                  : "N/A"}
+              </p>
             </div>
           </div>
         </div>
@@ -224,9 +254,12 @@ export default function DashMedicineDispence() {
                         <Table.Cell>{prescription.itemId.itemName}</Table.Cell>
                         <Table.Cell>{prescription.dosage}</Table.Cell>
                         <Table.Cell>{prescription.itemId.itemPrice}</Table.Cell>
-                        <Table.Cell>{prescription.itemId.itemPrice * prescription.dosage}</Table.Cell>
                         <Table.Cell>
-                          {prescription.itemId.itemQuantity > prescription.dosage ? (
+                          {prescription.itemId.itemPrice * prescription.dosage}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {prescription.itemId.itemQuantity >
+                          prescription.dosage ? (
                             <span className="font-bold text-green-500">
                               In Stock
                             </span>

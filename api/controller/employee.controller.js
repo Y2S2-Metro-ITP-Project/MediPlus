@@ -439,3 +439,75 @@ export const updateEmp = async (req, res) => {
     }
   };
   
+  export const getDoctorDetailsById = async (req, res, next) => {
+    try {
+        const doctorId = req.params.doctorId;
+        
+        // Find the corresponding EmployeeDetails document based on the doctorId
+        const doctorDetails = await EmployeeDetails.findOne({ userId: doctorId });
+        
+        if (!doctorDetails) {
+            return res.status(404).json({ message: 'Doctor details not found' });
+        }
+        
+        // If doctor details are found, return them
+        return res.status(200).json({ doctorDetails });
+    } catch (error) {
+        console.error('Error fetching doctor details:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getDoctorsBySpecialization = async (req, res, next) => {
+  try {
+    const { specialization } = req.params;
+    console.log(`Fetching doctor details for specialization: ${specialization}`);
+
+    const doctorDetails = await EmployeeDetails.find({ specialization }).lean();
+    console.log('doctorDetails:', doctorDetails);
+    if (doctorDetails.length === 0) {
+      return res.status(404).json({ message: 'No doctor details found for the given specialization' });
+    }
+
+    const doctors = []; // Initialize an array to store doctor details
+
+    // Iterate through each doctor detail
+    doctorDetails.forEach(doctor => {
+      // Add each doctor detail to a doctor object
+      const doctorDetail = {
+        doctorDetails: doctor
+      };
+      // Add the doctor object to the doctors array
+      doctors.push(doctorDetail);
+    });
+
+    return res.status(200).json(doctors); // Return the array of doctor details
+  } catch (error) {
+    const { message } = error;
+    console.error('Error fetching doctor details:', message);
+    return res.status(500).json({ message: 'An unexpected error occurred' });
+  }
+};
+
+export const getDoctorBySpecializationAndId = async (req, res, next) => {
+  try {
+    const { specialization, doctorId } = req.params;
+    console.log(`Fetching doctor details for specialization: ${specialization} and id: ${doctorId}`);
+
+    const doctorDetail = await EmployeeDetails.find({ specialization, _id: doctorId })
+    console.log('doctorDetail:', doctorDetail);
+    if (!doctorDetail) {
+      return res.status(404).json({ message: 'No doctor details found for the given specialization and id' });
+    }
+
+    const doctor = {
+      doctorDetails: doctorDetail
+    };
+
+    return res.status(200).json(doctor);
+  } catch (error) {
+    const { message } = error;
+    console.error('Error fetching doctor details:', message);
+    return res.status(500).json({ message: 'An unexpected error occurred' });
+  }
+};
