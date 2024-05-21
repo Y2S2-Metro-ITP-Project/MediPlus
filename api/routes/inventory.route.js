@@ -13,7 +13,8 @@ import {
   genrateLowStockInventoryReport,
   genrateOutOfStockInventoryReport,
   genrateCloseToExpairyOfStockInventoryReport,
-  getFilteredInventoryData
+  getFilteredInventoryData,
+  getItemNames,
 } from "../controller/inventory.controller.js";
 const router = express.Router();
 
@@ -50,4 +51,5 @@ router.post(
   genrateCloseToExpairyOfStockInventoryReport
 );
 router.post("/filterInventory", verifyToken, getFilteredInventoryData);
+router.get("/getItemNames", getItemNames);
 export default router;

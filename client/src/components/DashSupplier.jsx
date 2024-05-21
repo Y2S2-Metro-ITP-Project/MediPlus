@@ -8,6 +8,7 @@ import {
   Label,
   Card,
   Badge,
+  Select,
 } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
@@ -25,6 +26,7 @@ import { set } from "mongoose";
 const DashSupplier = () => {
   const { currentUser } = useSelector((state) => state.user);
   const [suppliers, setSuppliers] = useState([]);
+  const [phoneError, setPhoneError] = useState("");
   const [totalSuppliers, setTotalSuppliers] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [supplierIdToDelete, setSupplierIdToDelete] = useState("");
@@ -39,6 +41,7 @@ const DashSupplier = () => {
     supplierPhone: "",
     itemName: "",
   });
+  const [itemNames, setItemNames] = useState([]);
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
@@ -60,6 +63,7 @@ const DashSupplier = () => {
 
   useEffect(() => {
     fetchSuppliers();
+    fetchItemNames();
   }, [currentUser._id, searchTerm, sortColumn, sortDirection]);
 
   const handleSort = (column) => {
@@ -168,8 +172,33 @@ const DashSupplier = () => {
       toast.error("Failed to update supplier. Please try again later.");
     }
   };
-
+  const fetchItemNames = async () => {
+    try {
+      const res = await fetch("/api/inventory/getItemNames");
+      const data = await res.json();
+      if (res.ok) {
+        setItemNames(data.itemNames);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch item names. Please try again later.");
+    }
+  };
   const handleInputChange = (e) => {
+    const { id, value } = e.target;
+  
+    if (id === 'supplierPhone') {
+      if (value.length > 10) {
+        setPhoneError('Phone number cannot exceed 10 digits');
+      } else if (!/^[0-9]*$/.test(value)) {
+        setPhoneError('Phone number can only contain digits');
+      } else {
+        setPhoneError('');
+      }
+    }
+  
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
@@ -271,6 +300,16 @@ const DashSupplier = () => {
                   <Table.HeadCell>
                     <span
                       className={`cursor-pointer ${
+                        sortColumn === "supplierItem" ? "text-blue-500" : ""
+                      }`}
+                      onClick={() => handleSort("Item Name")}
+                    >
+                      Item Name
+                    </span>
+                  </Table.HeadCell>
+                  <Table.HeadCell>
+                    <span
+                      className={`cursor-pointer ${
                         sortColumn === "itemName" ? "text-blue-500" : ""
                       }`}
                       onClick={() => handleSort("itemName")}
@@ -299,6 +338,7 @@ const DashSupplier = () => {
                       <Table.Cell>{supplier.supplierName}</Table.Cell>
                       <Table.Cell>{supplier.supplierEmail}</Table.Cell>
                       <Table.Cell>{supplier.supplierPhone}</Table.Cell>
+                      <Table.Cell>{supplier.itemName}</Table.Cell>
                       <Table.Cell>{supplier.item.length}</Table.Cell>
                       <Table.Cell>
                         {supplier.item.length > 0 ? (
@@ -327,6 +367,7 @@ const DashSupplier = () => {
                                 supplierName: supplier.supplierName,
                                 supplierEmail: supplier.supplierEmail,
                                 supplierPhone: supplier.supplierPhone,
+                                supplierItem: supplier.itemName,
                               });
                               setShowModal(true);
                             }}
@@ -400,12 +441,34 @@ const DashSupplier = () => {
                   <div className="mb-4">
                     <Label htmlFor="supplierPhone">Supplier Phone</Label>
                     <TextInput
-                      type="text"
+                      type="number"
                       id="supplierPhone"
                       value={formData.supplierPhone}
                       onChange={handleInputChange}
+                      maxLength={10}
                       required
                     />
+                    {phoneError && (
+                      <p className="text-red-500 mt-1">{phoneError}</p>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <Label htmlFor="itemName">Item Name</Label>
+                    <Select
+                      id="itemName"
+                      value={formData.itemName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, itemName: e.target.value })
+                      }
+                      required
+                    >
+                      <option value="">Select an item</option>
+                      {itemNames.map((itemName) => (
+                        <option key={itemName} value={itemName}>
+                          {itemName}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
                   <div className="flex justify-center gap-4">
                     <Button type="submit">Update Supplier</Button>
@@ -451,22 +514,34 @@ const DashSupplier = () => {
                   <div className="mb-4">
                     <Label htmlFor="supplierPhone">Supplier Phone</Label>
                     <TextInput
-                      type="text"
+                      type="Number"
                       id="supplierPhone"
                       value={formData.supplierPhone}
                       onChange={handleInputChange}
+                      maxLength={10}
                       required
                     />
+                    {phoneError && (
+                      <p className="text-red-500 mt-1">{phoneError}</p>
+                    )}
                   </div>
                   <div className="mb-4">
                     <Label htmlFor="itemName">Item Name</Label>
-                    <TextInput
-                      type="text"
+                    <Select
                       id="itemName"
                       value={formData.itemName}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setFormData({ ...formData, itemName: e.target.value })
+                      }
                       required
-                    />
+                    >
+                      <option value="">Select an item</option>
+                      {itemNames.map((itemName) => (
+                        <option key={itemName} value={itemName}>
+                          {itemName}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
                   <div className="flex justify-center gap-4">
                     <Button type="submit">Add Supplier</Button>

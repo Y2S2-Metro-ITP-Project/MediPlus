@@ -35,6 +35,7 @@ import ReactSelect from "react-select";
 import Supplier from "../../../api/models/Supplier.model";
 export default function DashOutPatients() {
   const { currentUser } = useSelector((state) => state.user);
+  const [expireDateError, setExpireDateError] = useState("");
   const [inventory, setInventory] = useState([]);
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -235,7 +236,21 @@ export default function DashOutPatients() {
     }
   }, [imageFile]);
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    const today = new Date();
+
+    if (id === "itemExpireDate") {
+      const selectedDate = new Date(value);
+
+      if (selectedDate < today) {
+        setExpireDateError("Expiry date cannot be in the past");
+      } else {
+        setExpireDateError("");
+        setFormData({ ...formData, [id]: value });
+      }
+    } else {
+      setFormData({ ...formData, [id]: value });
+    }
   };
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
     useState(null);
@@ -1082,6 +1097,9 @@ export default function DashOutPatients() {
                   required
                   onChange={handleChange}
                 />
+                {expireDateError && (
+                  <p className="text-red-500 mt-1">{expireDateError}</p>
+                )}
               </div>
               <div className="mb-4">
                 <Label htmlFor="itemQuantity">Item Quantity</Label>
